@@ -4,11 +4,13 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <iostream>
+#include <sstream>
 #include <fstream>
 #include <unistd.h> // For close
+#include <stdexcept>
 
 #define DEFAULT_PORT 8080
-#define MAX_BUFFER_SIZE 1024
+#define MAX_BUFFER_SIZE 2048
 
 class WebServer
 {
@@ -18,7 +20,6 @@ class WebServer
 		int _opt = 1;
 		int _addrlen = sizeof(_address);
 		int _port;
-		char _buffer[MAX_BUFFER_SIZE] = {0};
 
 		void parse_file(std::string filename);
 		void setup_socket();
