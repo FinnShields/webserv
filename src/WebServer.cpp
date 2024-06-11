@@ -1,7 +1,9 @@
 #include "WebServer.hpp"
 
 WebServer::WebServer()
-{}
+{
+	_port = DEFAULT_PORT;
+}
 
 WebServer::~WebServer()
 {}
@@ -10,7 +12,6 @@ void WebServer::parse_file(std::string filename)
 {
     std::ifstream config_file(filename);
     std::string line;
-    _port = DEFAULT_PORT;
     if (config_file.is_open())
 	{
 		std::cout << "Reading file" << std::endl;
@@ -40,7 +41,7 @@ void WebServer::create_socket_fd()
 
 void WebServer::attach_socket()
 {
-	if (setsockopt(_server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &_opt, sizeof(_opt))) 
+	if (setsockopt(_server_fd, SOL_SOCKET, SO_REUSEADDR, &_opt, sizeof(_opt))) 
 	{
 		perror("setsockopt");
 		exit(EXIT_FAILURE);
@@ -52,8 +53,6 @@ void WebServer::bind_socket()
 	_address.sin_family = AF_INET;
     _address.sin_addr.s_addr = INADDR_ANY;
     _address.sin_port = htons(_port);
-
-    // Bind the socket to the network address and port
     if (bind(_server_fd, (struct sockaddr *)&_address, sizeof(_address)) < 0) {
         perror("bind failed");
         exit(EXIT_FAILURE);
@@ -93,6 +92,8 @@ void WebServer::run()
 		// Send HTTP response
 		std::string response = "HTTP/1.1 200 OK\nContent-Type: text/plain\n\nHello, World!";
 		send(_new_socket, response.c_str(), response.size(), 0);
+		if (recv(_new_socket, &_buffer, MAX_BUFFER_SIZE, 0))
+			std::cout << _buffer << std::endl;
 		close(_new_socket);
     }
 }

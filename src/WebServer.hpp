@@ -8,6 +8,7 @@
 #include <unistd.h> // For close
 
 #define DEFAULT_PORT 8080
+#define MAX_BUFFER_SIZE 1024
 
 class WebServer
 {
@@ -17,7 +18,7 @@ class WebServer
 		int _opt = 1;
 		int _addrlen = sizeof(_address);
 		int _port;
-		// char buffer[MAX_BUFFER_SIZE] = {0};
+		char _buffer[MAX_BUFFER_SIZE] = {0};
 
 		void parse_file(std::string filename);
 		void create_socket_fd();
