@@ -21,9 +21,7 @@ class WebServer
 		char _buffer[MAX_BUFFER_SIZE] = {0};
 
 		void parse_file(std::string filename);
-		void create_socket_fd();
-		void attach_socket();
-		void bind_socket();
+		void setup_socket();
 		void start_listen();
 		WebServer(WebServer &copy);
 		WebServer &operator=(WebServer &assignment);

@@ -30,26 +30,21 @@ void WebServer::parse_file(std::string filename)
 	std::cout << "Port: 8080" << std::endl;
 }
 
-void WebServer::create_socket_fd()
+void WebServer::setup_socket()
 {
+	//Creates the socket
 	if ((_server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) 
 	{
 		perror("socket failed");
 		exit(EXIT_FAILURE);
 	}
-}
-
-void WebServer::attach_socket()
-{
+	//Attaches the socket (optional?)
 	if (setsockopt(_server_fd, SOL_SOCKET, SO_REUSEADDR, &_opt, sizeof(_opt))) 
 	{
 		perror("setsockopt");
 		exit(EXIT_FAILURE);
     }
-}
-
-void WebServer::bind_socket()
-{
+	//Binds the socket
 	_address.sin_family = AF_INET;
     _address.sin_addr.s_addr = INADDR_ANY;
     _address.sin_port = htons(_port);
@@ -71,9 +66,7 @@ void WebServer::start_listen()
 void WebServer::setup(std::string filename)
 {
 	parse_file(filename);
-	create_socket_fd();
-	attach_socket();
-	bind_socket();
+	setup_socket();
 	start_listen();
 }
 
@@ -87,13 +80,15 @@ void WebServer::run()
 			exit(EXIT_FAILURE);
 		}
 
-		std::cout << "Incoming connection! server_fd: " << _server_fd << "\naddress: " << _address.sin_addr.s_addr
-			<< "\n" << _address.sin_family << "\n" << _address.sin_port << "\n" << _address.sin_zero << std::endl;
-		// Send HTTP response
+		if (recv(_new_socket, &_buffer, MAX_BUFFER_SIZE, 0) < 0)
+			std::cout << "Recv error" << std::endl;
+		else
+			std::cout << "Recvicved info:\n" << _buffer << std::endl;
+		
 		std::string response = "HTTP/1.1 200 OK\nContent-Type: text/plain\n\nHello, World!";
-		send(_new_socket, response.c_str(), response.size(), 0);
-		if (recv(_new_socket, &_buffer, MAX_BUFFER_SIZE, 0))
-			std::cout << _buffer << std::endl;
+		if (send(_new_socket, response.c_str(), response.size(), 0) < 0)
+			std::cout << "Send error" << std::endl;
+		
 		close(_new_socket);
     }
 }
