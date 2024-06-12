@@ -8,6 +8,9 @@
 #include <fstream>
 #include <unistd.h> // For close
 #include <stdexcept>
+#include <vector>
+#include <poll.h>
+#include <algorithm>
 
 #define DEFAULT_PORT 8080
 #define MAX_BUFFER_SIZE 2048
@@ -15,7 +18,8 @@
 class WebServer
 {
 	private:
-		int _server_fd, _new_socket;
+		std::vector<pollfd> fds;
+		int _server_fd;
 		struct sockaddr_in _address;
 		int _opt = 1;
 		int _addrlen = sizeof(_address);
@@ -24,6 +28,8 @@ class WebServer
 		void parse_file(std::string filename);
 		void setup_socket();
 		void start_listen();
+		void accept_new_connection();
+		void handle_client(int socket);
 		WebServer(WebServer &copy);
 		WebServer &operator=(WebServer &assignment);
 
