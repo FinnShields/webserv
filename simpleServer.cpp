@@ -6,14 +6,16 @@
 /*   By: fshields <fshields@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/11 12:16:17 by fshields          #+#    #+#             */
-/*   Updated: 2024/06/12 08:18:20 by fshields         ###   ########.fr       */
+/*   Updated: 2024/06/12 13:00:39 by fshields         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "simpleServer.hpp"
+#include "Request.hpp"
 
 int	main()
 {
+	Request r1;
 	int	listen_fd;
 	int	conn_fd;
 	int opt = 1;
@@ -56,11 +58,12 @@ int	main()
 			std::cout << "connection established" << std::endl;
 		if (send(conn_fd, &msg, 5, 0) == -1)
 			std::cerr << "send error" << std::endl;
+		else
+			std::cout << "sent message" << std::endl;
 		if (recv(conn_fd, buffer, 1024, 0) == -1)
 			std::cerr << "recv error" << std::endl;
-		else
-			std::cout << "send message" << std::endl;
-		std::cout << buffer << std::endl;
+		r1.parse(buffer);
+		r1.display();
 		close(conn_fd);
 	}
 }
