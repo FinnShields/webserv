@@ -99,12 +99,10 @@ void WebServer::run()
 
 void WebServer::accept_new_connection()
 {
-	int new_socket;
-	
-	if ((new_socket = accept(_server_fd, (struct sockaddr *)&_address, (socklen_t*)&_addrlen)) < 0)
-		return (perror("accept"));
 	pollfd client;
-	client.fd = new_socket;
+	
+	if ((client.fd = accept(_server_fd, (struct sockaddr *)&_address, (socklen_t*)&_addrlen)) < 0)
+		return (perror("accept"));
 	client.events = POLLIN;
 	fds.push_back(client);
 }
@@ -113,7 +111,7 @@ static std::string load_index()
 {
 	std::ifstream file("www/index.html");
 	if (!file.is_open())
-		return ("HTTP/1.1 200 ERROR\nContent-Type: text/plain\n\nError loading index.html");
+		return ("HTTP/1.1 404 Not Found\nContent-Type: text/plain\n\nError: index.html not found");
 	
 	std::stringstream buffer;
 	buffer << file.rdbuf();
