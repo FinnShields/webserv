@@ -18,7 +18,7 @@
 class WebServer
 {
 	private:
-		std::vector<pollfd> fds;
+		std::vector<pollfd> _fds;
 		int _server_fd;
 		struct sockaddr_in _address;
 		int _opt = 1;

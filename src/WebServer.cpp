@@ -60,7 +60,7 @@ void WebServer::setup(std::string filename)
 		pollfd server;
 		server.fd = _server_fd;
 		server.events = POLLIN;
-		fds.push_back(server);
+		_fds.push_back(server);
 	}
 	catch(char const *e)
 	{
@@ -74,11 +74,11 @@ void WebServer::run()
 {
 	while (1)
 	{
-		std::cout << "\nWaiting for a connection... - size of pollfd vector: " << fds.size() << std::endl;
-		int poll_result = poll(fds.data(), fds.size(), -1);
+		std::cout << "\nWaiting for action... - size of pollfd vector: " << _fds.size() << std::endl;
+		int poll_result = poll(_fds.data(), _fds.size(), -1);
 		if (poll_result == -1)
 			return (perror("poll"));
-		for (std::vector<pollfd>::iterator pfdit = fds.begin(); pfdit != fds.end();)
+		for (std::vector<pollfd>::iterator pfdit = _fds.begin(); pfdit != _fds.end();)
 		{
 			if (pfdit->revents & POLLIN)
 			{
@@ -88,9 +88,9 @@ void WebServer::run()
 				{
 					handle_client(pfdit->fd);
 					close(pfdit->fd);
-					pfdit = fds.erase(pfdit);
-					continue;
+					pfdit = _fds.erase(pfdit);
 				}
+				break;
 			}
 			pfdit++;
 		}
@@ -101,10 +101,11 @@ void WebServer::accept_new_connection()
 {
 	pollfd client;
 	
+	std::cout << "Recived a new connection" << std::endl;
 	if ((client.fd = accept(_server_fd, (struct sockaddr *)&_address, (socklen_t*)&_addrlen)) < 0)
 		return (perror("accept"));
 	client.events = POLLIN;
-	fds.push_back(client);
+	_fds.push_back(client);
 }
 
 static std::string load_index()
@@ -124,20 +125,21 @@ void WebServer::handle_client(int socket)
 {
 	char _buffer[MAX_BUFFER_SIZE] = {0};
 	if (recv(socket, &_buffer, MAX_BUFFER_SIZE, 0) < 0)
-		return (perror("Recv error"));
+		perror("Recv error");
 
 	std::istringstream request(_buffer);
 	std::string method, dir;
 	std::getline(request, method, ' ');
 	std::getline(request, dir, ' ');
 
-	std::cout << "Recicved a " + method + " " + dir;
+	if (!method.empty())
+		std::cout << "Recicved a request: " + method + " " + dir << std::endl;
+	else
+		std::cout << "Connection cancelled (empty method)" << std::endl;
+	std::string response = "HTTP/1.1 200 OK\nContent-Type: text/plain\n\nYour request: " + method + " " + dir;
 	if (method == "GET")
-	{
-		std::string response = "HTTP/1.1 200 OK\nContent-Type: text/plain\n\nYou sent a GET request for " + dir;
 		if (dir == "/")
 			response = load_index();
-		if (send(socket, response.c_str(), response.size(), 0) < 0)
-			perror("Send error");
-	}
+	if (send(socket, response.c_str(), response.size(), 0) < 0)
+		perror("Send error");
 }
