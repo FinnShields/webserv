@@ -96,8 +96,9 @@ void WebServer::handle_client(int socket)
 	if (recv(socket, &_buffer, MAX_BUFFER_SIZE, 0) < 0)
 		perror("Recv error");
 	request.parse(_buffer);
-	std::string method = request.getMethod();
-	std::string dir = request.getDir();
+	std::cout << _buffer << std::endl;
+	std::string method = request.get("method");
+	std::string dir = request.get("request-target");
 	if (!method.empty())
 	{
 		std::cout << "Received a request:" << std::endl;

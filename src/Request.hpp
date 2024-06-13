@@ -6,7 +6,7 @@
 /*   By: fshields <fshields@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:41 by fshields          #+#    #+#             */
-/*   Updated: 2024/06/13 11:43:51 by fshields         ###   ########.fr       */
+/*   Updated: 2024/06/13 12:44:29 by fshields         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,8 +30,7 @@ class Request
 		std::string extractMethod(std::string& input);
 		std::string extractTarget(std::string& input);
 		std::string extractVersion(std::string& input);
-		const std::string getMethod();
-		const std::string getDir(); 
+		const std::string get(std::string first);
 		void display();
 };
 
