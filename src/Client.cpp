@@ -50,9 +50,8 @@ void Client::handle_request(Server srv)
 		perror("Send error");
 }
 
-void Client::close_connection(Server &srv, std::vector<pollfd> &fds, std::vector<pollfd>::iterator &it)
+void Client::close_connection(Server &srv)
 {
     close(_fd);
-	fds.erase(it);
     srv.remove_client(_fd);
 }

@@ -21,6 +21,8 @@ class WebServer
 		std::vector<Server> _servers;
 
 		void parse_file(std::string filename);
+		bool fd_is_server(int fd);
+		void fd_is_client(int fd);
 		WebServer(WebServer &copy);
 		WebServer &operator=(WebServer &assignment);
 

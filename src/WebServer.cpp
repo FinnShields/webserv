@@ -44,6 +44,31 @@ void WebServer::setup(std::string filename)
 	
 }
 
+bool WebServer::fd_is_server(int fd)
+{
+	for (Server &srv : _servers)
+		if (fd == srv._server_fd)
+		{
+			srv.accept_new_connection(_fds);
+			return (true);
+		}
+	return (false);
+}
+
+void WebServer::fd_is_client(int fd)
+{
+	for (Server &srv : _servers)
+	{
+		for (Client &client : srv._clients)
+			if (client.get_socket_fd() == fd)
+			{
+				client.handle_request(srv);
+				client.close_connection(srv);
+				return ;
+			}
+	}
+}
+
 void WebServer::run()
 {
 	while (1)
@@ -54,27 +79,12 @@ void WebServer::run()
 			return (perror("poll"));
 		for (std::vector<pollfd>::iterator pfdit = _fds.begin(); pfdit != _fds.end();)
 		{
-			bool connection_accepted = false;
 			if (pfdit->revents & POLLIN)
 			{
-				for (Server &srv : _servers)
-					if (pfdit->fd == srv._server_fd)
-					{
-						srv.accept_new_connection(_fds);
-						connection_accepted = true;
-						break ;
-					}
-				if (connection_accepted)
+				if (fd_is_server(pfdit->fd))
 					break;
-				for (Server &srv : _servers)
-					for (Client &client : srv._clients)
-						if (client.get_socket_fd() == pfdit->fd)
-						{
-							client.handle_request(srv);
-							client.close_connection(srv, _fds, pfdit);
-							break ;
-						}
-				
+				fd_is_client(pfdit->fd);
+				_fds.erase(pfdit);
 				break;
 			}
 			pfdit++;

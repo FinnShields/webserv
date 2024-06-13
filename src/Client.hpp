@@ -23,7 +23,7 @@ class Client
         ~Client();
         
         void handle_request(Server srv);
-        void close_connection(Server &srv, std::vector<pollfd> &fds, std::vector<pollfd>::iterator &it);
+        void close_connection(Server &srv);
         
         int get_socket_fd();
 };
