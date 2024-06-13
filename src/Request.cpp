@@ -6,7 +6,7 @@
 /*   By: fshields <fshields@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/06/13 11:44:05 by fshields         ###   ########.fr       */
+/*   Updated: 2024/06/13 12:06:17 by fshields         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -107,7 +107,7 @@ void	Request::display()
 	std::cout << "method: " << this->data["method"] << std::endl;
 	std::cout << "request-target: " << this->data["request-target"] << std::endl;
 	for(it = this->data.begin(); it != this->data.end(); it++)
-		if (!it->first.compare("method") && !it->first.compare("request-target"))
+		if (it->first.compare("method") && it->first.compare("request-target"))
 			std::cout << it->first << ": " << it->second << std::endl;
 	std::cout << "---------------------" << std::endl;
 	std::cout << std::endl;
