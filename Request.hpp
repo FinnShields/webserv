@@ -6,7 +6,7 @@
 /*   By: fshields <fshields@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:41 by fshields          #+#    #+#             */
-/*   Updated: 2024/06/12 13:07:23 by fshields         ###   ########.fr       */
+/*   Updated: 2024/06/12 13:56:14 by fshields         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,6 @@ class Request
 {
 	private:
 		std::map<std::string, std::string> data;
-
 	public:
 		Request();
 		Request(const Request&);
