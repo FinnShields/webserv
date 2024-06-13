@@ -6,7 +6,7 @@
 /*   By: fshields <fshields@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/06/13 12:06:17 by fshields         ###   ########.fr       */
+/*   Updated: 2024/06/13 12:44:24 by fshields         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -85,18 +85,11 @@ void	Request::parse(char *buffer)
 	}
 }
 
-const std::string	Request::getMethod()
+const std::string	Request::get(std::string first)
 {
-	if (this->data.empty())
+	if (!this->data.count(first))
 		return ("");
-	return (this->data["method"]);
-}
-
-const std::string	Request::getDir()
-{
-	if (this->data.empty())
-		return ("");
-	return (this->data["request-target"]);
+	return (this->data[first]);
 }
 
 void	Request::display()
@@ -104,10 +97,11 @@ void	Request::display()
 	std::cout << std::endl;
 	std::cout << "---------------------" << std::endl;
 	std::map<std::string, std::string>::iterator it;
-	std::cout << "method: " << this->data["method"] << std::endl;
-	std::cout << "request-target: " << this->data["request-target"] << std::endl;
+	std::cout << "Method: " << this->data["method"] << std::endl;
+	std::cout << "Request-target: " << this->data["request-target"] << std::endl;
+	std::cout << "HTTP-version: " << this->data["http-version"] << std::endl;
 	for(it = this->data.begin(); it != this->data.end(); it++)
-		if (it->first.compare("method") && it->first.compare("request-target"))
+		if (it->first.compare("method") && it->first.compare("request-target") && it->first.compare("http-version"))
 			std::cout << it->first << ": " << it->second << std::endl;
 	std::cout << "---------------------" << std::endl;
 	std::cout << std::endl;
