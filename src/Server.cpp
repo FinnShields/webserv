@@ -51,4 +51,15 @@ void Server::accept_new_connection(std::vector<pollfd> &_fds)
 		return (perror("accept"));
 	client.events = POLLIN;
 	_fds.push_back(client);
+	_clients.push_back(client.fd);
+}
+
+void Server::remove_client(int fd)
+{
+	for (auto it = _clients.begin(); it != _clients.end(); it++)
+		if (it->get_socket_fd() == fd)
+		{
+			_clients.erase(it);
+			break ;
+		}
 }

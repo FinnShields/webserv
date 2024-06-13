@@ -1,13 +1,11 @@
 #ifndef WEBSERVER_HPP
 #define WEBSERVER_HPP
 
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <iostream>
-#include <sstream>
-#include <fstream>
+#include <iostream> //std::cout
+#include <fstream> //Parse file
+#include <sstream> 
+
 #include <unistd.h> // For close
-#include <stdexcept>
 #include <vector>
 #include <poll.h>
 #include <algorithm>
@@ -15,7 +13,6 @@
 #include "Server.hpp"
 
 #define DEFAULT_PORT 8080
-#define MAX_BUFFER_SIZE 2048
 
 class WebServer
 {
@@ -24,8 +21,6 @@ class WebServer
 		std::vector<Server> _servers;
 
 		void parse_file(std::string filename);
-		void accept_new_connection();
-		void handle_client(int socket);
 		WebServer(WebServer &copy);
 		WebServer &operator=(WebServer &assignment);
 

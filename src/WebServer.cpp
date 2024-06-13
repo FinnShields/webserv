@@ -1,5 +1,4 @@
 #include "WebServer.hpp"
-#include "Request.hpp"
 
 WebServer::WebServer() {}
 
@@ -63,53 +62,22 @@ void WebServer::run()
 					{
 						srv.accept_new_connection(_fds);
 						connection_accepted = true;
+						break ;
 					}
 				if (connection_accepted)
 					break;
-				handle_client(pfdit->fd);
-				close(pfdit->fd);
-				pfdit = _fds.erase(pfdit);
+				for (Server &srv : _servers)
+					for (Client &client : srv._clients)
+						if (client.get_socket_fd() == pfdit->fd)
+						{
+							client.handle_request(srv);
+							client.close_connection(srv, _fds, pfdit);
+							break ;
+						}
+				
 				break;
 			}
 			pfdit++;
 		}
     }
-}
-
-static std::string load_index()
-{
-	std::ifstream file("www/index.html");
-	if (!file.is_open())
-		return ("HTTP/1.1 404 Not Found\nContent-Type: text/plain\n\nError: index.html not found");
-	
-	std::stringstream buffer;
-	buffer << file.rdbuf();
-	file.close();
-
-	return ("HTTP/1.1 200 OK\nContent-Type: text/html\n\n" + buffer.str());
-}
-
-void WebServer::handle_client(int socket)
-{
-	char _buffer[MAX_BUFFER_SIZE] = {0};
-	Request request;
-	if (recv(socket, &_buffer, MAX_BUFFER_SIZE, 0) < 0)
-		perror("Recv error");
-	request.parse(_buffer);
-	std::cout << _buffer << std::endl;
-	std::string method = request.get("method");
-	std::string dir = request.get("request-target");
-	if (!method.empty())
-	{
-		std::cout << "Received a request:" << std::endl;
-		request.display();
-	}
-	else
-		std::cout << "Connection cancelled (empty method)" << std::endl;
-	std::string response = "HTTP/1.1 200 OK\nContent-Type: text/plain\n\nYour request: " + method + " " + dir;
-	if (method == "GET")
-		if (dir == "/")
-			response = load_index();
-	if (send(socket, response.c_str(), response.size(), 0) < 0)
-		perror("Send error");
 }
