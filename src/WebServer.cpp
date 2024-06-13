@@ -1,12 +1,8 @@
 #include "WebServer.hpp"
 
-WebServer::WebServer()
-{
-	_port = DEFAULT_PORT;
-}
+WebServer::WebServer() {}
 
-WebServer::~WebServer()
-{}
+WebServer::~WebServer() {}
 
 void WebServer::parse_file(std::string filename)
 {
@@ -14,53 +10,31 @@ void WebServer::parse_file(std::string filename)
     std::string line;
     if (config_file.is_open())
 	{
+		Server srv;
 		std::cout << "Reading file" << std::endl;
         while (getline(config_file, line))
 		{
             if (line.find("port") != std::string::npos)
-                _port = std::stoi(line.substr(line.find("=") + 1));
+                srv._port = std::stoi(line.substr(line.find("=") + 1));
         }
+		_servers.push_back(srv);
         config_file.close();
 		return ; 
     }
 	std::cout << "No cfg file, using default" << std::endl;
+	Server srv;
+	srv._port = DEFAULT_PORT;
+	_servers.push_back(srv);
 }
 
-void WebServer::setup_socket()
-{
-	//Creates the socket
-	if ((_server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) 
-		throw ("socket failed");
-	//Attaches the socket (optional?)
-	if (setsockopt(_server_fd, SOL_SOCKET, SO_REUSEADDR, &_opt, sizeof(_opt))) 
-		throw ("setsockopt");
-	//Binds the socket
-	_address.sin_family = AF_INET;
-    _address.sin_addr.s_addr = INADDR_ANY;
-    _address.sin_port = htons(_port);
-    if (bind(_server_fd, (struct sockaddr *)&_address, sizeof(_address)) < 0)
-        throw ("bind failed");
-}
-
-void WebServer::start_listen()
-{
-	if (listen(_server_fd, 3) < 0)
-		throw ("listen");
-	std::cout << "Start listenting to port: " << _port << std::endl;
-}
 
 void WebServer::setup(std::string filename)
 {
 	try
 	{
 		parse_file(filename);
-		setup_socket();
-		start_listen();
-
-		pollfd server;
-		server.fd = _server_fd;
-		server.events = POLLIN;
-		_fds.push_back(server);
+		for (Server &srv : _servers)
+			srv.start(_fds);
 	}
 	catch(char const *e)
 	{
@@ -80,32 +54,25 @@ void WebServer::run()
 			return (perror("poll"));
 		for (std::vector<pollfd>::iterator pfdit = _fds.begin(); pfdit != _fds.end();)
 		{
+			bool connection_accepted = false;
 			if (pfdit->revents & POLLIN)
 			{
-				if (pfdit->fd == _server_fd)
-					accept_new_connection();
-				else
-				{
-					handle_client(pfdit->fd);
-					close(pfdit->fd);
-					pfdit = _fds.erase(pfdit);
-				}
+				for (Server &srv : _servers)
+					if (pfdit->fd == srv._server_fd)
+					{
+						srv.accept_new_connection(_fds);
+						connection_accepted = true;
+					}
+				if (connection_accepted)
+					break;
+				handle_client(pfdit->fd);
+				close(pfdit->fd);
+				pfdit = _fds.erase(pfdit);
 				break;
 			}
 			pfdit++;
 		}
     }
-}
-
-void WebServer::accept_new_connection()
-{
-	pollfd client;
-	
-	std::cout << "Recived a new connection" << std::endl;
-	if ((client.fd = accept(_server_fd, (struct sockaddr *)&_address, (socklen_t*)&_addrlen)) < 0)
-		return (perror("accept"));
-	client.events = POLLIN;
-	_fds.push_back(client);
 }
 
 static std::string load_index()
