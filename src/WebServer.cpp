@@ -1,4 +1,5 @@
 #include "WebServer.hpp"
+#include "Request.hpp"
 
 WebServer::WebServer()
 {
@@ -124,16 +125,17 @@ static std::string load_index()
 void WebServer::handle_client(int socket)
 {
 	char _buffer[MAX_BUFFER_SIZE] = {0};
+	Request request;
 	if (recv(socket, &_buffer, MAX_BUFFER_SIZE, 0) < 0)
 		perror("Recv error");
-
-	std::istringstream request(_buffer);
-	std::string method, dir;
-	std::getline(request, method, ' ');
-	std::getline(request, dir, ' ');
-
+	request.parse(_buffer);
+	std::string method = request.getMethod();
+	std::string dir = request.getDir();
 	if (!method.empty())
-		std::cout << "Recicved a request: " + method + " " + dir << std::endl;
+	{
+		std::cout << "Received a request:" << std::endl;
+		request.display();
+	}
 	else
 		std::cout << "Connection cancelled (empty method)" << std::endl;
 	std::string response = "HTTP/1.1 200 OK\nContent-Type: text/plain\n\nYour request: " + method + " " + dir;
