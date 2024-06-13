@@ -1,16 +1,28 @@
 #include <		
-#ifndef PARCECCONF_HPP
-# define PARCECCONF_HPP
 
-class ParceConf
-{
-	public:
-		ParceConf();
-		~ParceConf();
-		ParceConf(ParceConf &);
-		ParceConf& operator=(ParceConf&);
-	private:
-		std::string str;
-};
+ParceConf::ParceConf(){}
 
-#endif
+ParceConf::ParceConf(std::string filename):_filename(filename){}
+
+ParceConf::~ParceConf(){}
+
+ParceConf::ParceConf(ParceConf& other){
+	(void)other;
+}
+
+ParceConf& operator=(ParceConf& other){
+	(void)other;
+	return *this;
+}
+
+void	ParceConf::readFile(){
+	std::ifstream	infile(_filename);
+	if (!infile)
+	{
+		std::cout << "Unable to open the file " << _filename << std::endl;
+		return ("");
+	}
+	std::stringstream	buffer;
+	buffer << infile.rdbuf();
+	buffer.str();
+}
