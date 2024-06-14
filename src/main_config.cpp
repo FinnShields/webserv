@@ -1,14 +1,14 @@
 
-#include "WebServer.hpp"
+#include "ParceConf.hpp"
 
-int main(int argc, char *argv[]) {
-    if (argc < 2) {
-        std::cerr << "Usage: ./webserv [configuration file]" << std::endl;
-        return 1;
-    }
+int main() {
 
-	WebServer webserv;
-	webserv.setup(argv[1]);
-	webserv.run();
+    ParceConf config("test_config.txt");
+    //config.peek();
+   // while ((config.getToken()) != ParceConf::tok::eof)
+    //    ;
+    int i =-1;
+    while (++i < 30)
+        config.getToken();
     return 0;
 }

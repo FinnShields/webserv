@@ -1,0 +1,24 @@
+         			
+   	
+   #comment sdf sdf server # dddd
+ # other comment   
+
+
+server # comment3
+{ #comment
+	location name
+	{
+		keywork value0 value1;
+		#keywork value0 value1 ;
+	}
+}
+#other comment 
+server # server 3
+{ #comment
+	location name2
+	{
+		keywork valuee;
+		keywork
+	# commented something
+	}
+}

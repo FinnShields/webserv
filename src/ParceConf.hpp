@@ -1,6 +1,12 @@
-#ifndef PARCECCONF_HPP
-# define PARCECCONF_HPP
+#ifndef PARCECONF_HPP
+# define PARCECONF_HPP
 
+#include <string>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+
+# define TOKENS "{};\n#"
 /*
 std::vector<Server> servers
 server = std::map<std::string location, Config> locations
@@ -16,17 +22,18 @@ class ParceConf
 		ParceConf(ParceConf &);
 		ParceConf& operator=(ParceConf&);
 		ParceConf(std::string);
-		std::string readFile(std::sting filename);
-		int getToken();
-		int peek();
-		enum class tok {server, location, word, semicol, newline, comment};	
+		std::string readFile(std::string filename) const;
+		enum class tok;	
+		tok getToken();
+		tok peek();
+		void skipComment();
 	private:
 		std::string _filecontent;
-		int _endcontent;
-		int _size;	
-		int _position;	
-		int _tok_begin;	
-		int _tok_end;
+		size_t _endcontent;
+		size_t _size;	
+		size_t _position;	
+		size_t _tok_begin;	
+		size_t _tok_end;
 };
 
 #endif
