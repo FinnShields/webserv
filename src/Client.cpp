@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/06/14 16:30:28 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/06/14 17:52:14 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,13 +29,11 @@ int Client::get_socket_fd()
 
 void Client::handle_request(Server srv)
 {
-    (void) srv;
-	
 	Request request;
     request.read(_fd);
     request.display();
     
-	Response resp(_fd, request);
+	Response resp(_fd, request, srv);
 	resp.run();
 }
 

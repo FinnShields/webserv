@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:06 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/06/14 12:22:08 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/06/14 17:25:24 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,9 +16,8 @@ Server::Server() {}
 
 Server::~Server() {}
 
-Server::Server(const Server &copy) :_port(copy._port)
-{
-}
+Server::Server(const Server &copy) :_port(copy._port) {}
+
 
 void Server::setup_socket()
 {
@@ -83,6 +82,7 @@ Client *Server::get_client(int fd)
 			return (&client);
 	return (NULL);
 }
+
 int Server::get_port()
 {
 	return _port;

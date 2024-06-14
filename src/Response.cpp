@@ -6,38 +6,44 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/06/14 14:15:57 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/06/14 17:56:19 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Response.hpp"
 
-Response::Response(int fd, Request &req) : _fd(fd), _req(req) {}
-Response::~Response() {};
+Response::Response(int fd, Request &req, Server &srv) : _fd(fd), _req(req), _srv(srv) {}
+Response::~Response() {}
 
-void Response::get()
-{	
-	std::string method = _req.get("method");
-	std::string dir = _req.get("request-target");
-	
-	std::string respons = "HTTP/1.1 200 OK\nContent-Type: text/plain\n\nYour request: " + method + " " + dir;
-	if (dir == "/")
-		respons = load_index();
-	if (send(_fd, respons.c_str(), respons.size(), 0) < 0)
-		perror("Send error");
-}
-
-void Response::post()
-{
-	std::cout << "POST method is not supported" << std::endl;
-}
 void Response::run()
 {
 	std::string method = _req.get("method");
-    if (method == "GET")
-        get();
-    else if (method == "POST")
-        post();
+    
+	std::string response = (method == "GET") ? get()
+		: (method == "POST") ? post()
+		: "HTTP/1.1 501 Not Implemented\nContent-Type: text/plain\n\nError: Method not recognized or not implemented";
+	
+	if (send(_fd, response.c_str(), response.size(), 0) < 0)
+		perror("Send error");
+}
+
+std::string Response::get()
+{	
+	std::string method = _req.get("method");
+	std::string dir = _req.get("target");
+	
+	std::string response = "HTTP/1.1 200 OK\nContent-Type: text/plain\n\nYour request: " + method + " " + dir;
+	if (dir == "/")
+		response = load_index();
+	return (response);
+}
+
+std::string Response::post()
+{
+	std::cout << "POST method is not supported" << std::endl;
+	std::string response = "HTTP/1.1 405 Method Not Allowed\nContent-Type: text/plain\n\nError: POST method is not supported";
+
+	return (response);
 }
 
 std::string Response::load_index()
