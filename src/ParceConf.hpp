@@ -16,10 +16,17 @@ class ParceConf
 		ParceConf(ParceConf &);
 		ParceConf& operator=(ParceConf&);
 		ParceConf(std::string);
-		void
+		std::string readFile(std::sting filename);
+		int getToken();
+		int peek();
+		enum class tok {server, location, word, semicol, newline, comment};	
 	private:
-		std::string _filename;
-		std::string _content;
+		std::string _filecontent;
+		int _endcontent;
+		int _size;	
+		int _position;	
+		int _tok_begin;	
+		int _tok_end;
 };
 
 #endif

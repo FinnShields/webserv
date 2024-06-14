@@ -1,5 +1,7 @@
 #include <		
 
+enum class ParceConf::tok {server, location, word, semicol, newline, comment};
+
 ParceConf::ParceConf(){}
 
 ParceConf::ParceConf(std::string filename):_filename(filename){}
@@ -15,8 +17,13 @@ ParceConf& operator=(ParceConf& other){
 	return *this;
 }
 
-void	ParceConf::readFile(){
-	std::ifstream	infile(_filename);
+ParceConf::ParceConf(std::string filename){
+	_filecontent = readFile(filename);
+	_size = _filecontent.size();
+}
+
+std::string ParceConf::readFile(filename) const{
+	std::ifstream	infile(filename);
 	if (!infile)
 	{
 		std::cout << "Unable to open the file " << _filename << std::endl;
@@ -24,5 +31,5 @@ void	ParceConf::readFile(){
 	}
 	std::stringstream	buffer;
 	buffer << infile.rdbuf();
-	_content = buffer.str();
+	return buffer.str();
 }
