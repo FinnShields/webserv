@@ -16,21 +16,27 @@
 # include <string>
 # include <iostream>
 # include <map>
+# include "Client.hpp"
 
 class Request
 {
 	private:
-		std::map<std::string, std::string> data;
+		std::string method;
+		std::string target;
+		std::string version;
+		std::map<std::string, std::string> headers;
+		std::string body;
+		void parse(char *buffer);
+		std::string extractMethod(std::string& input);
+		std::string extractTarget(std::string& input);
+		std::string extractVersion(std::string& input);
 	public:
 		Request();
 		Request(const Request&);
 		Request& operator=(const Request&);
 		~Request();
-		void parse(char *buffer);
-		std::string extractMethod(std::string& input);
-		std::string extractTarget(std::string& input);
-		std::string extractVersion(std::string& input);
-		const std::string get(std::string first);
+		void read(int _fd);
+		const std::string get(std::string toGet);
 		void display();
 };
 

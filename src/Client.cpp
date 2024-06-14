@@ -44,20 +44,12 @@ void Client::handle_request(Server srv)
 {
 	(void) srv;
     
-    char buffer[MAX_BUFFER_SIZE] = {0};
 	Request request;
-	if (recv(_fd, &buffer, MAX_BUFFER_SIZE, 0) < 0)
-		perror("Recv error");
-	if (!*buffer)
-	{
-		std::cout << "Connection cancelled (empty buffer)" << std::endl;
-		return ;
-	}
-	request.parse(buffer);
+	request.read(_fd);
 	request.display();
 	
 	std::string method = request.get("method");
-	std::string dir = request.get("request-target");
+	std::string dir = request.get("target");
 	
 	std::string response = "HTTP/1.1 200 OK\nContent-Type: text/plain\n\nYour request: " + method + " " + dir;
 	if (method == "GET")
