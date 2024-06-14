@@ -27,9 +27,11 @@ class Request
 		std::map<std::string, std::string> headers;
 		std::string body;
 		void parse(char *buffer);
-		std::string extractMethod(std::string& input);
-		std::string extractTarget(std::string& input);
-		std::string extractVersion(std::string& input);
+		void extractMethod(std::string& input);
+		void extractTarget(std::string& input);
+		void extractVersion(std::string& input);
+		void extractHeaders(std::string& input);
+		void extractBody(std::string& input);
 	public:
 		Request();
 		Request(const Request&);
