@@ -58,7 +58,7 @@ void Server::accept_new_connection(std::vector<pollfd> &_fds)
 {
 	pollfd client;
 	
-	std::cout << "Recived a new connection" << std::endl;
+	std::cout << "Received a new connection" << std::endl;
 	if ((client.fd = accept(_server_fd, (struct sockaddr *)&_address, (socklen_t*)&_addrlen)) < 0)
 		return (perror("accept"));
 	client.events = POLLIN;
