@@ -20,7 +20,7 @@ Request::~Request()
 
 Request& Request::operator=(const Request& r)
 {
-	this->data = r.data;
+	this->headers = r.headers;
 	return (*this);
 }
 
@@ -55,6 +55,19 @@ std::string Request::extractVersion(std::string& input)
 	return (input.substr(start, end));
 }
 
+void	Request::read(int _fd)
+{
+	char buffer[MAX_BUFFER_SIZE] = {0};
+	if (recv(_fd, &buffer, MAX_BUFFER_SIZE, 0) < 0)
+		perror("Recv error");
+	if (!*buffer)
+	{
+		std::cout << "Connection cancelled (empty buffer)" << std::endl;
+		return ;
+	}
+	this->parse(buffer);
+}
+
 void	Request::parse(char *buffer)
 {
 	std::string	input(buffer);
@@ -62,34 +75,40 @@ void	Request::parse(char *buffer)
 	std::string second;
 	size_t	len;
 
-	this->data["method"] = this->extractMethod(input);
-	this->data["request-target"] = this->extractTarget(input);
-	this->data["http-version"] = this->extractVersion(input);
+	this->method = this->extractMethod(input);
+	this->target = this->extractTarget(input);
+	this->version = this->extractVersion(input);
+
+//add parsing for potential payload
+
 	for (size_t i = input.find('\n') + 1; i < input.size(); i++)
 	{
 		len = 0;
 		while (input.at(i + len) != ':')
-		{
-			len ++;
-			if (i + len == input.size())
+			if (i + (++len) == input.size())
 				return ;
-		}
 		first = input.substr(i, len);
 		i += len + 2;
 		len = 0;
 		while (input.at(i + len) != '\r' && i + len < input.size())
 			len ++;
 		second = input.substr(i, len);
-		this->data[first] = second;
+		this->headers[first] = second;
 		i += len + 1;
 	}
 }
 
-const std::string	Request::get(std::string first)
+const std::string	Request::get(std::string toGet)
 {
-	if (!this->data.count(first))
+	if (!toGet.compare("method"))
+		return (this->method);
+	if (!toGet.compare("target"))
+		return (this->target);
+	if (!toGet.compare("version"))
+		return (this->version);
+	if (!this->headers.count(toGet))
 		return ("");
-	return (this->data[first]);
+	return (this->headers[toGet]);
 }
 
 void	Request::display()
@@ -97,12 +116,11 @@ void	Request::display()
 	std::cout << std::endl;
 	std::cout << "---------------------" << std::endl;
 	std::map<std::string, std::string>::iterator it;
-	std::cout << "Method: " << this->data["method"] << std::endl;
-	std::cout << "Request-target: " << this->data["request-target"] << std::endl;
-	std::cout << "HTTP-version: " << this->data["http-version"] << std::endl;
-	for(it = this->data.begin(); it != this->data.end(); it++)
-		if (it->first.compare("method") && it->first.compare("request-target") && it->first.compare("http-version"))
-			std::cout << it->first << ": " << it->second << std::endl;
+	std::cout << "Method: " << this->method << std::endl;
+	std::cout << "Request-target: " << this->target << std::endl;
+	std::cout << "HTTP-version: " << this->version << std::endl;
+	for(it = this->headers.begin(); it != this->headers.end(); it++)
+		std::cout << it->first << ": " << it->second << std::endl;
 	std::cout << "---------------------" << std::endl;
 	std::cout << std::endl;
 }
