@@ -1,13 +1,23 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   WebServer.hpp                                      :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2024/06/14 12:22:19 by bsyvasal          #+#    #+#             */
+/*   Updated: 2024/06/14 12:22:23 by bsyvasal         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #ifndef WEBSERVER_HPP
 #define WEBSERVER_HPP
 
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <iostream>
-#include <sstream>
-#include <fstream>
+#include <iostream> //std::cout
+#include <fstream> //Parse file
+#include <sstream> 
+
 #include <unistd.h> // For close
-#include <stdexcept>
 #include <vector>
 #include <poll.h>
 #include <algorithm>
@@ -15,7 +25,6 @@
 #include "Server.hpp"
 
 #define DEFAULT_PORT 8080
-#define MAX_BUFFER_SIZE 2048
 
 class WebServer
 {
@@ -24,16 +33,17 @@ class WebServer
 		std::vector<Server> _servers;
 
 		void parse_file(std::string filename);
-		void accept_new_connection();
-		void handle_client(int socket);
+		bool fd_is_server(int fd);
+		void fd_is_client(int fd);
+		
 		WebServer(WebServer &copy);
 		WebServer &operator=(WebServer &assignment);
-
 	public:
-		void setup(std::string filename);
-		void run();
 		WebServer();
 		~WebServer();
+		
+		void setup(std::string filename);
+		void run();
 };
 
 #endif

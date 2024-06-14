@@ -1,5 +1,16 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   WebServer.cpp                                      :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
+/*   Updated: 2024/06/14 12:22:17 by bsyvasal         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "WebServer.hpp"
-#include "Request.hpp"
 
 WebServer::WebServer() {}
 
@@ -16,7 +27,7 @@ void WebServer::parse_file(std::string filename)
         while (getline(config_file, line))
 		{
             if (line.find("port") != std::string::npos)
-                srv._port = std::stoi(line.substr(line.find("=") + 1));
+                srv.set_port(std::stoi(line.substr(line.find("=") + 1)));
         }
 		_servers.push_back(srv);
         config_file.close();
@@ -24,7 +35,7 @@ void WebServer::parse_file(std::string filename)
     }
 	std::cout << "No cfg file, using default" << std::endl;
 	Server srv;
-	srv._port = DEFAULT_PORT;
+	srv.set_port(DEFAULT_PORT);
 	_servers.push_back(srv);
 }
 
@@ -45,6 +56,30 @@ void WebServer::setup(std::string filename)
 	
 }
 
+bool WebServer::fd_is_server(int fd)
+{
+	for (Server &srv : _servers)
+		if (fd == srv.get_fd())
+		{
+			srv.accept_new_connection(_fds);
+			return (true);
+		}
+	return (false);
+}
+
+void WebServer::fd_is_client(int fd)
+{
+	Client *client;
+
+	for (Server &srv : _servers)
+		if ((client = srv.get_client(fd)))
+		{
+			client->handle_request(srv);
+			client->close_connection(srv);
+			return ;
+		}
+}
+
 void WebServer::run()
 {
 	while (1)
@@ -55,61 +90,15 @@ void WebServer::run()
 			return (perror("poll"));
 		for (std::vector<pollfd>::iterator pfdit = _fds.begin(); pfdit != _fds.end();)
 		{
-			bool connection_accepted = false;
 			if (pfdit->revents & POLLIN)
 			{
-				for (Server &srv : _servers)
-					if (pfdit->fd == srv._server_fd)
-					{
-						srv.accept_new_connection(_fds);
-						connection_accepted = true;
-					}
-				if (connection_accepted)
+				if (fd_is_server(pfdit->fd))
 					break;
-				handle_client(pfdit->fd);
-				close(pfdit->fd);
-				pfdit = _fds.erase(pfdit);
+				fd_is_client(pfdit->fd);
+				_fds.erase(pfdit);
 				break;
 			}
 			pfdit++;
 		}
     }
-}
-
-static std::string load_index()
-{
-	std::ifstream file("www/index.html");
-	if (!file.is_open())
-		return ("HTTP/1.1 404 Not Found\nContent-Type: text/plain\n\nError: index.html not found");
-	
-	std::stringstream buffer;
-	buffer << file.rdbuf();
-	file.close();
-
-	return ("HTTP/1.1 200 OK\nContent-Type: text/html\n\n" + buffer.str());
-}
-
-void WebServer::handle_client(int socket)
-{
-	char _buffer[MAX_BUFFER_SIZE] = {0};
-	Request request;
-	if (recv(socket, &_buffer, MAX_BUFFER_SIZE, 0) < 0)
-		perror("Recv error");
-	request.parse(_buffer);
-	std::cout << _buffer << std::endl;
-	std::string method = request.get("method");
-	std::string dir = request.get("request-target");
-	if (!method.empty())
-	{
-		std::cout << "Received a request:" << std::endl;
-		request.display();
-	}
-	else
-		std::cout << "Connection cancelled (empty method)" << std::endl;
-	std::string response = "HTTP/1.1 200 OK\nContent-Type: text/plain\n\nYour request: " + method + " " + dir;
-	if (method == "GET")
-		if (dir == "/")
-			response = load_index();
-	if (send(socket, response.c_str(), response.size(), 0) < 0)
-		perror("Send error");
 }
