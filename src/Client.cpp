@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/06/14 12:21:22 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/06/14 13:36:06 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,30 +42,42 @@ static std::string load_index()
 
 void Client::handle_request(Server srv)
 {
-	(void) srv;
-    
-    char buffer[MAX_BUFFER_SIZE] = {0};
+    (void) srv;
+	
 	Request request;
-	if (recv(_fd, &buffer, MAX_BUFFER_SIZE, 0) < 0)
-		perror("Recv error");
-	if (!*buffer)
-	{
-		std::cout << "Connection cancelled (empty buffer)" << std::endl;
-		return ;
-	}
-	request.parse(buffer);
-	request.display();
-	
-	std::string method = request.get("method");
-	std::string dir = request.get("request-target");
-	
-	std::string response = "HTTP/1.1 200 OK\nContent-Type: text/plain\n\nYour request: " + method + " " + dir;
-	if (method == "GET")
-		if (dir == "/")
-			response = load_index();
-	if (send(_fd, response.c_str(), response.size(), 0) < 0)
-		perror("Send error");
+    request.read(_fd);
+    request.display();
+    
+	Response::answer(request);
+
 }
+
+// void Client::handle_request(Server srv)
+// {
+// 	(void) srv;
+    
+//     char buffer[MAX_BUFFER_SIZE] = {0};
+// 	Request request;
+// 	if (recv(_fd, &buffer, MAX_BUFFER_SIZE, 0) < 0)
+// 		perror("Recv error");
+// 	if (!*buffer)
+// 	{
+// 		std::cout << "Connection cancelled (empty buffer)" << std::endl;
+// 		return ;
+// 	}
+// 	request.parse(buffer);
+// 	request.display();
+	
+// 	std::string method = request.get("method");
+// 	std::string dir = request.get("request-target");
+	
+// 	std::string response = "HTTP/1.1 200 OK\nContent-Type: text/plain\n\nYour request: " + method + " " + dir;
+// 	if (method == "GET")
+// 		if (dir == "/")
+// 			response = load_index();
+// 	if (send(_fd, response.c_str(), response.size(), 0) < 0)
+// 		perror("Send error");
+// }
 
 void Client::close_connection(Server &srv)
 {

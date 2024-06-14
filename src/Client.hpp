@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:36 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/06/14 12:21:37 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/06/14 13:05:09 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,7 @@
 #include <unistd.h>
 #include "Server.hpp"
 #include "Request.hpp"
+#include "Response.hpp"
 
 #define MAX_BUFFER_SIZE 2048
 
