@@ -1,9 +1,26 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   Client.cpp                                         :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
+/*   Updated: 2024/06/14 12:21:22 by bsyvasal         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "Client.hpp"
 
 
 Client::Client(int fd) : _fd(fd) {}
 Client::Client(const Client &copy) : _fd(copy._fd) {}
 Client::~Client() {};
+Client &Client::operator=(const Client &assign)
+{
+	this->_fd = assign._fd;
+	return (*this);
+}
 
 int Client::get_socket_fd()
 {
@@ -27,21 +44,21 @@ void Client::handle_request(Server srv)
 {
 	(void) srv;
     
-    char _buffer[MAX_BUFFER_SIZE] = {0};
+    char buffer[MAX_BUFFER_SIZE] = {0};
 	Request request;
-	if (recv(_fd, &_buffer, MAX_BUFFER_SIZE, 0) < 0)
+	if (recv(_fd, &buffer, MAX_BUFFER_SIZE, 0) < 0)
 		perror("Recv error");
-	request.parse(_buffer);
-	std::cout << _buffer << std::endl;
+	if (!*buffer)
+	{
+		std::cout << "Connection cancelled (empty buffer)" << std::endl;
+		return ;
+	}
+	request.parse(buffer);
+	request.display();
+	
 	std::string method = request.get("method");
 	std::string dir = request.get("request-target");
-	if (!method.empty())
-	{
-		std::cout << "Received a request:" << std::endl;
-		request.display();
-	}
-	else
-		std::cout << "Connection cancelled (empty method)" << std::endl;
+	
 	std::string response = "HTTP/1.1 200 OK\nContent-Type: text/plain\n\nYour request: " + method + " " + dir;
 	if (method == "GET")
 		if (dir == "/")

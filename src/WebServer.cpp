@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   WebServer.cpp                                      :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
+/*   Updated: 2024/06/14 12:22:17 by bsyvasal         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "WebServer.hpp"
 
 WebServer::WebServer() {}
@@ -15,7 +27,7 @@ void WebServer::parse_file(std::string filename)
         while (getline(config_file, line))
 		{
             if (line.find("port") != std::string::npos)
-                srv._port = std::stoi(line.substr(line.find("=") + 1));
+                srv.set_port(std::stoi(line.substr(line.find("=") + 1)));
         }
 		_servers.push_back(srv);
         config_file.close();
@@ -23,7 +35,7 @@ void WebServer::parse_file(std::string filename)
     }
 	std::cout << "No cfg file, using default" << std::endl;
 	Server srv;
-	srv._port = DEFAULT_PORT;
+	srv.set_port(DEFAULT_PORT);
 	_servers.push_back(srv);
 }
 
@@ -47,7 +59,7 @@ void WebServer::setup(std::string filename)
 bool WebServer::fd_is_server(int fd)
 {
 	for (Server &srv : _servers)
-		if (fd == srv._server_fd)
+		if (fd == srv.get_fd())
 		{
 			srv.accept_new_connection(_fds);
 			return (true);
@@ -57,16 +69,15 @@ bool WebServer::fd_is_server(int fd)
 
 void WebServer::fd_is_client(int fd)
 {
+	Client *client;
+
 	for (Server &srv : _servers)
-	{
-		for (Client &client : srv._clients)
-			if (client.get_socket_fd() == fd)
-			{
-				client.handle_request(srv);
-				client.close_connection(srv);
-				return ;
-			}
-	}
+		if ((client = srv.get_client(fd)))
+		{
+			client->handle_request(srv);
+			client->close_connection(srv);
+			return ;
+		}
 }
 
 void WebServer::run()

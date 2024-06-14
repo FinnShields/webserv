@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   Server.cpp                                         :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2024/06/14 12:22:06 by bsyvasal          #+#    #+#             */
+/*   Updated: 2024/06/14 12:22:08 by bsyvasal         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "Server.hpp"
 
 Server::Server() {}
@@ -62,4 +74,31 @@ void Server::remove_client(int fd)
 			_clients.erase(it);
 			break ;
 		}
+}
+
+Client *Server::get_client(int fd)
+{
+	for (Client &client : _clients)
+		if (client.get_socket_fd() == fd)
+			return (&client);
+	return (NULL);
+}
+int Server::get_port()
+{
+	return _port;
+}
+
+int Server::get_fd()
+{
+	return _server_fd;
+}
+
+void Server::set_port(int port)
+{
+	_port = port;
+}
+
+void Server::set_fd(int fd)
+{
+	_server_fd = fd;
 }
