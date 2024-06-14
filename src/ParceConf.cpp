@@ -24,5 +24,5 @@ void	ParceConf::readFile(){
 	}
 	std::stringstream	buffer;
 	buffer << infile.rdbuf();
-	buffer.str();
+	_content = buffer.str();
 }
