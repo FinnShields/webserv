@@ -116,7 +116,9 @@ Config::tok Config::getToken(){
 		//	std::cout << "add new location to current server\n";
 			break;
 		case tok::word:
-			while (_tok_end < _size && !std::isspace(_filecontent.at(_tok_end))){
+			while (_tok_end < _size && 
+				!std::isspace(_filecontent.at(_tok_end)) &&
+				_filecontent.at(_tok_end) != ';'){
      			++_tok_end;
     		}
 			_position = _tok_end;
@@ -149,4 +151,27 @@ std::string Config::parseWord(){
 		 throw std::runtime_error("Syntax error: expected word");
 	size_t len = _tok_end - _tok_begin;
 	return _filecontent.substr(_tok_begin, len);
+}
+
+t_vector_str	Config::parseWordList(){
+	t_vector_str value_list;
+	while (peek() == tok::word){
+		value_list.push_back(parseWord());
+	}
+	if (peek() != tok::semicol)
+		throw std::runtime_error("Syntax error: expected semicolumn.");
+	return value_list;
+}
+
+t_location Config::parseLocation(){
+	t_location location;
+	std::string keyword; // = parseWord();
+	t_vector_str value_list;
+	while (peek() != tok::close){
+		keyword = parseWord();
+		value_list = parseWordList();
+		location[keyword] = value_list;
+	}
+
+	return location;
 }

@@ -10,9 +10,9 @@
 
 //# define TOKENS "{};\n#"
 
-typedef std::vector<std::string> vector_str;
-typedef std::map<std::string, vector_str> submap;
-typedef std::map<std::string, submap> t_server;
+typedef std::vector<std::string> t_vector_str;
+typedef std::map<std::string, t_vector_str> t_location;
+typedef std::map<std::string, t_location> t_server;
 
 /*
 std::vector<Server> servers
@@ -40,8 +40,8 @@ class Config
 	//	void parseFile();
 	//	void parseServer();
 	//	void parseLocationList();
-	//	void parseLocation();
-	//	void parseKeyValueList();
+		t_location parseLocation();
+		t_vector_str	parseWordList();
 		std::string parseWord();
 		tok		_token;
 	private:

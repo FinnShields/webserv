@@ -17,6 +17,10 @@ int main() {
     //    ;
     std::cout << "word = " << config.parseWord() 
             << "\n";    
+    t_vector_str value_list = config.parseWordList();
+    for (std::string s : value_list){
+        std::cout << "val = " << s << "\n";
+    }
     int i =-1;
     while (++i < 30){
         config.getToken();
