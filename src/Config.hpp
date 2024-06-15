@@ -5,8 +5,15 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <vector>
+#include <map>
 
-# define TOKENS "{};\n#"
+//# define TOKENS "{};\n#"
+
+typedef std::vector<std::string> vector_str;
+typedef std::map<std::string, vector_str> submap;
+typedef std::map<std::string, submap> t_server;
+
 /*
 std::vector<Server> servers
 server = std::map<std::string location, Config> locations
@@ -14,26 +21,37 @@ config = std::map<std::string key, values> setting
 values = std::vector<std::string>
 */
 
-class ParceConf
+
+class Config
 {
 	public:
-		ParceConf();
-		~ParceConf();
-		ParceConf(ParceConf &);
-		ParceConf& operator=(ParceConf&);
-		ParceConf(std::string);
+		Config();
+		~Config();
+		Config(Config &);
+		Config& operator=(Config&);
+		Config(std::string);
 		std::string readFile(std::string filename) const;
-		enum class tok;	
+		//enum class tok;	
+		enum class tok {server, location, word, semicol, newline, 
+			open, close, eof};
 		tok getToken();
 		tok peek();
 		void skipComment();
+	//	void parseFile();
+	//	void parseServer();
+	//	void parseLocationList();
+	//	void parseLocation();
+	//	void parseKeyValueList();
+		std::string parseWord();
+		tok		_token;
 	private:
 		std::string _filecontent;
-		size_t _endcontent;
-		size_t _size;	
-		size_t _position;	
-		size_t _tok_begin;	
-		size_t _tok_end;
+		size_t	_endcontent;
+		size_t	_size;	
+		size_t	_position;
+		size_t	_tok_begin;	
+		size_t	_tok_end;
+		std::vector<t_server> _data;
 };
 
 #endif
