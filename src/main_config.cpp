@@ -7,39 +7,51 @@
 
 #include "Config.hpp"
 
-std::ostream& operator<<(std::ostream& os, t_vector_str& vs){
-    for (std::string& s : vs)
-        os << s << ", ";
-    return os;
-}
 
-std::ostream& operator<<(std::ostream& os, t_location& l){
-	for (auto& pair : l)
-		std::cout << "\t\t" 
-            << pair.first << "=(" 
-            << pair.second << ");\n";
-	return os;
-}
 
-std::ostream& operator<<(std::ostream& os, t_server& l){
-	for (auto& [key, value] : l)
-		std::cout << "\tlocation dir=" << key << "\n"
-            << value;
-	return os;
-}
+//#include "WebServer.hpp"
 
-std::ostream& operator<<(std::ostream& os, std::vector<t_server>& file){
-    int i = -1;
-	for (auto& server : file)
-		std::cout << "server " << ++i << "\n"
-            << server;
-	return os;
-}
-
-int main() {
-
-    Config config("test_config.txt");
-    std::vector<t_server>& data = config.parseFile();
-    std::cout << data;
+int main(int argc, char *argv[]){
+    if (argc < 2){
+        std::cerr << "Usage: ./webserv [configuration file]" << std::endl;
+        return 1;
+    }
+    try{
+        Config config(argv[1]);
+        std::vector<t_server>& data = config.parseFile();
+        std::cout
+            << "----- DATA ------------\n"
+            << data
+            << "----- END of DATA -----\n";
+        std::cout << "value=value [server=0, name2, key] = ("
+            << data[0]["name2"]["key"]<< ")\n";
+        std::cout << "value=none, [0, name2, keynoval] =("
+            << data[0]["name2"]["keynoval"] << ")\n";
+        std::cout << "value for noexistkey, [0, name2, noexistkey] =("
+            << data[0]["name2"]["noexistkey"] << ")\n";
+        
+    }
+    catch (const std::runtime_error& e){
+         std::cerr << e.what() << "\n";
+//         std::cerr << "Unexpectedly got this:" << config.currentString() << "\n";
+         return 1;
+    }
+/*    try
+    {
+        WebServer webserv;
+        webserv.setup(argv[1]);
+        webserv.run();
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << "Caught exception in main" << std::endl;
+        std::cerr << e.what() << '\n';
+    }
+    catch(std::string e)
+    {
+        std::cerr << "Caught string in main" << std::endl;
+        std::cerr << e << '\n';
+    }
+*/  
     return 0;
 }

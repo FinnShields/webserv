@@ -3,7 +3,7 @@
 /*
 enum class Config::tok {
 	server, location, word, 
-	semicol, newline,  // comment,
+	semicol, //newline,   comment,
 	open, close, eof};
 */
 
@@ -107,14 +107,16 @@ Config::tok Config::peek(){
 Config::tok Config::getToken(){
 	_token = peek();
 	_tok_begin = _position;
-	_tok_end = _tok_begin;
+	_tok_end = _position;
 	switch (_token){
 		case tok::server:
 			_position += 6;
+			_tok_end = _position;
 		//	std::cout << "add new server\n";
 			break;
 		case tok::location:
 			_position += 8;
+			_tok_end = _position;
 		//	std::cout << "add new location to current server\n";
 			break;
 		case tok::word:
@@ -128,20 +130,23 @@ Config::tok Config::getToken(){
 			break;
 		case tok::semicol:
 			_position ++;
+			_tok_end = _position;
 		//	std::cout << "semicolumn\n";
 			break;
 		case tok::open:
 			//_open_par++;
 			_position ++;
+			_tok_end = _position;
 		//	std::cout << "{ open \n";
 			break;
 		case tok::close:
 			//_open_par--;
 			_position++;
+			_tok_end = _position;
 		//	std::cout << "close } \n";
 			break;
 		case tok::eof:
-			std::cout << "EOF\n";
+			//std::cout << "EOF\n";
 			break;
 		default:
 			break;
@@ -151,7 +156,9 @@ Config::tok Config::getToken(){
 
 std::string Config::parseWord(){
 	if (peek() != tok::word)
-		 throw std::runtime_error("Syntax error: expected word");
+		 throw std::runtime_error(
+			"Syntax error: expected word, but got:\n"
+			+ leftoverString());
 	getToken();
 	size_t len = _tok_end - _tok_begin;
 	return _filecontent.substr(_tok_begin, len);
@@ -165,13 +172,17 @@ t_vector_str	Config::parseWordList(){
 	if (peek() == tok::semicol)
 		getToken();
 	else
-		throw std::runtime_error("Syntax error: expected semicolumn.");
+		throw std::runtime_error(
+			"Syntax error: expected semicolumn, but got:\n"
+			+ leftoverString());
 	return value_list;
 }
 
 t_location Config::parseLocationDict(){
 	if (peek() != tok::open)
-		throw std::runtime_error("Syntax error: expected {.");
+		throw std::runtime_error(
+			"Syntax error: expected {, but got:\n"
+			+ leftoverString());
 	getToken();
 	t_location location;
 	std::string keyword; // = parseWord();
@@ -182,17 +193,23 @@ t_location Config::parseLocationDict(){
 		location[keyword] = value_list;
 	}
 	if (peek() != tok::close)
-		throw std::runtime_error("Syntax error: expected }.");
+		throw std::runtime_error(
+			"Syntax error: expected }, but got:\n"
+			+ leftoverString());
 	getToken();
 	return location;
 }
 
 t_server Config::parseServer(){
 	if (peek() != tok::server)
-		throw std::runtime_error("Syntax error: expected keyword server.");
+		throw std::runtime_error(
+			"Syntax error: expected keyword server, but got:\n"
+			+ leftoverString());
 	getToken();
 	if (peek() != tok::open)
-		throw std::runtime_error("Syntax error: expected {.");
+		throw std::runtime_error(
+			"Syntax error: expected {, but got:\n"
+			+ leftoverString());
 	getToken();
 	t_server server;
 	std::string dir;
@@ -204,7 +221,9 @@ t_server Config::parseServer(){
 		server[dir] = location;
 	}
 	if (peek() != tok::close)
-		throw std::runtime_error("Syntax error: expected }.");
+		throw std::runtime_error(
+			"Syntax error: expected }, but got:\n"
+			+ leftoverString());
 	getToken();
 	return server;
 }
@@ -214,6 +233,45 @@ std::vector<t_server>& Config::parseFile(){
 		_data.push_back(parseServer());
 	}
 	if (peek() != tok::eof)
-		throw std::runtime_error("Syntax error: expected EOF");
+		throw std::runtime_error(
+			"Syntax error: expected server or EOF, but got:\n"
+			+ leftoverString());
 	return _data;
+}
+
+std::string Config::leftoverString(){
+	//tok token = ;
+	if (getToken() == tok::eof)
+		return "EOF";
+	return _filecontent.substr(_tok_begin, _tok_end - _tok_begin);
+}
+
+
+std::ostream& operator<<(std::ostream& os, t_vector_str& vs){
+    for (std::string& s : vs)
+        os << s << ", ";
+    return os;
+}
+
+std::ostream& operator<<(std::ostream& os, t_location& l){
+	for (auto& pair : l)
+		std::cout << "\t\t" 
+            << pair.first << "=(" 
+            << pair.second << ");\n";
+	return os;
+}
+
+std::ostream& operator<<(std::ostream& os, t_server& l){
+	for (auto& [key, value] : l)
+		std::cout << "\tlocation dir=" << key << "\n"
+            << value;
+	return os;
+}
+
+std::ostream& operator<<(std::ostream& os, std::vector<t_server>& file){
+    int i = -1;
+	for (auto& server : file)
+		std::cout << "server " << ++i << "\n"
+            << server;
+	return os;
 }
