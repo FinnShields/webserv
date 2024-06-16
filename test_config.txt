@@ -1,16 +1,26 @@
    	
    #comment sdf sdf server # dddd
  # other comment   
-
-       firstword   val1 val2 val3;
-
 server # comment3
 { #comment
-	location name
+	location name1
 	{
-		keyword value0 value1;
+		keyword1;
+		keyword2 value0 ;
+		#comment value0 value1 ;
+		keyword3 value0 value1;
+	}
+	location name2
+	{
+		keyword21 value0 value1;
+		#keyword22 value0 value1 ;
+	}
+	location name3
+	{
+		keyword31 value0 value1;
 		#keyword value0 value1 ;
 	}
+
 }
 #other comment 
 server # server 3
@@ -18,7 +28,7 @@ server # server 3
 	location name2
 	{
 		keyword valuee;
-		keyword
+		keyword;
 	# commented something
 	}
 }

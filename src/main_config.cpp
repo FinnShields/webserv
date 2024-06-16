@@ -7,27 +7,39 @@
 
 #include "Config.hpp"
 
+std::ostream& operator<<(std::ostream& os, t_vector_str& vs){
+    for (std::string& s : vs)
+        os << s << ", ";
+    return os;
+}
 
+std::ostream& operator<<(std::ostream& os, t_location& l){
+	for (auto& pair : l)
+		std::cout << "\t\t" 
+            << pair.first << "=(" 
+            << pair.second << ");\n";
+	return os;
+}
+
+std::ostream& operator<<(std::ostream& os, t_server& l){
+	for (auto& [key, value] : l)
+		std::cout << "\tlocation dir=" << key << "\n"
+            << value;
+	return os;
+}
+
+std::ostream& operator<<(std::ostream& os, std::vector<t_server>& file){
+    int i = -1;
+	for (auto& server : file)
+		std::cout << "server " << ++i << "\n"
+            << server;
+	return os;
+}
 
 int main() {
 
     Config config("test_config.txt");
-    //config.peek();
-   // while ((config.getToken()) != ParceConf::tok::eof)
-    //    ;
-    std::cout << "word = " << config.parseWord() 
-            << "\n";    
-    t_vector_str value_list = config.parseWordList();
-    for (std::string s : value_list){
-        std::cout << "val = " << s << "\n";
-    }
-    int i =-1;
-    while (++i < 30){
-        config.getToken();
-        /*if (config._token == Config::tok::word)
-            std::cout << "word = " << config.parseWord() 
-            << "\n";
-        */
-    }
+    std::vector<t_server>& data = config.parseFile();
+    std::cout << data;
     return 0;
 }

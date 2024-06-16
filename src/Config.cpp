@@ -29,12 +29,14 @@ Config::Config(std::string filename):
 	_tok_end(0)
 {
 	_filecontent = readFile(filename);
+	/*
 	std::cout <<  "File content:\n-----------------------\n" 
 		<< _filecontent 
 		<< "\n----------- end of file -------- \n"
 		<< std::endl;
+	*/
 	_size = _filecontent.size();
-	std::cout <<  "File size =" << _size << "\n"; 
+	//std::cout <<  "File size =" << _size << "\n"; 
 }
 
 std::string Config::readFile(std::string filename) const{
@@ -77,28 +79,28 @@ Config::tok Config::peek(){
 				return tok::eof;
 			return peek();
 		case '{':
-			std::cout << "peek: open {\n";
+//			std::cout << "peek: open {\n";
 			return tok::open;
 		case '}':
-			std::cout << "peek: close }\n";
+//			std::cout << "peek: close }\n";
 			return tok::close;
 		case ';':
-			std::cout << "peek: semicol ;\n";
+//			std::cout << "peek: semicol ;\n";
 			return tok::semicol;
 		default:
 			break ;
 	}
 	if (_filecontent.find("location",_position) == _position)
 	{
-		std::cout << "peek: location\n";
+//		std::cout << "peek: location\n";
 		return tok::location;
 	}
 	else if (_filecontent.find("server",_position) == _position)
 	{
-		std::cout << "peek: location\n";
+//		std::cout << "peek: location\n";
 		return tok::server;
 	}
-	std::cout << "peek: word\n";
+//	std::cout << "peek: word\n";
 	return tok::word;
 }
 
@@ -129,11 +131,13 @@ Config::tok Config::getToken(){
 		//	std::cout << "semicolumn\n";
 			break;
 		case tok::open:
+			//_open_par++;
 			_position ++;
 		//	std::cout << "{ open \n";
 			break;
 		case tok::close:
-			_position ++;
+			//_open_par--;
+			_position++;
 		//	std::cout << "close } \n";
 			break;
 		case tok::eof:
@@ -146,9 +150,9 @@ Config::tok Config::getToken(){
 }
 
 std::string Config::parseWord(){
-	tok	token = getToken();
-	if (token != tok::word)
+	if (peek() != tok::word)
 		 throw std::runtime_error("Syntax error: expected word");
+	getToken();
 	size_t len = _tok_end - _tok_begin;
 	return _filecontent.substr(_tok_begin, len);
 }
@@ -158,20 +162,58 @@ t_vector_str	Config::parseWordList(){
 	while (peek() == tok::word){
 		value_list.push_back(parseWord());
 	}
-	if (peek() != tok::semicol)
+	if (peek() == tok::semicol)
+		getToken();
+	else
 		throw std::runtime_error("Syntax error: expected semicolumn.");
 	return value_list;
 }
 
-t_location Config::parseLocation(){
+t_location Config::parseLocationDict(){
+	if (peek() != tok::open)
+		throw std::runtime_error("Syntax error: expected {.");
+	getToken();
 	t_location location;
 	std::string keyword; // = parseWord();
 	t_vector_str value_list;
-	while (peek() != tok::close){
+	while (peek() == tok::word){
 		keyword = parseWord();
 		value_list = parseWordList();
 		location[keyword] = value_list;
 	}
-
+	if (peek() != tok::close)
+		throw std::runtime_error("Syntax error: expected }.");
+	getToken();
 	return location;
+}
+
+t_server Config::parseServer(){
+	if (peek() != tok::server)
+		throw std::runtime_error("Syntax error: expected keyword server.");
+	getToken();
+	if (peek() != tok::open)
+		throw std::runtime_error("Syntax error: expected {.");
+	getToken();
+	t_server server;
+	std::string dir;
+	t_location	location;
+	while (peek() == tok::location){
+		getToken();
+		dir = parseWord();
+		location = parseLocationDict();
+		server[dir] = location;
+	}
+	if (peek() != tok::close)
+		throw std::runtime_error("Syntax error: expected }.");
+	getToken();
+	return server;
+}
+
+std::vector<t_server>& Config::parseFile(){
+	while (peek() == tok::server){
+		_data.push_back(parseServer());
+	}
+	if (peek() != tok::eof)
+		throw std::runtime_error("Syntax error: expected EOF");
+	return _data;
 }

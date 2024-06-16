@@ -10,17 +10,14 @@
 
 //# define TOKENS "{};\n#"
 
-typedef std::vector<std::string> t_vector_str;
-typedef std::map<std::string, t_vector_str> t_location;
-typedef std::map<std::string, t_location> t_server;
+//typedef std::vector<std::string> t_vector_str;
+//typedef std::map<std::string, t_vector_str> t_location;
+//typedef std::map<std::string, t_location> t_server;
 
-/*
-std::vector<Server> servers
-server = std::map<std::string location, Config> locations
-config = std::map<std::string key, values> setting
-values = std::vector<std::string>
-*/
 
+using t_vector_str = std::vector<std::string>;
+using t_location = std::map<std::string, t_vector_str>;
+using t_server = std::map<std::string, t_location>;
 
 class Config
 {
@@ -31,28 +28,30 @@ class Config
 		Config& operator=(Config&);
 		Config(std::string);
 		std::string readFile(std::string filename) const;
-		//enum class tok;	
 		enum class tok {server, location, word, semicol, newline, 
 			open, close, eof};
-		tok getToken();
-		tok peek();
 		void skipComment();
-	//	void parseFile();
-	//	void parseServer();
-	//	void parseLocationList();
-		t_location parseLocation();
-		t_vector_str	parseWordList();
+		tok peek();
+		tok getToken();
+		std::vector<t_server>& parseFile();
+		t_server parseServer();
+		t_location parseLocationDict();
+		t_vector_str parseWordList();
 		std::string parseWord();
 		tok		_token;
 	private:
 		std::string _filecontent;
 		size_t	_endcontent;
-		size_t	_size;	
+		size_t	_size;
 		size_t	_position;
 		size_t	_tok_begin;	
 		size_t	_tok_end;
+		//int		_open_par;
 		std::vector<t_server> _data;
 };
+
+//std::ostream&	operator<<(std::ostream& os, const t_vector_str& l);
+//std::ostream&	operator<<(std::ostream& os, const t_location& l);
 
 #endif
 
