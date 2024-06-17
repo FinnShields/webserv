@@ -78,9 +78,10 @@ void WebServer::parse_file(std::string filename)
 		<< "----- END of DATA ---------------\n";
 	Server srv;
 	int i = -1;
+	// The following part to be moved to Config and/or Server. 
 	std::cout << "Number of servers to init: " << data.size() << "\n";
-	for (t_server& server_data : data){
-		std::cout << "Initialization of server " << ++i << "\n"; 
+	for (t_server& server_data : data) {
+		std::cout << "Initialization of server " << ++i << "\n";
 		if (server_data.find("main") == server_data.end()) {
 			std::cout << "No main settings\n";
 			// here all parameters to be set to defaults
@@ -90,7 +91,7 @@ void WebServer::parse_file(std::string filename)
 		}
 		else {
 			t_location main = server_data["main"];
-			if (main.find("listen") == main.end() || main["listen"].size() != 1){
+			if (main.find("listen") == main.end() || main["listen"].size() != 1) {
 				std::cout << "No port provided\n";
 				srv.set_port(DEFAULT_PORT);
 			}
@@ -106,9 +107,12 @@ void WebServer::setup(std::string filename)
 {
 	try
 	{
+		int i = -1;
 		parse_file(filename);
-		for (Server &srv : _servers)
+		for (Server &srv : _servers){
+			std::cout << "Starting server " << ++i << " with port " << srv.get_port() << "\n"; 
 			srv.start(_fds);
+		}
 	}
 	catch(char const *e)
 	{

@@ -5,7 +5,7 @@ server # comment3
 { #comment
 	location main
 	{
-		listen 4242;
+		listen 5242;
 		keyword2 value0 ;
 		#comment value0 value1 ;
 		keyword3 value0 value1;
@@ -30,7 +30,7 @@ server # server 3
 	location main
 	
 	{
-		listen 4242;
+		listen 4243;
 		keyword valuee;
 		keyword;
 	# commented something
