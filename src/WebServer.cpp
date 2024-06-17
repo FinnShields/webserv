@@ -72,23 +72,33 @@ void WebServer::parse_file(std::string filename)
 {
 	Config config(filename);
     std::vector<t_server>& data = config.parseFile();
+	std::cout
+		<< "----- EXTRACTED DATA ------------\n"
+		<< data
+		<< "----- END of DATA ---------------\n";
 	Server srv;
 	int i = -1;
+	std::cout << "Number of servers to init: " << data.size() << "\n";
 	for (t_server& server_data : data){
+		std::cout << "Initialization of server " << ++i << "\n"; 
 		if (server_data.find("main") == server_data.end()) {
-			// here all parameters to be set to defaults 
+			std::cout << "No main settings\n";
+			// here all parameters to be set to defaults
 			srv.set_port(DEFAULT_PORT);
+			_servers.push_back(srv);
 			return ;		
 		}
-		t_location main = server_data["main"];
-		if (main.find("listen") == main.end())
-			srv.set_port(DEFAULT_PORT);
-		else
-			srv.set_port(std::stoi(server_data["main"]["listen"][0]));
-		std::cout << "post is setted";
+		else {
+			t_location main = server_data["main"];
+			if (main.find("listen") == main.end() || main["listen"].size() != 1){
+				std::cout << "No port provided\n";
+				srv.set_port(DEFAULT_PORT);
+			}
+			else
+				srv.set_port(std::stoi(main["listen"][0]));
+		}
 		_servers.push_back(srv);
 	}
-	srv.set_port(DEFAULT_PORT);
 }
 
 
