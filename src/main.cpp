@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
         std::cerr << "Usage: ./webserv [configuration file]" << std::endl;
         return 1;
     }
-
+/*/
     try{
         Config config(argv[1]);
         std::vector<t_server>& data = config.parseFile();
@@ -34,15 +34,26 @@ int main(int argc, char *argv[]) {
         std::cout << "value for noexistkey, [0, name2, noexistkey] =("
             << data[0]["name2"]["noexistkey"] << ")\n";
     }
+    catch (const std::ios_base::failure& e) {
+        std::cerr << e.what() << std::endl;
+    }
     catch (const std::runtime_error& e){
          std::cerr << e.what() << "\n";
          return 1;
     }
+*/
     try
     {
         WebServer webserv;
         webserv.setup(argv[1]);
         webserv.run();
+    }
+    catch (const std::ios_base::failure& e) {
+        std::cerr << e.what() << std::endl;
+    }
+    catch (const std::runtime_error& e){
+         std::cerr << e.what() << "\n";
+         return 1;
     }
     catch(const std::exception& e)
     {

@@ -41,13 +41,12 @@ Config::Config(std::string filename):
 
 std::string Config::readFile(std::string filename) const{
 	std::ifstream	infile(filename);
-	if (!infile)
-	{
-		std::cout << "Unable to open the file " << filename << std::endl;
-		return ("");
-	}
+	if (!infile.is_open())
+		throw  std::ios_base::failure("Config::readFile can't open " + filename);
+	std::cout << "Reading file" << std::endl;
 	std::stringstream	buffer;
 	buffer << infile.rdbuf();
+	infile.close();
 	return buffer.str();
 }
 

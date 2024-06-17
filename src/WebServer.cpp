@@ -10,12 +10,14 @@
 /*                                                                            */
 /* ************************************************************************** */
 
+#include "Config.hpp"
 #include "WebServer.hpp"
 
 WebServer::WebServer() {}
 
 WebServer::~WebServer() {}
 
+/*
 void WebServer::parse_file(std::string filename)
 {
     std::ifstream config_file(filename);
@@ -37,6 +39,56 @@ void WebServer::parse_file(std::string filename)
 	Server srv;
 	srv.set_port(DEFAULT_PORT);
 	_servers.push_back(srv);
+}
+*/
+
+
+
+/*
+    try{
+        Config config(argv[1]);
+        std::vector<t_server>& data = config.parseFile();
+        std::cout
+            << "----- DATA ------------\n"
+            << data
+            << "----- END of DATA -----\n";
+        std::cout << "value=value [server=0, name2, key] = ("
+            << data[0]["name2"]["key"]<< ")\n";
+        std::cout << "value=none, [0, name2, keynoval] =("
+            << data[0]["name2"]["keynoval"] << ")\n";
+        std::cout << "value for noexistkey, [0, name2, noexistkey] =("
+            << data[0]["name2"]["noexistkey"] << ")\n";
+    }
+    catch (const std::ios_base::failure& e) {
+        std::cerr << e.what() << std::endl;
+    }
+    catch (const std::runtime_error& e){
+         std::cerr << e.what() << "\n";
+         return 1;
+    }
+*/
+
+void WebServer::parse_file(std::string filename)
+{
+	Config config(filename);
+    std::vector<t_server>& data = config.parseFile();
+	Server srv;
+	int i = -1;
+	for (t_server& server_data : data){
+		if (server_data.find("main") == server_data.end()) {
+			// here all parameters to be set to defaults 
+			srv.set_port(DEFAULT_PORT);
+			return ;		
+		}
+		t_location main = server_data["main"];
+		if (main.find("listen") == main.end())
+			srv.set_port(DEFAULT_PORT);
+		else
+			srv.set_port(std::stoi(server_data["main"]["listen"][0]));
+		std::cout << "post is setted";
+		_servers.push_back(srv);
+	}
+	srv.set_port(DEFAULT_PORT);
 }
 
 
