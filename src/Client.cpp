@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/06/14 12:21:22 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/06/14 17:52:14 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,36 +27,14 @@ int Client::get_socket_fd()
     return (_fd);
 }
 
-static std::string load_index()
-{
-	std::ifstream file("www/index.html");
-	if (!file.is_open())
-		return ("HTTP/1.1 404 Not Found\nContent-Type: text/plain\n\nError: index.html not found");
-	
-	std::stringstream buffer;
-	buffer << file.rdbuf();
-	file.close();
-
-	return ("HTTP/1.1 200 OK\nContent-Type: text/html\n\n" + buffer.str());
-}
-
 void Client::handle_request(Server srv)
 {
-	(void) srv;
-    
 	Request request;
-	request.read(_fd);
-	request.display();
-	
-	std::string method = request.get("method");
-	std::string dir = request.get("target");
-	
-	std::string response = "HTTP/1.1 200 OK\nContent-Type: text/plain\n\nYour request: " + method + " " + dir;
-	if (method == "GET")
-		if (dir == "/")
-			response = load_index();
-	if (send(_fd, response.c_str(), response.size(), 0) < 0)
-		perror("Send error");
+    request.read(_fd);
+    request.display();
+    
+	Response resp(_fd, request, srv);
+	resp.run();
 }
 
 void Client::close_connection(Server &srv)
