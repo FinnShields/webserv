@@ -166,6 +166,8 @@ void	Request::display()
 	std::cout << "HTTP-version: " << this->version << std::endl;
 	for(it = this->headers.begin(); it != this->headers.end(); it++)
 		std::cout << it->first << ": " << it->second << std::endl;
+	if (!this->body.empty())
+		std::cout << "Body: " << this->body << std::endl;
 	std::cout << "---------------------" << std::endl;
 	std::cout << std::endl;
 }
