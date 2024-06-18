@@ -40,10 +40,12 @@ std::string Response::get()
 
 std::string Response::post()
 {
-	std::cout << "POST method is not supported" << std::endl;
-	std::string response = "HTTP/1.1 405 Method Not Allowed\nContent-Type: text/plain\n\nError: POST method is not supported";
-
-	return (response);
+	std::string body = _req.get("body");
+	if (body.length() == 5)
+		std::cout << "No name entered!" << std::endl;
+	else
+		std::cout << "Name: " << body.c_str() + 5 << std::endl;
+	return (load_index());
 }
 
 std::string Response::load_index()
