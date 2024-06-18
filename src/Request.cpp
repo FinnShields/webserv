@@ -151,6 +151,8 @@ const std::string	Request::get(std::string toGet)
 		return (this->target);
 	if (!toGet.compare("version"))
 		return (this->version);
+	if (!toGet.compare("body"))
+		return (this->body);
 	if (!this->headers.count(toGet))
 		return ("");
 	return (this->headers[toGet]);
