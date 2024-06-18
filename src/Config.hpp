@@ -7,23 +7,24 @@
 #include <sstream>
 #include <vector>
 #include <map>
+#include <algorithm> 
 
 /* here we follow the EBNF given next:
 	S -> server S'
 	S' -> server S' | eps
-	server -> 'server' '{' location_list '}'
-	location_list -> location location_list | eps
-	location -> 'location' identifier '{' key_value_list '}'
+	server -> 'server' '{' group_list '}'
+	group_list -> group group_list | eps
+	group -> 'group' identifier '{' key_value_list '}'
 	key_value_list -> key_value key_value_list | eps
 	key_value -> identifier value_list ';'
 	value_list -> identifier value_list | eps
-	identifier -> [non whitespace character]*  exclude ; server location
+	identifier -> [non whitespace character]*  exclude ; server group
 	eps = empty set
 */
 
 using t_vector_str = std::vector<std::string>;
-using t_location = std::map<std::string, t_vector_str>;
-using t_server = std::map<std::string, t_location>;
+using t_group = std::map<std::string, t_vector_str>;
+using t_server = std::map<std::string, t_group>;
 
 class Config
 {
@@ -34,7 +35,7 @@ class Config
 		Config& operator=(Config&);
 		Config(std::string);
 		std::string readFile(std::string filename) const;
-		enum class tok {server, location, word, semicol, //newline, 
+		enum class tok {server, group, word, semicol, //newline, 
 			open, close, eof};
 		void skipComment();
 		tok peek();
@@ -42,14 +43,14 @@ class Config
 		tok getToken();
 		std::vector<t_server>& parseFile();
 		t_server parseServer();
-		t_location parseLocationDict();
+		t_group parseGroupSetting();
 		t_vector_str parseWordList();
 		std::string parseWord();
 		std::string leftoverString();
 		size_t	size();
 		std::vector<t_server>& get();
 		t_server get(size_t server);
-		t_location get(size_t server, std::string group);
+		t_group get(size_t server, std::string group);
 		t_vector_str get(size_t server, std::string group, std::string key);
 		std::string get(size_t server, std::string group, std::string key, size_t num);
 		
@@ -70,7 +71,7 @@ class Config
 };
 
 std::ostream& operator<<(std::ostream& os, t_vector_str& vs);
-std::ostream& operator<<(std::ostream& os, t_location& l);
+std::ostream& operator<<(std::ostream& os, t_group& l);
 std::ostream& operator<<(std::ostream& os, t_server& l);
 std::ostream& operator<<(std::ostream& os, std::vector<t_server>& file);
 

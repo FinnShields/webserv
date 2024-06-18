@@ -2,7 +2,7 @@
 
 /*
 enum class Config::tok {
-	server, location, word, 
+	server, group, word, 
 	semicol, //newline,   comment,
 	open, close, eof};
 */
@@ -70,9 +70,9 @@ Config::tok Config::peek(){
 		default:
 			break ;
 	}
-	if (_filecontent.find("location",_position) == _position && 
-			std::isspace(_filecontent.at(_position + 8)))
-		return tok::location;
+	if (_filecontent.find("group",_position) == _position && 
+			std::isspace(_filecontent.at(_position + 5)))
+		return tok::group;
 	else if (_filecontent.find("server",_position) == _position && 
 			std::isspace(_filecontent.at(_position + 6)))
 		return tok::server;
@@ -88,8 +88,8 @@ Config::tok Config::getToken(){
 			_position += 6;
 			_tok_end = _position;
 			break;
-		case tok::location:
-			_position += 8;
+		case tok::group:
+			_position += 5;
 			_tok_end = _position;
 			break;
 		case tok::word:
@@ -122,7 +122,7 @@ Config::tok Config::getToken(){
 
 bool Config::isAnyWord(tok token){
 	return (token == tok::word ||
-		token == tok::location ||
+		token == tok::group ||
 		token == tok::server);
 }
 
@@ -151,26 +151,26 @@ t_vector_str	Config::parseWordList(){
 	return value_list;
 }
 
-t_location Config::parseLocationDict(){
+t_group Config::parseGroupSetting(){
 	if (peek() != tok::open)
 		throw std::runtime_error(
 			"Syntax error: expected {, but got:\n"
 			+ leftoverString());
 	getToken();
-	t_location location;
+	t_group group;
 	std::string keyword; // = parseWord();
 	t_vector_str value_list;
 	while (isAnyWord(peek())){
 		keyword = parseWord();
 		value_list = parseWordList();
-		location[keyword] = value_list;
+		group[keyword] = value_list;
 	}
 	if (peek() != tok::close)
 		throw std::runtime_error(
-			"Syntax error: expected } or location, but got:\n"
+			"Syntax error: expected } or group, but got:\n"
 			+ leftoverString());
 	getToken();
-	return location;
+	return group;
 }
 
 t_server Config::parseServer(){
@@ -186,12 +186,13 @@ t_server Config::parseServer(){
 	getToken();
 	t_server server;
 	std::string dir;
-	t_location	location;
-	while (peek() == tok::location){
+	t_group	group;
+	std::cout << "parseServer\n";
+	while (peek() == tok::group){
 		getToken();
 		dir = parseWord();
-		location = parseLocationDict();
-		server[dir] = location;
+		group = parseGroupSetting();
+		server[dir] = group;
 	}
 	if (peek() != tok::close)
 		throw std::runtime_error(
@@ -215,6 +216,9 @@ std::vector<t_server>& Config::parseFile(){
 std::string Config::leftoverString(){
 	if (getToken() == tok::eof)
 		return "EOF";
+	std::string read_str = _filecontent.substr(0, _position);
+    size_t new_line_count = std::count(read_str.begin(), read_str.end(), '\n');
+	std::cout << "in line number " << new_line_count << "   ";
 	return _filecontent.substr(_tok_begin, _tok_end - _tok_begin);
 }
 
@@ -225,7 +229,7 @@ std::ostream& operator<<(std::ostream& os, t_vector_str& vs){
     return os;
 }
 
-std::ostream& operator<<(std::ostream& os, t_location& l){
+std::ostream& operator<<(std::ostream& os, t_group& l){
 	for (auto& pair : l)
 		std::cout << "\t\t" 
             << pair.first << "=(" 
@@ -263,7 +267,7 @@ t_server Config::get(size_t server){
 	return ret;
 }
 
-t_location Config::get(size_t server, std::string group){
+t_group Config::get(size_t server, std::string group){
 	return get(server)[group];
 }
 

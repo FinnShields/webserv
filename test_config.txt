@@ -3,22 +3,22 @@
  # other comment
 server # comment3
 { #comment
-	location main
+	group main
 	{
 		listen 5252;
-		listen location ;
+		listen 0;
 		keyword2 value0 ;
 		#comment value0 value1 ;
 		keyword3 value0 value1;
 	}
-	location /dir1
+	group /dir1
 	{
 		keyword21 value0 value1;
 		#keyword22 value0 value1 ;
 		key	value ; #comment
 		keynoval	; # novalue
 	}
-	location /dir2
+	group /dir2
 	{
 		keyword31 value0 value1};
 		#keyword value0 value1};
@@ -28,7 +28,7 @@ server # comment3
 #other comment 
 server # server 3
 { #comment
-	location main
+	group main
 	
 	{
 		listen 5242;
@@ -40,7 +40,7 @@ server # server 3
 
 server # server 4
 { #comment
-	location name2
+	group name2
 	{
 		keyword valuee;
 		keyword4
