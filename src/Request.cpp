@@ -6,7 +6,7 @@
 /*   By: fshields <fshields@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/06/13 12:44:24 by fshields         ###   ########.fr       */
+/*   Updated: 2024/06/18 11:07:03 by fshields         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -91,6 +91,30 @@ void	Request::extractHeaders(std::string& input)
 	}
 }
 
+void	Request::handleChunks(std::string& input, size_t i)
+{
+	size_t contentLength = 0;
+	size_t chunkLength = atoi(input.c_str() + i);
+	std::string content;
+	std::string::iterator it;
+
+	it = input.begin();
+	it += i;
+	while (chunkLength != 0)
+	{
+		contentLength += chunkLength;
+		while (isdigit(*it) || *it == '\r' || *it == '\n')
+			it ++;
+		while (*it != '\r' && *it != '\n')
+			content.append(1, *(it++));
+		while (!isdigit(*it))
+			it ++;
+		chunkLength = atoi(input.c_str() + std::distance(input.begin(), it));
+	}
+	this->headers["Content-Length"] = std::to_string(contentLength);
+	this->body = content;
+}
+
 void	Request::extractBody(std::string& input)
 {
 	size_t	i;
@@ -100,8 +124,10 @@ void	Request::extractBody(std::string& input)
 	i = input.find("\r\n\r\n");
 	if (i == std::string::npos)
 		return ;
-	len = atoi(this->get("Content-Length").c_str());
 	i += 4;
+	if (!this->get("Transfer-Encoding").compare("chunked"))
+		return (this->handleChunks(input, i));
+	len = atoi(this->get("Content-Length").c_str());
 	for (size_t j = 0; j < len; j++)
 		this->body.append(1, input[i++]);
 }
