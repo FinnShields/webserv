@@ -128,6 +128,8 @@ void	Request::extractBody(std::string& input)
 	if (!this->get("Transfer-Encoding").compare("chunked"))
 		return (this->handleChunks(input, i));
 	len = atoi(this->get("Content-Length").c_str());
+	if (!len)
+		len = atoi(this->get("content-length").c_str());
 	for (size_t j = 0; j < len; j++)
 		this->body.append(1, input[i++]);
 }
