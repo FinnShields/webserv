@@ -42,35 +42,9 @@ void WebServer::parse_file(std::string filename)
 }
 */
 
-
-
-/*
-    try{
-        Config config(argv[1]);
-        std::vector<t_server>& data = config.parseFile();
-        std::cout
-            << "----- DATA ------------\n"
-            << data
-            << "----- END of DATA -----\n";
-        std::cout << "value=value [server=0, name2, key] = ("
-            << data[0]["name2"]["key"]<< ")\n";
-        std::cout << "value=none, [0, name2, keynoval] =("
-            << data[0]["name2"]["keynoval"] << ")\n";
-        std::cout << "value for noexistkey, [0, name2, noexistkey] =("
-            << data[0]["name2"]["noexistkey"] << ")\n";
-    }
-    catch (const std::ios_base::failure& e) {
-        std::cerr << e.what() << std::endl;
-    }
-    catch (const std::runtime_error& e){
-         std::cerr << e.what() << "\n";
-         return 1;
-    }
-*/
-
-void WebServer::parse_file(std::string filename)
+/*void WebServer::parse_file(std::string filename)
 {
-	Config config(filename);
+	Config data(filename);
     std::vector<t_server>& data = config.parseFile();
 	std::cout
 		<< "----- EXTRACTED DATA ------------\n"
@@ -99,6 +73,28 @@ void WebServer::parse_file(std::string filename)
 				srv.set_port(std::stoi(main["listen"][0]));
 		}
 		_servers.push_back(srv);
+	}
+}*/
+
+void WebServer::parse_file(std::string filename)
+{
+	Config data(filename);
+	//vector<t_server> data = data.get
+	std::cout
+		<< "----- EXTRACTED DATA ------------\n"
+		<< data.get()
+		<< "----- END of DATA ---------------\n";
+	Server srv;
+	// The following part to be refactored and moved to Config and/or Server. 
+	std::cout << "Number of servers: " << data.size() << "\n";
+	for (size_t i = 0; i < data.size(); ++i) {
+		std::string port_str = data.get(i, "main", "listen", 0);
+		if (port_str.empty())
+			srv.set_port(DEFAULT_PORT);
+		else
+			srv.set_port(std::stoi(port_str));
+		_servers.push_back(srv);
+		std::cout << "Server " << i << " is initialized with port " << srv.get_port() << "\n";
 	}
 }
 

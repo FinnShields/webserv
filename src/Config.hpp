@@ -38,6 +38,7 @@ class Config
 			open, close, eof};
 		void skipComment();
 		tok peek();
+		bool isAnyWord(tok token);
 		tok getToken();
 		std::vector<t_server>& parseFile();
 		t_server parseServer();
@@ -45,6 +46,13 @@ class Config
 		t_vector_str parseWordList();
 		std::string parseWord();
 		std::string leftoverString();
+		size_t	size();
+		std::vector<t_server>& get();
+		t_server get(size_t server);
+		t_location get(size_t server, std::string group);
+		t_vector_str get(size_t server, std::string group, std::string key);
+		std::string get(size_t server, std::string group, std::string key, size_t num);
+		
 		/*class SyntaxError: public std::exception {
 			public:
 				const char* what() const noexcept override;

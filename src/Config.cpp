@@ -22,6 +22,7 @@ Config& Config::operator=(Config& other){
 
 Config::Config(std::string filename):
 	_filecontent(""),
+	_token(tok::eof),
 	_endcontent(0),
 	_size(0),
 	_position(0),
@@ -29,14 +30,8 @@ Config::Config(std::string filename):
 	_tok_end(0)
 {
 	_filecontent = readFile(filename);
-	/*
-	std::cout <<  "File content:\n-----------------------\n" 
-		<< _filecontent 
-		<< "\n----------- end of file -------- \n"
-		<< std::endl;
-	*/
 	_size = _filecontent.size();
-	//std::cout <<  "File size =" << _size << "\n"; 
+	parseFile();
 }
 
 std::string Config::readFile(std::string filename) const{
@@ -50,14 +45,7 @@ std::string Config::readFile(std::string filename) const{
 	return buffer.str();
 }
 
-
-/*  void Config::skipComment(){
-	_position = _filecontent.find('\n',_position) + 1;
-}  */
-
 Config::tok Config::peek(){
-	//std::string tokens = TOKENS;
-	// skip spaces
 	size_t i;
 	for (i = _position; i < _size && isspace(_filecontent.at(i));){
 		++i;
@@ -65,12 +53,8 @@ Config::tok Config::peek(){
 	_position = i;
 	if (_position >= _size)
 		return tok::eof;
-	//std::cout << _position << " c=" <<_filecontent.at(_position) << std::endl;
-
 	switch (_filecontent.at(_position)){
 		case '#':
-			//std::cout << "peek: comment\n";
-			//skipComment();
 			if (_filecontent.find('\n',_position) == std::string::npos)
 				return tok::eof;
 			_position = _filecontent.find('\n',_position) + 1;
@@ -78,28 +62,20 @@ Config::tok Config::peek(){
 				return tok::eof;
 			return peek();
 		case '{':
-//			std::cout << "peek: open {\n";
 			return tok::open;
 		case '}':
-//			std::cout << "peek: close }\n";
 			return tok::close;
 		case ';':
-//			std::cout << "peek: semicol ;\n";
 			return tok::semicol;
 		default:
 			break ;
 	}
-	if (_filecontent.find("location",_position) == _position)
-	{
-//		std::cout << "peek: location\n";
+	if (_filecontent.find("location",_position) == _position && 
+			std::isspace(_filecontent.at(_position + 8)))
 		return tok::location;
-	}
-	else if (_filecontent.find("server",_position) == _position)
-	{
-//		std::cout << "peek: location\n";
+	else if (_filecontent.find("server",_position) == _position && 
+			std::isspace(_filecontent.at(_position + 6)))
 		return tok::server;
-	}
-//	std::cout << "peek: word\n";
 	return tok::word;
 }
 
@@ -111,41 +87,32 @@ Config::tok Config::getToken(){
 		case tok::server:
 			_position += 6;
 			_tok_end = _position;
-		//	std::cout << "add new server\n";
 			break;
 		case tok::location:
 			_position += 8;
 			_tok_end = _position;
-		//	std::cout << "add new location to current server\n";
 			break;
 		case tok::word:
 			while (_tok_end < _size && 
-				!std::isspace(_filecontent.at(_tok_end)) &&
-				_filecontent.at(_tok_end) != ';'){
+					!std::isspace(_filecontent.at(_tok_end)) &&
+					_filecontent.at(_tok_end) != ';'){
      			++_tok_end;
     		}
 			_position = _tok_end;
-		//	std::cout << "add new word to current server and location\n";
 			break;
 		case tok::semicol:
 			_position ++;
 			_tok_end = _position;
-		//	std::cout << "semicolumn\n";
 			break;
 		case tok::open:
-			//_open_par++;
 			_position ++;
 			_tok_end = _position;
-		//	std::cout << "{ open \n";
 			break;
 		case tok::close:
-			//_open_par--;
 			_position++;
 			_tok_end = _position;
-		//	std::cout << "close } \n";
 			break;
 		case tok::eof:
-			//std::cout << "EOF\n";
 			break;
 		default:
 			break;
@@ -153,11 +120,18 @@ Config::tok Config::getToken(){
 	return _token;
 }
 
+bool Config::isAnyWord(tok token){
+	return (token == tok::word ||
+		token == tok::location ||
+		token == tok::server);
+}
+
 std::string Config::parseWord(){
-	if (peek() != tok::word)
-		 throw std::runtime_error(
+	if (isAnyWord(peek()) == 0){
+		throw std::runtime_error(
 			"Syntax error: expected word, but got:\n"
 			+ leftoverString());
+	}
 	getToken();
 	size_t len = _tok_end - _tok_begin;
 	return _filecontent.substr(_tok_begin, len);
@@ -165,7 +139,7 @@ std::string Config::parseWord(){
 
 t_vector_str	Config::parseWordList(){
 	t_vector_str value_list;
-	while (peek() == tok::word){
+	while (isAnyWord(peek())){
 		value_list.push_back(parseWord());
 	}
 	if (peek() == tok::semicol)
@@ -186,14 +160,14 @@ t_location Config::parseLocationDict(){
 	t_location location;
 	std::string keyword; // = parseWord();
 	t_vector_str value_list;
-	while (peek() == tok::word){
+	while (isAnyWord(peek())){
 		keyword = parseWord();
 		value_list = parseWordList();
 		location[keyword] = value_list;
 	}
 	if (peek() != tok::close)
 		throw std::runtime_error(
-			"Syntax error: expected }, but got:\n"
+			"Syntax error: expected } or location, but got:\n"
 			+ leftoverString());
 	getToken();
 	return location;
@@ -239,7 +213,6 @@ std::vector<t_server>& Config::parseFile(){
 }
 
 std::string Config::leftoverString(){
-	//tok token = ;
 	if (getToken() == tok::eof)
 		return "EOF";
 	return _filecontent.substr(_tok_begin, _tok_end - _tok_begin);
@@ -262,7 +235,7 @@ std::ostream& operator<<(std::ostream& os, t_location& l){
 
 std::ostream& operator<<(std::ostream& os, t_server& l){
 	for (auto& [key, value] : l)
-		std::cout << "\tlocation dir=" << key << "\n"
+		std::cout << "\tsettings group:" << key << "\n"
             << value;
 	return os;
 }
@@ -274,3 +247,35 @@ std::ostream& operator<<(std::ostream& os, std::vector<t_server>& file){
             << server;
 	return os;
 }
+
+size_t Config::size(){
+	return _data.size();
+}
+
+std::vector<t_server>& Config::get(){
+	return _data;
+}
+
+t_server Config::get(size_t server){
+	t_server ret;
+	if (server < _data.size())
+		ret = _data.at(server);
+	return ret;
+}
+
+t_location Config::get(size_t server, std::string group){
+	return get(server)[group];
+}
+
+t_vector_str Config::get(size_t server, std::string group, std::string key){
+	return get(server, group)[key];
+}
+
+std::string Config::get(size_t server, std::string group, std::string key, size_t num){
+	t_vector_str vec = get(server, group, key);
+	std::string str;
+	if (num < vec.size())
+		str = vec[num];
+	return str;
+}
+

@@ -6,6 +6,7 @@ server # comment3
 	location main
 	{
 		listen 5252;
+		listen location ;
 		keyword2 value0 ;
 		#comment value0 value1 ;
 		keyword3 value0 value1;
