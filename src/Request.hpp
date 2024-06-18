@@ -6,7 +6,7 @@
 /*   By: fshields <fshields@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:41 by fshields          #+#    #+#             */
-/*   Updated: 2024/06/13 12:44:29 by fshields         ###   ########.fr       */
+/*   Updated: 2024/06/17 13:14:52 by fshields         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,6 +32,7 @@ class Request
 		void extractVersion(std::string& input);
 		void extractHeaders(std::string& input);
 		void extractBody(std::string& input);
+		void handleChunks(std::string& input, size_t i);
 	public:
 		Request();
 		Request(const Request&);
