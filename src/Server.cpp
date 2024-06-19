@@ -22,10 +22,10 @@ Server::Server(const Server &copy) :_port(copy._port) {}
 void Server::setup_socket()
 {
 	//Creates the socket
-	if ((_server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) 
+	if ((_server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
 		throw ("socket failed");
 	//Attaches the socket (optional?)
-	if (setsockopt(_server_fd, SOL_SOCKET, SO_REUSEADDR, &_opt, sizeof(_opt))) 
+	if (setsockopt(_server_fd, SOL_SOCKET, SO_REUSEADDR, &_opt, sizeof(_opt)))
 		throw ("setsockopt");
 	//Binds the socket
 	_address.sin_family = AF_INET;

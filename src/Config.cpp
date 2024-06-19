@@ -129,7 +129,7 @@ bool Config::isAnyWord(tok token){
 std::string Config::parseWord(){
 	if (isAnyWord(peek()) == 0){
 		throw std::runtime_error(
-			"Syntax error: expected word, but got:\n"
+			"Syntax error: expected word, but got: "
 			+ leftoverString());
 	}
 	getToken();
@@ -146,7 +146,7 @@ t_vector_str	Config::parseWordList(){
 		getToken();
 	else
 		throw std::runtime_error(
-			"Syntax error: expected semicolumn, but got:\n"
+			"Syntax error: expected semicolumn, but got: "
 			+ leftoverString());
 	return value_list;
 }
@@ -154,7 +154,7 @@ t_vector_str	Config::parseWordList(){
 t_group Config::parseGroupSetting(){
 	if (peek() != tok::open)
 		throw std::runtime_error(
-			"Syntax error: expected {, but got:\n"
+			"Syntax error: expected {, but got: "
 			+ leftoverString());
 	getToken();
 	t_group group;
@@ -167,27 +167,31 @@ t_group Config::parseGroupSetting(){
 	}
 	if (peek() != tok::close)
 		throw std::runtime_error(
-			"Syntax error: expected } or group, but got:\n"
+			"Syntax error: expected } or group, but got: "
 			+ leftoverString());
 	getToken();
 	return group;
-}
+	}
 
 t_server Config::parseServer(){
 	if (peek() != tok::server)
 		throw std::runtime_error(
-			"Syntax error: expected keyword server, but got:\n"
+			"Syntax error: expected keyword server, but got: "
 			+ leftoverString());
 	getToken();
 	if (peek() != tok::open)
 		throw std::runtime_error(
-			"Syntax error: expected {, but got:\n"
+			"Syntax error: expected {, but got: "
 			+ leftoverString());
 	getToken();
+	_token = peek();
+	if (!(_token == tok::group || _token == tok::close))
+		throw std::runtime_error(
+			"Syntax error: expected group or }, but got: "
+			+ leftoverString());
 	t_server server;
 	std::string dir;
 	t_group	group;
-	std::cout << "parseServer\n";
 	while (peek() == tok::group){
 		getToken();
 		dir = parseWord();
@@ -196,7 +200,7 @@ t_server Config::parseServer(){
 	}
 	if (peek() != tok::close)
 		throw std::runtime_error(
-			"Syntax error: expected }, but got:\n"
+			"Syntax error: expected }, but got: "
 			+ leftoverString());
 	getToken();
 	return server;
@@ -208,18 +212,47 @@ std::vector<t_server>& Config::parseFile(){
 	}
 	if (peek() != tok::eof)
 		throw std::runtime_error(
-			"Syntax error: expected server or EOF, but got:\n"
+			"Syntax error: expected server or EOF, but got: "
 			+ leftoverString());
 	return _data;
 }
 
 std::string Config::leftoverString(){
-	if (getToken() == tok::eof)
+	//if (getToken() == tok::eof)
+	if (peek() == tok::eof)
 		return "EOF";
 	std::string read_str = _filecontent.substr(0, _position);
-    size_t new_line_count = std::count(read_str.begin(), read_str.end(), '\n');
-	std::cout << "in line number " << new_line_count << "   ";
-	return _filecontent.substr(_tok_begin, _tok_end - _tok_begin);
+    size_t new_line_count = std::count(read_str.begin(), read_str.end(), '\n') + 1;
+	size_t new_line_prev = _filecontent.rfind('\n', _position);
+	if (new_line_prev == std::string::npos)
+		new_line_prev = 0;
+	else
+		new_line_prev++;
+	size_t new_line_next = _filecontent.find('\n', _position);
+	if (new_line_next == std::string::npos)
+		new_line_next = _size;
+	size_t pos = _position - new_line_prev;
+	getToken();
+	std::string line = _filecontent.substr(new_line_prev, new_line_next - new_line_prev);
+	std::string line_err = line;
+	for (size_t i = 0; i < line_err.size(); ++i){
+		if (!isspace(line_err[i]) &&
+			i > _tok_begin - new_line_prev && 
+			i < _tok_end - new_line_prev)
+		{
+			line_err[i] = '~';
+		}
+		else if (!isspace(line_err[i]))
+			line_err[i] = ' ';
+		if (pos < line_err.size())
+			line_err[pos] = '^';
+	}
+	std::stringstream ss;
+    ss << _filecontent.substr(_tok_begin, _tok_end - _tok_begin) 
+		<< ", see line " << new_line_count << ":" << pos << "\n"
+		<< line << "\n"
+		<< line_err;
+	return ss.str();
 }
 
 

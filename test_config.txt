@@ -1,16 +1,13 @@
-   	
-   #comment sdf sdf server # dddd dsfdsf
- # other comment
-server # comment3
+server 
 { #comment
 	group main
 	{
 		listen 5252;
-		listen 0;
+		listen 33;
 		keyword2 value0 ;
 		#comment value0 value1 ;
 		keyword3 value0 value1;
-	}
+	}	
 	group /dir1
 	{
 		keyword21 value0 value1;
@@ -23,13 +20,13 @@ server # comment3
 		keyword31 value0 value1};
 		#keyword value0 value1};
 	}
-
 }
+
 #other comment 
 server # server 3
 { #comment
 	group main
-	
+
 	{
 		listen 5242;
 		keyword valuee;
