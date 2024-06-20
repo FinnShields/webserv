@@ -22,6 +22,7 @@
 #include <iostream>
 #include <poll.h>
 
+#include "Parser.hpp"
 
 typedef std::map<std::string, std::string> config;
 
@@ -30,6 +31,9 @@ class Client;
 class Server 
 {
     private:
+        size_t _server_index;
+      //  static std::vector<t_server> _settings;
+        
         std::vector<Client> _clients;
         std::map<std::string, config> _locations;
 		

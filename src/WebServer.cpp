@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "Config.hpp"
+#include "Parser.hpp"
 #include "WebServer.hpp"
 
 WebServer::WebServer() {}
@@ -44,7 +44,7 @@ void WebServer::parse_file(std::string filename)
 
 /*void WebServer::parse_file(std::string filename)
 {
-	Config data(filename);
+	Parser data(filename);
     std::vector<t_server>& data = config.parseFile();
 	std::cout
 		<< "----- EXTRACTED DATA ------------\n"
@@ -52,7 +52,7 @@ void WebServer::parse_file(std::string filename)
 		<< "----- END of DATA ---------------\n";
 	Server srv;
 	int i = -1;
-	// The following part to be moved to Config and/or Server. 
+	// The following part to be moved to Parser and/or Server. 
 	std::cout << "Number of servers to init: " << data.size() << "\n";
 	for (t_server& server_data : data) {
 		std::cout << "Initialization of server " << ++i << "\n";
@@ -78,14 +78,14 @@ void WebServer::parse_file(std::string filename)
 
 void WebServer::parse_file(std::string filename)
 {
-	Config data(filename);
+	Parser data(filename);
 	//vector<t_server> data = data.get
 	std::cout
 		<< "----- EXTRACTED DATA ------------\n"
 		<< data.get()
 		<< "----- END of DATA ---------------\n";
 	Server srv;
-	// The following part to be refactored and moved to Config and/or Server. 
+	// The following part to be refactored and moved to Parser and/or Server. 
 	std::cout << "Number of servers: " << data.size() << "\n";
 	for (size_t i = 0; i < data.size(); ++i) {
 		std::string port_str = data.get(i, "main", "listen", 0);

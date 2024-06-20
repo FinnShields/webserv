@@ -12,7 +12,7 @@
 
 
 #include "WebServer.hpp"
-#include "Config.hpp"
+#include "Parser.hpp"
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
     }
 /*/
     try{
-        Config config(argv[1]);
+        Parser config(argv[1]);
         std::vector<t_server>& data = config.parseFile();
         std::cout
             << "----- DATA ------------\n"
