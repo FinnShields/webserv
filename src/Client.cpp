@@ -38,6 +38,8 @@ void Client::saveFile(Request& request)
     it += body.find("filename") + 10;
     while (*it != '\"')
         fileName.append(1, *(it++));
+    if (fileName.empty())
+        return ;
     size_t start = body.find("\r\n\r\n") + 4;
     size_t len = body.find_last_of(boundary) - boundary.length() - 6 - start;
     std::string fileContent = body.substr(start, len);
@@ -52,7 +54,7 @@ void Client::handle_request(Server srv)
 	Request request;
     request.read(_fd);
     request.display();
-    if (request.get("method") == "POST")
+    if (!request.get("method").compare("POST"))
     {
         this->saveFile(request);
     }
