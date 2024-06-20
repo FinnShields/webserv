@@ -11,6 +11,7 @@
 /* ************************************************************************** */
 
 #include "Parser.hpp"
+#include "Config.hpp"
 #include "WebServer.hpp"
 
 WebServer::WebServer() {}
@@ -42,52 +43,22 @@ void WebServer::parse_file(std::string filename)
 }
 */
 
-/*void WebServer::parse_file(std::string filename)
-{
-	Parser data(filename);
-    std::vector<t_server>& data = config.parseFile();
-	std::cout
-		<< "----- EXTRACTED DATA ------------\n"
-		<< data
-		<< "----- END of DATA ---------------\n";
-	Server srv;
-	int i = -1;
-	// The following part to be moved to Parser and/or Server. 
-	std::cout << "Number of servers to init: " << data.size() << "\n";
-	for (t_server& server_data : data) {
-		std::cout << "Initialization of server " << ++i << "\n";
-		if (server_data.find("main") == server_data.end()) {
-			std::cout << "No main settings\n";
-			// here all parameters to be set to defaults
-			srv.set_port(DEFAULT_PORT);
-			_servers.push_back(srv);
-			return ;		
-		}
-		else {
-			t_location main = server_data["main"];
-			if (main.find("listen") == main.end() || main["listen"].size() != 1) {
-				std::cout << "No port provided\n";
-				srv.set_port(DEFAULT_PORT);
-			}
-			else
-				srv.set_port(std::stoi(main["listen"][0]));
-		}
-		_servers.push_back(srv);
-	}
-}*/
-
 void WebServer::parse_file(std::string filename)
 {
 	Parser data(filename);
+	//Config conf(data.get());
+	//conf.get();
 	//vector<t_server> data = data.get
 	std::cout
 		<< "----- EXTRACTED DATA ------------\n"
 		<< data.get()
 		<< "----- END of DATA ---------------\n";
-	Server srv;
 	// The following part to be refactored and moved to Parser and/or Server. 
 	std::cout << "Number of servers: " << data.size() << "\n";
 	for (size_t i = 0; i < data.size(); ++i) {
+		Server srv(data.get(), i);
+		std::cout << srv._config.get(0, "main", "newkey", 0) 
+			<< "\n my index=" << srv._server_index <<  "\n";
 		std::string port_str = data.get(i, "main", "listen", 0);
 		if (port_str.empty())
 			srv.set_port(DEFAULT_PORT);

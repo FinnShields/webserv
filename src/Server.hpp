@@ -22,7 +22,9 @@
 #include <iostream>
 #include <poll.h>
 
+#include "Client.hpp"
 #include "Parser.hpp"
+#include "Config.hpp"
 
 typedef std::map<std::string, std::string> config;
 
@@ -31,8 +33,7 @@ class Client;
 class Server 
 {
     private:
-        size_t _server_index;
-      //  static std::vector<t_server> _settings;
+        
         
         std::vector<Client> _clients;
         std::map<std::string, config> _locations;
@@ -50,6 +51,8 @@ class Server
     public:
         Server();
         Server (const Server &copy);
+        Server(std::vector<t_server>&, size_t&);
+        //Server (const Config&);
         ~Server();
   
         void start(std::vector<pollfd> &_fds);
@@ -60,9 +63,8 @@ class Server
         int get_fd();
         void set_port(int port);
         void set_fd(int fd);
-
+        static Config _config;
+        const size_t _server_index;
 };
-
-#include "Client.hpp"
 
 #endif

@@ -13,12 +13,15 @@
 
 #include "WebServer.hpp"
 #include "Parser.hpp"
+#include "Config.hpp"
+
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
         std::cerr << "Usage: ./webserv [configuration file]" << std::endl;
         return 1;
     }
+   
 /*/
     try{
         Parser config(argv[1]);
@@ -43,7 +46,9 @@ int main(int argc, char *argv[]) {
     }
 */
     try
-    {
+    {   
+        //Config config(argv[1]);
+        //WebServer webserv(config);
         WebServer webserv;
         webserv.setup(argv[1]);
         webserv.run();

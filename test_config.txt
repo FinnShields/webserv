@@ -2,8 +2,8 @@ server
 { #comment
 	group main
 	{
-		listen 5252;
-		listen 33;
+		listen 1111; 
+		newkey ABC;
 		keyword2 value0 ;
 		#comment value0 value1 ;
 		keyword3 value0 value1;
@@ -28,7 +28,7 @@ server # server 3
 	group main
 
 	{
-		listen 5242;
+		listen 2222;
 		keyword valuee;
 		keyword;
 	# commented something

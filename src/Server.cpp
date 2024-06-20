@@ -12,12 +12,17 @@
 
 #include "Server.hpp"
 
-Server::Server() {}
+Config Server::_config = Config();
+
+Server::Server(): _server_index(0) {}
 
 Server::~Server() {}
 
-Server::Server(const Server &copy) :_port(copy._port) {}
+Server::Server(const Server &copy) :_port(copy._port),  _server_index(copy._server_index) {}
 
+Server::Server(std::vector<t_server>& data, size_t &index) : _server_index(index){
+	_config = Config(data);
+}
 
 void Server::setup_socket()
 {
@@ -25,7 +30,7 @@ void Server::setup_socket()
 	if ((_server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
 		throw ("socket failed");
 	//Attaches the socket (optional?)
-	if (setsockopt(_server_fd, SOL_SOCKET, SO_REUSEADDR, &_opt, sizeof(_opt)))
+	if (setsockopt(_server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &_opt, sizeof(_opt)))
 		throw ("setsockopt");
 	//Binds the socket
 	_address.sin_family = AF_INET;

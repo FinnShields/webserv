@@ -256,13 +256,13 @@ std::string Parser::leftoverString(){
 }
 
 
-std::ostream& operator<<(std::ostream& os, t_vector_str& vs){
-    for (std::string& s : vs)
+std::ostream& operator<<(std::ostream& os, const t_vector_str& vs){
+    for (const std::string& s : vs)
         os << s << ", ";
     return os;
 }
 
-std::ostream& operator<<(std::ostream& os, t_group& l){
+std::ostream& operator<<(std::ostream& os, const  t_group& l){
 	for (auto& pair : l)
 		std::cout << "\t\t" 
             << pair.first << "=(" 
@@ -270,14 +270,14 @@ std::ostream& operator<<(std::ostream& os, t_group& l){
 	return os;
 }
 
-std::ostream& operator<<(std::ostream& os, t_server& l){
+std::ostream& operator<<(std::ostream& os, const  t_server& l){
 	for (auto& [key, value] : l)
 		std::cout << "\tsettings group:" << key << "\n"
             << value;
 	return os;
 }
 
-std::ostream& operator<<(std::ostream& os, std::vector<t_server>& file){
+std::ostream& operator<<(std::ostream& os, const  std::vector<t_server>& file){
     int i = -1;
 	for (auto& server : file)
 		std::cout << "server " << ++i << "\n"

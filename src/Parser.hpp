@@ -70,10 +70,10 @@ class Parser
 		std::vector<t_server> _data;
 };
 
-std::ostream& operator<<(std::ostream& os, t_vector_str& vs);
-std::ostream& operator<<(std::ostream& os, t_group& l);
-std::ostream& operator<<(std::ostream& os, t_server& l);
-std::ostream& operator<<(std::ostream& os, std::vector<t_server>& file);
+std::ostream& operator<<(std::ostream& os, const t_vector_str& vs);
+std::ostream& operator<<(std::ostream& os, const t_group& l);
+std::ostream& operator<<(std::ostream& os, const t_server& l);
+std::ostream& operator<<(std::ostream& os, const std::vector<t_server>& file);
 
 
 #endif
