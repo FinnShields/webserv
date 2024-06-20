@@ -16,7 +16,7 @@ Server::Server() {}
 
 Server::~Server() {}
 
-Server::Server(const Server &copy) :_port(copy._port) {}
+Server::Server(const Server &copy) :_port(copy._port), _ip(copy._ip), _name(copy._name) {}
 
 
 void Server::setup_socket()
@@ -25,11 +25,11 @@ void Server::setup_socket()
 	if ((_server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) 
 		throw ("socket failed");
 	//Attaches the socket (optional?)
-	if (setsockopt(_server_fd, SOL_SOCKET, SO_REUSEADDR, &_opt, sizeof(_opt))) 
+	if (setsockopt(_server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &_opt, sizeof(_opt))) 
 		throw ("setsockopt");
 	//Binds the socket
 	_address.sin_family = AF_INET;
-    _address.sin_addr.s_addr = INADDR_ANY;
+    _address.sin_addr.s_addr = _ip;
     _address.sin_port = htons(_port);
     if (bind(_server_fd, (struct sockaddr *)&_address, sizeof(_address)) < 0)
         throw ("bind failed");
@@ -83,22 +83,37 @@ Client *Server::get_client(int fd)
 	return (NULL);
 }
 
-int Server::get_port()
+int Server::get_port() const
 {
 	return _port;
 }
 
-int Server::get_fd()
+int Server::get_fd() const
 {
 	return _server_fd;
 }
 
-void Server::set_port(int port)
+std::string Server::get_name()
+{
+	return _name;
+}
+
+void Server::set_port(const int &port)
 {
 	_port = port;
 }
 
-void Server::set_fd(int fd)
+void Server::set_fd(const int &fd)
 {
 	_server_fd = fd;
+}
+
+void Server::set_ip(const int &ip)
+{
+	_ip = ip;
+}
+
+void Server::set_name(const std::string &name)
+{
+	_name = name;
 }

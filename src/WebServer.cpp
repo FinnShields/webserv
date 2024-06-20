@@ -35,7 +35,14 @@ void WebServer::parse_file(std::string filename)
     }
 	std::cout << "No cfg file, using default" << std::endl;
 	Server srv;
+	Server srv1;
 	srv.set_port(DEFAULT_PORT);
+	srv1.set_port(1111);
+	srv.set_ip(INADDR_ANY);
+	srv1.set_ip(inet_addr("127.0.0.2"));
+	srv.set_name("srv");
+	srv1.set_name("srv1");
+	_servers.push_back(srv1);
 	_servers.push_back(srv);
 }
 
