@@ -14,17 +14,23 @@
 
 
 Client::Client(int fd) : _fd(fd) {}
-Client::Client(const Client &copy) : _fd(copy._fd) {}
+Client::Client(const Client &copy) : _fd(copy._fd), fileName(copy.fileName) {}
 Client::~Client() {};
 Client &Client::operator=(const Client &assign)
 {
 	this->_fd = assign._fd;
+    this->fileName = assign.fileName;
 	return (*this);
 }
 
 int Client::get_socket_fd()
 {
     return (_fd);
+}
+
+std::string& Client::get_fileName()
+{
+    return (this->fileName);
 }
 
 void Client::saveFile(Request& request)
@@ -49,7 +55,19 @@ void Client::saveFile(Request& request)
     this->fileName = fileName;
 }
 
-void Client::handle_request(Server srv)
+//not yet working
+void Client::deleteFile()
+{
+    if (this->get_fileName().empty())
+    {
+        std::cout << "no file!!" << std::endl;
+        return ;
+    }
+    std::cout << "ret: " << std::remove(this->get_fileName().c_str()) << std::endl;
+    this->fileName.clear();
+}
+
+void Client::handle_request(Server& srv)
 {
 	Request request;
     request.read(_fd);
@@ -57,6 +75,10 @@ void Client::handle_request(Server srv)
     if (!request.get("method").compare("POST"))
     {
         this->saveFile(request);
+    }
+    if (!request.get("method").compare("DELETE"))
+    {
+        this->deleteFile();
     }
 	Response resp(_fd, request, srv);
 	resp.run();

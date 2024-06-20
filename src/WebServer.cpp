@@ -29,6 +29,7 @@ void WebServer::parse_file(std::string filename)
             if (line.find("port") != std::string::npos)
                 srv.set_port(std::stoi(line.substr(line.find("=") + 1)));
         }
+		srv.set_ip(INADDR_ANY);
 		_servers.push_back(srv);
         config_file.close();
 		return ; 
