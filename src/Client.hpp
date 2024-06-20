@@ -25,10 +25,13 @@
 
 class Server;
 
+class Request;
+
 class Client
 {
     private:
         int _fd;
+        std::string fileName;
 
         Client();
     public:
@@ -40,6 +43,7 @@ class Client
         void handle_request(Server srv);
         void close_connection(Server &srv);
         int get_socket_fd();
+        void saveFile(Request& request);
 };
 
 #endif

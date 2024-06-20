@@ -78,7 +78,7 @@ void	Request::extractHeaders(std::string& input)
 	{
 		len = 0;
 		while (input.at(i + len) != ':')
-			if (i + (++len) == input.size() || input.at(i) == '\n')
+			if (i + (++len) == input.size() || input.at(i + len) == '\n')
 				return ;
 		first = input.substr(i, len);
 		i += len + 2;
@@ -145,7 +145,7 @@ void	Request::parse(char *buffer)
 	this->extractBody(input);
 }
 
-const std::string	Request::get(std::string toGet)
+const std::string&	Request::get(std::string toGet)
 {
 	if (!toGet.compare("method"))
 		return (this->method);
@@ -156,7 +156,7 @@ const std::string	Request::get(std::string toGet)
 	if (!toGet.compare("body"))
 		return (this->body);
 	if (!this->headers.count(toGet))
-		return ("");
+		return (this->method);
 	return (this->headers[toGet]);
 }
 
