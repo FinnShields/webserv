@@ -10,5 +10,15 @@
       <input id="fileInput" name="fileInput" type="file" accept=".txt" placeholder="Upload a .txt file"/>
       <button id="uploadButton">Upload</button>
     </form>
+    <div>
+      <form method="post">
+        <input type="hidden" name="_method" value="delete">
+        <button id="deleteButton">Delete</button>
+      </form>
+      <script>
+        document.getElementById("deleteButton").addEventListener("click", function() {
+        })
+      </script>
+    </div>
   </body>
 </html>

@@ -21,6 +21,10 @@ Request::~Request()
 Request& Request::operator=(const Request& r)
 {
 	this->headers = r.headers;
+	this->method = r.method;
+	this->body = r.body;
+	this->version = r.version;
+	this->target = r.target;
 	return (*this);
 }
 
