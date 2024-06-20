@@ -33,6 +33,7 @@ std::string Response::get()
 	std::string dir = _req.get("target");
 	
 	std::string response = "HTTP/1.1 200 OK\nContent-Type: text/plain\n\nYour request: " + method + " " + dir;
+	response.append(" srv: " + _srv.get_name());
 	if (dir == "/")
 		response = load_index();
 	return (response);

@@ -36,8 +36,8 @@ class WebServer
 		bool fd_is_server(int fd);
 		void fd_is_client(int fd);
 		
-		WebServer(WebServer &copy);
-		WebServer &operator=(WebServer &assignment);
+		WebServer(const WebServer &copy);
+		WebServer &operator=(const WebServer &assignment);
 	public:
 		WebServer();
 		~WebServer();
