@@ -5,30 +5,10 @@
   </head>
   <body onload="init()">
     <p>Welcome to FAB WebServer.</p>
-    <!-- <form action="/" method="post" >
-      <label for="Name">Name:</label>
-      <input type="text" id="Name" name="Name" placeholder="Type name here..">
-      <button type="submit">Submit</button>
-    </form> -->
-
     <form method="post" enctype="multipart/form-data">
-      <label for="fileInput">File</label>
-      <input id="fileInput" name="fileInput" type="file" />
+      <label for="fileInput">Upload a .txt file!</label>
+      <input id="fileInput" name="fileInput" type="file" accept=".txt" placeholder="Upload a .txt file"/>
       <button id="uploadButton">Upload</button>
     </form>
-
-    <!-- <input type="file" id="fileInput">
-    <div id="fileInfo"></div>
-    <script>
-      document.getElementById('fileInput').addEventListener('change', function(event) {
-        var file = event.target.files[0]
-        var fileInfo = `
-        <p>File Name: ${file.name}</p>
-        <p>File Size: ${file.size} bytes</p>
-        <p>File Type: ${file.type}</p>
-        `;
-        document.getElementById('fileInfo').innerHTML = fileInfo;
-      });
-    </script> -->
   </body>
 </html>
