@@ -17,8 +17,9 @@ int main(int argc, char *argv[]){
         return 1;
     }
     try{
-        Config config(argv[1]);
-        std::vector<t_server>& data = config.parseFile();
+        Parser pars(argv[1]);
+        Config conf(pars.get(),0);
+        std::vector<t_server>& data = conf.get();
         std::cout
             << "----- DATA ------------\n"
             << data

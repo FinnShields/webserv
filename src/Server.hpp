@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:10 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/06/14 12:22:12 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/06/21 11:13:11 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,17 +26,15 @@
 #include "Parser.hpp"
 #include "Config.hpp"
 
-typedef std::map<std::string, std::string> config;
+//typedef std::map<std::string, std::string> config;
 
 class Client; 
 
 class Server 
 {
     private:
-        
-        
         std::vector<Client> _clients;
-        std::map<std::string, config> _locations;
+  //      std::map<std::string, config> _locations;
 		
         struct sockaddr_in _address;
 		int _opt = 1;
@@ -47,12 +45,11 @@ class Server
         void setup_socket();
 		void start_listen();
         
+        Server();
         Server &operator=(const Server &copy);
     public:
-        Server();
         Server (const Server &copy);
-        Server(std::vector<t_server>&, size_t&);
-        //Server (const Config&);
+        Server(std::vector<t_server>&, size_t);
         ~Server();
   
         void start(std::vector<pollfd> &_fds);
@@ -63,8 +60,9 @@ class Server
         int get_fd();
         void set_port(int port);
         void set_fd(int fd);
-        static Config _config;
-        const size_t _server_index;
+
+        const size_t index;
+        const Config config;
 };
 
 #endif

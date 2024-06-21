@@ -2,7 +2,8 @@ server
 { #comment
 	group main
 	{
-		listen 1111; 
+		listen 1111
+				3 5 6;
 		newkey ABC;
 		keyword2 value0 ;
 		#comment value0 value1 ;

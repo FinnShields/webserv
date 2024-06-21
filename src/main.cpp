@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   main.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:39 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/06/14 12:21:41 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/06/21 10:06:02 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,36 +21,18 @@ int main(int argc, char *argv[]) {
         std::cerr << "Usage: ./webserv [configuration file]" << std::endl;
         return 1;
     }
-   
-/*/
-    try{
-        Parser config(argv[1]);
-        std::vector<t_server>& data = config.parseFile();
-        std::cout
-            << "----- DATA ------------\n"
-            << data
-            << "----- END of DATA -----\n";
-        std::cout << "value=value [server=0, name2, key] = ("
-            << data[0]["name2"]["key"]<< ")\n";
-        std::cout << "value=none, [0, name2, keynoval] =("
-            << data[0]["name2"]["keynoval"] << ")\n";
-        std::cout << "value for noexistkey, [0, name2, noexistkey] =("
-            << data[0]["name2"]["noexistkey"] << ")\n";
-    }
-    catch (const std::ios_base::failure& e) {
-        std::cerr << e.what() << std::endl;
-    }
-    catch (const std::runtime_error& e){
-         std::cerr << e.what() << "\n";
-         return 1;
-    }
-*/
     try
-    {   
+    {
+        Parser data(argv[1]);
+        std::cout
+		<< "----- EXTRACTED DATA ------------\n"
+		<< data.get()
+		<< "----- END of DATA ---------------\n";
+        
         //Config config(argv[1]);
         //WebServer webserv(config);
-        WebServer webserv;
-        webserv.setup(argv[1]);
+        WebServer webserv(data.get());
+        webserv.setup();
         webserv.run();
     }
     catch (const std::ios_base::failure& e) {

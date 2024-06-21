@@ -3,26 +3,29 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:06 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/06/14 17:25:24 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/06/21 10:02:40 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
 
-Config Server::_config = Config();
+//Config Server::_config = Config();
 
-Server::Server(): _server_index(0) {}
+//Server::Server(): index(0) {}
 
 Server::~Server() {}
 
-Server::Server(const Server &copy) :_port(copy._port),  _server_index(copy._server_index) {}
+Server::Server(const Server &copy):
+	_port(copy._port),
+	index(copy.index),
+	config(copy.config){}
 
-Server::Server(std::vector<t_server>& data, size_t &index) : _server_index(index){
-	_config = Config(data);
-}
+Server::Server(std::vector<t_server>& data, size_t ind): 
+	index(ind),
+	config(Config(data, ind)){}
 
 void Server::setup_socket()
 {

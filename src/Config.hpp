@@ -10,19 +10,32 @@
 class Config
 {
 	public:
-		Config();
 		~Config();
-		Config(Config &);
-		Config(std::vector<t_server>);
+		Config(const Config&);
+		Config(std::vector<t_server>& data, size_t index);
 		Config& operator=(const Config);
-		size_t	size();
-		std::vector<t_server> get();
-		t_server get(size_t server);
-		t_group get(size_t server, std::string group);
-		t_vector_str get(size_t server, std::string group, std::string key);
-		std::string get(size_t server, std::string group, std::string key, size_t num);
+		size_t	size() const;
+		
+		std::vector<t_server>& getAll() const;
+		t_server getAll(size_t server) const;
+		t_group getAll(size_t server, std::string group) const;
+		t_vector_str getAll(size_t server, std::string group,
+			std::string key) const;
+		std::string getAll(size_t server, std::string group, std::string key, 
+			size_t num) const;
+		
+		t_server get() const;
+		t_group get(std::string group) const;
+		t_vector_str get(std::string group, std::string key) const;
+		std::string get(std::string group, std::string key, size_t num) const;
+
+		std::vector<int> getInt(std::string group, std::string key) const;
+		int getInt(std::string group, std::string key, size_t num) const;
+
+		const size_t index;
 	private:
-		std::vector<t_server> _data;
+		Config();
+		std::vector<t_server>& _data;
 };
 
 #endif

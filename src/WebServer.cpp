@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   WebServer.cpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/06/14 12:22:17 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/06/21 11:28:33 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,9 +14,11 @@
 #include "Config.hpp"
 #include "WebServer.hpp"
 
-WebServer::WebServer() {}
+//WebServer::WebServer() {}
 
 WebServer::~WebServer() {}
+
+WebServer::WebServer(std::vector<t_server>& data):config(Config(data, 0)) {}
 
 /*
 void WebServer::parse_file(std::string filename)
@@ -43,6 +45,7 @@ void WebServer::parse_file(std::string filename)
 }
 */
 
+/*
 void WebServer::parse_file(std::string filename)
 {
 	Parser data(filename);
@@ -57,7 +60,7 @@ void WebServer::parse_file(std::string filename)
 	std::cout << "Number of servers: " << data.size() << "\n";
 	for (size_t i = 0; i < data.size(); ++i) {
 		Server srv(data.get(), i);
-		std::cout << srv._config.get(0, "main", "newkey", 0) 
+		std::cout << srv.config.get(0, "main", "newkey", 0) 
 			<< "\n my index=" << srv._server_index <<  "\n";
 		std::string port_str = data.get(i, "main", "listen", 0);
 		if (port_str.empty())
@@ -68,14 +71,36 @@ void WebServer::parse_file(std::string filename)
 		std::cout << "Server " << i << " is initialized with port " << srv.get_port() << "\n";
 	}
 }
+*/
+
+void WebServer::setServers()
+{
+	std::cout << "Number of servers: " << config.size() << "\n";
+	for (size_t i = 0; i < config.size(); ++i) {
+		Server srv(config.getAll(), i);
+		std::cout << "example newkey= " 
+			<< srv.config.getAll(0, "main", "newkey", 0)
+			<< "\n my index=" << srv.index
+			<< "\n config index=" << srv.config.index <<  "\n";
+		std::string port_str = srv.config.get("main", "listen", 0);
+		if (port_str.empty())
+			srv.set_port(DEFAULT_PORT);
+		else
+			srv.set_port(std::stoi(port_str));
+		_servers.push_back(srv);
+		std::cout << "Server " << i << " is initialized with port " << srv.get_port() << "\n";
+	}
+}
 
 
-void WebServer::setup(std::string filename)
+//void WebServer::setup(std::string filename)
+void WebServer::setup()
 {
 	try
 	{
 		int i = -1;
-		parse_file(filename);
+		//parse_file(filename);
+		setServers();
 		for (Server &srv : _servers){
 			std::cout << "Starting server " << ++i << " with port " << srv.get_port() << "\n"; 
 			srv.start(_fds);
