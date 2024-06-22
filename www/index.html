@@ -3,7 +3,23 @@
   <head>
     <title>FAB WebServer</title>
   </head>
-  <body>
+  <body onload="init()">
     <p>Welcome to FAB WebServer.</p>
+    <form method="post" enctype="multipart/form-data">
+      <label for="fileInput">Upload a .txt file!</label>
+      <input id="fileInput" name="fileInput" type="file" accept=".txt" placeholder="Upload a .txt file"/>
+      <button id="uploadButton">Upload</button>
+    </form>
+    <div>
+      <button id="deleteButton">Delete</button>
+      </form>
+      <script>
+        document.getElementById("deleteButton").addEventListener("click", function() {
+          var delReq = new XMLHttpRequest();
+          delReq.open("DELETE", "/", false);
+          delReq.send(null);
+        })
+      </script>
+    </div>
   </body>
 </html>

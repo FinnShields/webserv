@@ -118,7 +118,7 @@ t_vector_str Config::getList(std::string group, std::string key, std::string def
 }
 
 std::vector<int> Config::getList(std::string group, std::string key, int default_value) const {
-	std::vector<int> ret = getInt(std::string group, std::string key);
+	std::vector<int> ret = getInt(group, key);
 	if (0 == ret.size()){
 		ret.push_back(default_value);
 	}

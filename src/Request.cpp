@@ -6,7 +6,7 @@
 /*   By: fshields <fshields@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/06/13 12:44:24 by fshields         ###   ########.fr       */
+/*   Updated: 2024/06/18 11:07:03 by fshields         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,10 @@ Request::~Request()
 Request& Request::operator=(const Request& r)
 {
 	this->headers = r.headers;
+	this->method = r.method;
+	this->body = r.body;
+	this->version = r.version;
+	this->target = r.target;
 	return (*this);
 }
 
@@ -78,7 +82,7 @@ void	Request::extractHeaders(std::string& input)
 	{
 		len = 0;
 		while (input.at(i + len) != ':')
-			if (i + (++len) == input.size() || input.at(i) == '\n')
+			if (i + (++len) == input.size() || input.at(i + len) == '\n')
 				return ;
 		first = input.substr(i, len);
 		i += len + 2;
@@ -91,6 +95,30 @@ void	Request::extractHeaders(std::string& input)
 	}
 }
 
+void	Request::handleChunks(std::string& input, size_t i)
+{
+	size_t contentLength = 0;
+	size_t chunkLength = atoi(input.c_str() + i);
+	std::string content;
+	std::string::iterator it;
+
+	it = input.begin();
+	it += i;
+	while (chunkLength != 0)
+	{
+		contentLength += chunkLength;
+		while (isdigit(*it) || *it == '\r' || *it == '\n')
+			it ++;
+		while (*it != '\r' && *it != '\n')
+			content.append(1, *(it++));
+		while (!isdigit(*it))
+			it ++;
+		chunkLength = atoi(input.c_str() + std::distance(input.begin(), it));
+	}
+	this->headers["Content-Length"] = std::to_string(contentLength);
+	this->body = content;
+}
+
 void	Request::extractBody(std::string& input)
 {
 	size_t	i;
@@ -100,8 +128,12 @@ void	Request::extractBody(std::string& input)
 	i = input.find("\r\n\r\n");
 	if (i == std::string::npos)
 		return ;
-	len = atoi(this->get("Content-Length").c_str());
 	i += 4;
+	if (!this->get("Transfer-Encoding").compare("chunked"))
+		return (this->handleChunks(input, i));
+	len = atoi(this->get("Content-Length").c_str());
+	if (!len)
+		len = atoi(this->get("content-length").c_str());
 	for (size_t j = 0; j < len; j++)
 		this->body.append(1, input[i++]);
 }
@@ -117,7 +149,7 @@ void	Request::parse(char *buffer)
 	this->extractBody(input);
 }
 
-const std::string	Request::get(std::string toGet)
+const std::string&	Request::get(std::string toGet)
 {
 	if (!toGet.compare("method"))
 		return (this->method);
@@ -125,8 +157,10 @@ const std::string	Request::get(std::string toGet)
 		return (this->target);
 	if (!toGet.compare("version"))
 		return (this->version);
+	if (!toGet.compare("body"))
+		return (this->body);
 	if (!this->headers.count(toGet))
-		return ("");
+		return (this->method);
 	return (this->headers[toGet]);
 }
 
@@ -140,6 +174,8 @@ void	Request::display()
 	std::cout << "HTTP-version: " << this->version << std::endl;
 	for(it = this->headers.begin(); it != this->headers.end(); it++)
 		std::cout << it->first << ": " << it->second << std::endl;
+	if (!this->body.empty())
+		std::cout << "Body: " << this->body << std::endl;
 	std::cout << "---------------------" << std::endl;
 	std::cout << std::endl;
 }

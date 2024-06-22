@@ -25,10 +25,13 @@
 
 class Server;
 
+class Request;
+
 class Client
 {
     private:
         int _fd;
+        std::string fileName;
 
         Client();
     public:
@@ -37,9 +40,12 @@ class Client
         Client &operator=(const Client &assign);
         ~Client();
         
-        void handle_request(Server srv);
+        void handle_request(Server& srv);
         void close_connection(Server &srv);
         int get_socket_fd();
+        std::string& get_fileName();
+        void saveFile(Request& request);
+        void deleteFile();
 };
 
 #endif

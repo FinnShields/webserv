@@ -2,12 +2,15 @@ server
 { #comment
 	group main
 	{
-		listen 1111
-				3 5 6;
-		newkey ABC;
-		keyword2 value0 ;
-		#comment value0 value1 ;
-		keyword3 value0 value1;
+		name					localhost;
+		listen					4242;
+		host					127.0.0.1;
+		# the following in this group is not used yet
+		limit_except			GET POST;
+		server_name 			first;
+		client_max_body_size	30000000;
+		index					index.html;
+		root					webpage;
 	}	
 	group /dir1
 	{
@@ -15,11 +18,6 @@ server
 		#keyword22 value0 value1 ;
 		key	value ; #comment
 		keynoval	; # novalue
-	}
-	group /dir2
-	{
-		keyword31 value0 value1};
-		#keyword value0 value1};
 	}
 }
 

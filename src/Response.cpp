@@ -33,6 +33,7 @@ std::string Response::get()
 	std::string dir = _req.get("target");
 	
 	std::string response = "HTTP/1.1 200 OK\nContent-Type: text/plain\n\nYour request: " + method + " " + dir;
+	response.append(" srv: " + _srv.get_name());
 	if (dir == "/")
 		response = load_index();
 	return (response);
@@ -40,10 +41,9 @@ std::string Response::get()
 
 std::string Response::post()
 {
-	std::cout << "POST method is not supported" << std::endl;
-	std::string response = "HTTP/1.1 405 Method Not Allowed\nContent-Type: text/plain\n\nError: POST method is not supported";
-
-	return (response);
+	std::string body = _req.get("body");
+	
+	return (load_index());
 }
 
 std::string Response::load_index()

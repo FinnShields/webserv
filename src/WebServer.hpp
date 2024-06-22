@@ -6,7 +6,7 @@
 /*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:19 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/06/22 06:37:00 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/06/22 10:59:16 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,8 +40,8 @@ class WebServer
 		void fd_is_client(int fd);
 		
 		WebServer();
-		WebServer(WebServer &copy);
-		WebServer &operator=(WebServer &assignment);
+		WebServer(const WebServer &copy);
+		WebServer &operator=(const WebServer &assignment);
 	public:
 		~WebServer();
 		WebServer(std::vector<t_server>&);

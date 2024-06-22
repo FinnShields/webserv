@@ -6,7 +6,7 @@
 /*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/06/22 06:36:18 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/06/22 11:10:12 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,6 +34,7 @@ void WebServer::parse_file(std::string filename)
             if (line.find("port") != std::string::npos)
                 srv.set_port(std::stoi(line.substr(line.find("=") + 1)));
         }
+		srv.set_ip(INADDR_ANY);
 		_servers.push_back(srv);
         config_file.close();
 		return ; 
@@ -41,7 +42,16 @@ void WebServer::parse_file(std::string filename)
 	std::cout << "No cfg file, using default" << std::endl;
 	Server srv;
 	srv.set_port(DEFAULT_PORT);
+	srv.set_ip(INADDR_ANY);
+	srv.set_name("srv");
 	_servers.push_back(srv);
+
+	Server srv1;
+	srv1.set_port(1111);
+	srv1.set_ip(inet_addr("127.0.0.2"));
+	srv1.set_name("srv1");
+	_servers.push_back(srv1);
+
 }
 */
 
@@ -82,11 +92,6 @@ void WebServer::setServers()
 			<< srv.config.getAll(0, "main", "newkey", 0)
 			<< "\n my index=" << srv.index
 			<< "\n config index=" << srv.config.index <<  "\n";
-		//std::string port_str = srv.config.get("main", "listen", 0);
-		//if (port_str.empty())
-		//	srv.set_port(DEFAULT_PORT);
-		//else
-		//	srv.set_port(std::stoi(port_str));
 		int port_val = srv.config.getFirst("main", "listen", 4242);
 		srv.set_port(port_val);
 		_servers.push_back(srv);
