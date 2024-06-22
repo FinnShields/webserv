@@ -6,7 +6,7 @@
 /*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:06 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/06/22 11:03:12 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/06/22 12:51:31 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,10 @@ Server::Server(const Server &copy):
 
 Server::Server(std::vector<t_server>& data, size_t ind): 
 	index(ind),
-	config(Config(data, ind)){}
+	config(Config(data, ind))
+{
+	set_all_config();
+}
 
 void Server::setup_socket()
 {
@@ -124,4 +127,11 @@ void Server::set_ip(const int &ip)
 void Server::set_name(const std::string &name)
 {
 	_name = name;
+}
+
+//"0.0.0.0" is string for INADDR_ANY
+void Server::set_all_config(){
+	_port = config.getFirst("main", "listen", DEFAULT_PORT);
+	_ip = inet_addr(config.getFirst("main", "host", "0.0.0.0").c_str());
+	_name = config.getFirst("main", "server_name", "srv-" + std::to_string(index));
 }

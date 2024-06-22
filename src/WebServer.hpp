@@ -6,7 +6,7 @@
 /*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:19 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/06/22 10:59:16 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/06/22 12:33:17 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@
 #include <iostream> //std::cout
 #include <fstream> //Parse file
 #include <sstream> 
+#include <string> 
 
 #include <unistd.h> // For close
 #include <vector>
@@ -26,7 +27,6 @@
 #include "Parser.hpp"
 #include "Config.hpp"
 
-#define DEFAULT_PORT 8080
 
 class WebServer
 {
