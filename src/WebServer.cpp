@@ -6,7 +6,7 @@
 /*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/06/21 11:28:33 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/06/22 06:36:18 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -82,11 +82,13 @@ void WebServer::setServers()
 			<< srv.config.getAll(0, "main", "newkey", 0)
 			<< "\n my index=" << srv.index
 			<< "\n config index=" << srv.config.index <<  "\n";
-		std::string port_str = srv.config.get("main", "listen", 0);
-		if (port_str.empty())
-			srv.set_port(DEFAULT_PORT);
-		else
-			srv.set_port(std::stoi(port_str));
+		//std::string port_str = srv.config.get("main", "listen", 0);
+		//if (port_str.empty())
+		//	srv.set_port(DEFAULT_PORT);
+		//else
+		//	srv.set_port(std::stoi(port_str));
+		int port_val = srv.config.getFirst("main", "listen", 4242);
+		srv.set_port(port_val);
 		_servers.push_back(srv);
 		std::cout << "Server " << i << " is initialized with port " << srv.get_port() << "\n";
 	}

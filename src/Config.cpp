@@ -67,17 +67,16 @@ t_group Config::get(std::string group) const {
 }
 
 t_vector_str Config::get(std::string group, std::string key) const {
-	return get(group)[key];
+	return get()[group][key];
 }
 
 std::string Config::get(std::string group, std::string key, size_t num) const {
-	t_vector_str vec = get(group, key);
+	t_vector_str vec = get()[group][key];
 	std::string str;
 	if (num < vec.size())
 		str = vec[num];
 	return str;
 }
-
 
 std::vector<int> Config::getInt(std::string group, std::string key) const {
 	t_vector_str vec = get(group)[key];
@@ -93,5 +92,35 @@ int Config::getInt(std::string group, std::string key, size_t num) const {
 	int ret = 0;
 	if (num < vec.size())
 		ret = vec[num];
+	return ret;
+}
+
+std::string Config::getFirst(std::string group, std::string key, std::string default_value) const {
+	t_vector_str vec = get()[group][key];
+	if (0 >= vec.size())
+		return default_value;
+	return vec[0];
+}
+
+int Config::getFirst(std::string group, std::string key, int default_value) const {
+	std::vector<int> vec = getInt(group, key);
+	if (0 < vec.size())
+		return vec[0];
+	return default_value;
+}
+
+t_vector_str Config::getList(std::string group, std::string key, std::string default_value) const {
+	t_vector_str vec = get()[group][key];
+	if (0 < vec.size())
+		return vec;
+	vec.push_back(default_value);
+	return vec;
+}
+
+std::vector<int> Config::getList(std::string group, std::string key, int default_value) const {
+	std::vector<int> ret = getInt(std::string group, std::string key);
+	if (0 == ret.size()){
+		ret.push_back(default_value);
+	}
 	return ret;
 }

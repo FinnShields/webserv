@@ -10,6 +10,8 @@
 class Config
 {
 	public:
+		const size_t index;
+
 		~Config();
 		Config(const Config&);
 		Config(std::vector<t_server>& data, size_t index);
@@ -32,7 +34,11 @@ class Config
 		std::vector<int> getInt(std::string group, std::string key) const;
 		int getInt(std::string group, std::string key, size_t num) const;
 
-		const size_t index;
+		std::string getFirst(std::string group, std::string key, std::string default_value) const;
+		int getFirst(std::string group, std::string key, int default_value) const;
+
+		t_vector_str getList(std::string group, std::string key, std::string default_value) const;
+		std::vector<int> getList(std::string group, std::string key, int default_value) const;
 	private:
 		Config();
 		std::vector<t_server>& _data;
