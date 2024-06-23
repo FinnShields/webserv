@@ -6,7 +6,7 @@
 /*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/06/22 12:49:21 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/06/23 15:10:23 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,14 +22,13 @@ void WebServer::setup()
 {
 	try
 	{
-		int i = -1;
 		std::cout << "Number of servers: " << config.size() << "\n";
 		for (size_t i = 0; i < config.size(); ++i) {
 			_servers.emplace_back(config.getAll(), i);
 			std::cout << "Server " << i << " is initialized with port " << _servers[i].get_port() << "\n";
 		}
 		for (Server &srv : _servers){
-			std::cout << "Starting server " << ++i << " with port " << srv.get_port() << "\n"; 
+			std::cout << "Starting server " << srv.index << " with port " << srv.get_port() << "\n";
 			srv.start(_fds);
 		}
 	}
