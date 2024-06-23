@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:10 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/06/14 12:22:12 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/06/22 12:33:16 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,8 +23,11 @@
 #include <poll.h>
 #include <arpa/inet.h>
 
+#include "Client.hpp"
+#include "Parser.hpp"
+#include "Config.hpp"
 
-typedef std::map<std::string, std::string> config;
+#define DEFAULT_PORT 8080
 
 class Client; 
 
@@ -32,7 +35,6 @@ class Server
 {
     private:
         std::vector<Client> _clients;
-        std::map<std::string, config> _locations;
 		
         struct sockaddr_in _address;
 		int _opt = 1;
@@ -45,10 +47,11 @@ class Server
         void setup_socket();
 		void start_listen();
         
+        Server();
         Server &operator=(const Server &copy);
     public:
-        Server();
         Server (const Server &copy);
+        Server(std::vector<t_server>&, size_t);
         ~Server();
   
         void start(std::vector<pollfd> &_fds);
@@ -62,9 +65,10 @@ class Server
         void set_fd(const int &fd);
         void set_ip(const int &ip);
         void set_name(const std::string &);
+        void set_all_config ();
 
+        const size_t index;
+        const Config config;
 };
-
-#include "Client.hpp"
 
 #endif

@@ -3,58 +3,35 @@
 /*                                                        :::      ::::::::   */
 /*   WebServer.cpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/06/14 12:22:17 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/06/22 12:49:21 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
+#include "Parser.hpp"
+#include "Config.hpp"
 #include "WebServer.hpp"
-
-WebServer::WebServer() {}
 
 WebServer::~WebServer() {}
 
-void WebServer::parse_file(std::string filename)
-{
-    std::ifstream config_file(filename);
-    std::string line;
-    if (config_file.is_open())
-	{
-		Server srv;
-		std::cout << "Reading file" << std::endl;
-        while (getline(config_file, line))
-		{
-            if (line.find("port") != std::string::npos)
-                srv.set_port(std::stoi(line.substr(line.find("=") + 1)));
-        }
-		srv.set_ip(INADDR_ANY);
-		_servers.push_back(srv);
-        config_file.close();
-		return ; 
-    }
-	std::cout << "No cfg file, using default" << std::endl;
-	Server srv;
-	Server srv1;
-	srv.set_port(DEFAULT_PORT);
-	srv1.set_port(1111);
-	srv.set_ip(INADDR_ANY);
-	srv1.set_ip(inet_addr("127.0.0.2"));
-	srv.set_name("srv");
-	srv1.set_name("srv1");
-	_servers.push_back(srv1);
-	_servers.push_back(srv);
-}
+WebServer::WebServer(std::vector<t_server>& data):config(Config(data, 0)) {}
 
-
-void WebServer::setup(std::string filename)
+void WebServer::setup()
 {
 	try
 	{
-		parse_file(filename);
-		for (Server &srv : _servers)
+		int i = -1;
+		std::cout << "Number of servers: " << config.size() << "\n";
+		for (size_t i = 0; i < config.size(); ++i) {
+			_servers.emplace_back(config.getAll(), i);
+			std::cout << "Server " << i << " is initialized with port " << _servers[i].get_port() << "\n";
+		}
+		for (Server &srv : _servers){
+			std::cout << "Starting server " << ++i << " with port " << srv.get_port() << "\n"; 
 			srv.start(_fds);
+		}
 	}
 	catch(char const *e)
 	{

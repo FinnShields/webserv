@@ -3,26 +3,37 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:06 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/06/14 17:25:24 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/06/22 12:51:31 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
 
-Server::Server() {}
+//Config Server::_config = Config();
+
+//Server::Server(): index(0) {}
 
 Server::~Server() {}
 
-Server::Server(const Server &copy) :_port(copy._port), _ip(copy._ip), _name(copy._name) {}
+Server::Server(const Server &copy):
+	_port(copy._port), _ip(copy._ip), _name(copy._name),
+	index(copy.index),
+	config(copy.config){}
 
+Server::Server(std::vector<t_server>& data, size_t ind): 
+	index(ind),
+	config(Config(data, ind))
+{
+	set_all_config();
+}
 
 void Server::setup_socket()
 {
 	//Creates the socket
-	if ((_server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) 
+	if ((_server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
 		throw ("socket failed");
 	//Attaches the socket (optional?)
 	if (setsockopt(_server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &_opt, sizeof(_opt))) 
@@ -116,4 +127,11 @@ void Server::set_ip(const int &ip)
 void Server::set_name(const std::string &name)
 {
 	_name = name;
+}
+
+//"0.0.0.0" is string for INADDR_ANY
+void Server::set_all_config(){
+	_port = config.getFirst("main", "listen", DEFAULT_PORT);
+	_ip = inet_addr(config.getFirst("main", "host", "0.0.0.0").c_str());
+	_name = config.getFirst("main", "server_name", "srv-" + std::to_string(index));
 }
