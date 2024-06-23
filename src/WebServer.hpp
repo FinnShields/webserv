@@ -6,7 +6,7 @@
 /*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:19 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/06/22 12:33:17 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/06/23 15:32:45 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,7 +50,7 @@ class WebServer
 		void setup();
 		void run();
 		
-		Config config;
+		const Config config;
 };
 
 #endif
