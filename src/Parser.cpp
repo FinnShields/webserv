@@ -1,12 +1,5 @@
 #include "Parser.hpp"	
 
-/*
-enum class Parser::tok {
-	server, group, word, 
-	semicol, //newline,   comment,
-	open, close, eof};
-*/
-
 Parser::Parser(){}
 
 Parser::~Parser(){}
@@ -46,14 +39,12 @@ std::string Parser::readFile(std::string filename) const{
 }
 
 Parser::tok Parser::peek(){
-	size_t i;
-	for (i = _position; i < _size && isspace(_filecontent.at(i));){
-		++i;
-	}
-	_position = i;
+	while (_position < _size && isspace(_filecontent.at(_position)))
+		++_position;
 	if (_position >= _size)
 		return tok::eof;
-	switch (_filecontent.at(_position)){
+	switch (_filecontent.at(_position))
+	{
 		case '#':
 			if (_filecontent.find('\n',_position) == std::string::npos)
 				return tok::eof;
@@ -82,41 +73,16 @@ Parser::tok Parser::peek(){
 Parser::tok Parser::getToken(){
 	_token = peek();
 	_tok_begin = _position;
-	_tok_end = _position;
-	switch (_token){
-		case tok::server:
-			_position += 6;
-			_tok_end = _position;
-			break;
-		case tok::group:
-			_position += 5;
-			_tok_end = _position;
-			break;
-		case tok::word:
-			while (_tok_end < _size && 
-					!std::isspace(_filecontent.at(_tok_end)) &&
-					_filecontent.at(_tok_end) != ';'){
+	_tok_end = _position +
+		(_token == tok::server ? 6 :
+		_token == tok::group ? 5 :
+		_token == tok::semicol ? 1 :
+		_token == tok::open ? 1 :
+		_token == tok::close ? 1 : 0);
+	if (_token == tok::word)
+		while (_tok_end < _size && !std::isspace(_filecontent.at(_tok_end)) && _filecontent.at(_tok_end) != ';')
      			++_tok_end;
-    		}
-			_position = _tok_end;
-			break;
-		case tok::semicol:
-			_position ++;
-			_tok_end = _position;
-			break;
-		case tok::open:
-			_position ++;
-			_tok_end = _position;
-			break;
-		case tok::close:
-			_position++;
-			_tok_end = _position;
-			break;
-		case tok::eof:
-			break;
-		default:
-			break;
-	}
+	_position = _tok_end;
 	return _token;
 }
 
@@ -127,12 +93,11 @@ bool Parser::isAnyWord(tok token){
 }
 
 std::string Parser::parseWord(){
-	if (isAnyWord(peek()) == 0){
+	if (isAnyWord(getToken()) == 0){
 		throw std::runtime_error(
 			"Syntax error: expected word, but got: "
 			+ leftoverString());
 	}
-	getToken();
 	size_t len = _tok_end - _tok_begin;
 	return _filecontent.substr(_tok_begin, len);
 }
@@ -142,9 +107,7 @@ t_vector_str	Parser::parseWordList(){
 	while (isAnyWord(peek())){
 		value_list.push_back(parseWord());
 	}
-	if (peek() == tok::semicol)
-		getToken();
-	else
+	if (getToken() != tok::semicol)
 		throw std::runtime_error(
 			"Syntax error: expected semicolumn, but got: "
 			+ leftoverString());
@@ -152,11 +115,10 @@ t_vector_str	Parser::parseWordList(){
 }
 
 t_group Parser::parseGroupSetting(){
-	if (peek() != tok::open)
+	if (getToken() != tok::open)
 		throw std::runtime_error(
 			"Syntax error: expected {, but got: "
 			+ leftoverString());
-	getToken();
 	t_group group;
 	std::string keyword; // = parseWord();
 	t_vector_str value_list;
@@ -165,25 +127,22 @@ t_group Parser::parseGroupSetting(){
 		value_list = parseWordList();
 		group[keyword] = value_list;
 	}
-	if (peek() != tok::close)
+	if (getToken() != tok::close)
 		throw std::runtime_error(
 			"Syntax error: expected } or group, but got: "
 			+ leftoverString());
-	getToken();
 	return group;
 	}
 
 t_server Parser::parseServer(){
-	if (peek() != tok::server)
+	if (getToken() != tok::server)
 		throw std::runtime_error(
 			"Syntax error: expected keyword server, but got: "
 			+ leftoverString());
-	getToken();
-	if (peek() != tok::open)
+	if (getToken() != tok::open)
 		throw std::runtime_error(
 			"Syntax error: expected {, but got: "
 			+ leftoverString());
-	getToken();
 	_token = peek();
 	if (!(_token == tok::group || _token == tok::close))
 		throw std::runtime_error(
@@ -207,9 +166,8 @@ t_server Parser::parseServer(){
 }
 
 std::vector<t_server>& Parser::parseFile(){
-	while (peek() == tok::server){
+	while (peek() == tok::server)
 		_data.push_back(parseServer());
-	}
 	if (peek() != tok::eof)
 		throw std::runtime_error(
 			"Syntax error: expected server or EOF, but got: "
