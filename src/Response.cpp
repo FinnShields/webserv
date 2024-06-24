@@ -21,6 +21,7 @@ void Response::run()
     
 	std::string response = (method == "GET") ? get()
 		: (method == "POST") ? post()
+		: (method == "DELETE") ? deleteResp()
 		: "HTTP/1.1 501 Not Implemented\nContent-Type: text/plain\n\nError: Method not recognized or not implemented";
 	
 	if (send(_fd, response.c_str(), response.size(), 0) < 0)
@@ -41,9 +42,12 @@ std::string Response::get()
 
 std::string Response::post()
 {
-	std::string body = _req.get("body");
-	
-	return (load_index());
+	return ("HTTP/1.1 204 No Content");
+}
+
+std::string Response::deleteResp()
+{
+	return ("HTTP/1.1 204 No Content");
 }
 
 std::string Response::load_index()

@@ -58,10 +58,7 @@ void Client::saveFile(Request& request, Server& srv)
 void Client::deleteFile(Server& srv)
 {
     if (srv.getFileName().empty())
-    {
-        std::cout << "no file!!" << std::endl;
         return ;
-    }
     if (std::remove(srv.getFileName().c_str()) < 0)
         perror("remove");
     srv.clearFileName();
@@ -76,12 +73,12 @@ void Client::handle_request(Server& srv)
     {
         this->saveFile(request, srv);
     }
+	Response resp(_fd, request, srv);
+	resp.run();
     if (!request.get("method").compare("DELETE"))
     {
         this->deleteFile(srv);
     }
-	Response resp(_fd, request, srv);
-	resp.run();
 }
 
 void Client::close_connection(Server &srv)

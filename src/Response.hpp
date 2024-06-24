@@ -28,6 +28,7 @@ class Response
 		Server &_srv;
 		std::string get();
 		std::string post();
+		std::string deleteResp();
 		std::string load_index();
 
 		Response();
