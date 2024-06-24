@@ -18,6 +18,7 @@
 #include "Server.hpp"
 
 class Request;
+class Server;
 
 class Response
 {

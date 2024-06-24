@@ -2,7 +2,9 @@ NAME = webserv
 CC = c++
 CFLAGS = -Wall -Wextra -Werror -std=c++17
 SRC_DIR = src
-SRC_FILES = main.cpp WebServer.cpp Request.cpp Server.cpp Client.cpp Response.cpp
+SRC_FILES = main.cpp WebServer.cpp Request.cpp \
+	Server.cpp \
+	Client.cpp Response.cpp Parser.cpp Config.cpp
 SRCS = $(SRC_FILES:%=$(SRC_DIR)/%)
 OBJS = $(SRCS:.cpp=.o)
 

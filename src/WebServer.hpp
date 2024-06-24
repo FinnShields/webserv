@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   WebServer.hpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:19 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/06/14 12:22:23 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/06/23 15:28:43 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@
 #include <iostream> //std::cout
 #include <fstream> //Parse file
 #include <sstream> 
+#include <string> 
 
 #include <unistd.h> // For close
 #include <vector>
@@ -23,8 +24,9 @@
 #include <algorithm>
 
 #include "Server.hpp"
+#include "Parser.hpp"
+#include "Config.hpp"
 
-#define DEFAULT_PORT 8080
 
 class WebServer
 {
@@ -32,18 +34,23 @@ class WebServer
 		std::vector<pollfd> _fds;
 		std::vector<Server> _servers;
 
-		void parse_file(std::string filename);
+		void setServers();
+		//void parse_file(std::string filename);
 		bool fd_is_server(int fd);
 		void fd_is_client(int fd);
 		
+		WebServer();
 		WebServer(const WebServer &copy);
 		WebServer &operator=(const WebServer &assignment);
 	public:
-		WebServer();
 		~WebServer();
+		WebServer(std::vector<t_server>&);
 		
-		void setup(std::string filename);
+		//void setup(std::string filename);
+		void setup();
 		void run();
+		
+		const Config config;
 };
 
 #endif
