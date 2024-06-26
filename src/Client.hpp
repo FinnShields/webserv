@@ -44,8 +44,8 @@ class Client
         void close_connection(Server &srv);
         int get_socket_fd();
         std::string& get_fileName();
-        void saveFile(Request& request);
-        void deleteFile();
+        void saveFile(Request& request, Server& srv);
+        void deleteFile(Server& srv);
 };
 
 #endif

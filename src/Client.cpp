@@ -33,7 +33,7 @@ std::string& Client::get_fileName()
     return (this->fileName);
 }
 
-void Client::saveFile(Request& request)
+void Client::saveFile(Request& request, Server& srv)
 {
     if (request.get("Content-Type").compare(0, 19, "multipart/form-data"))
         return ;
@@ -52,19 +52,16 @@ void Client::saveFile(Request& request)
     std::ofstream newFile(fileName);
     newFile << fileContent;
     newFile.close();
-    this->fileName = fileName;
+    srv.setFileName(fileName);
 }
 
-//not yet working
-void Client::deleteFile()
+void Client::deleteFile(Server& srv)
 {
-    if (this->get_fileName().empty())
-    {
-        std::cout << "no file!!" << std::endl;
+    if (srv.getFileName().empty())
         return ;
-    }
-    std::cout << "ret: " << std::remove(this->get_fileName().c_str()) << std::endl;
-    this->fileName.clear();
+    if (std::remove(srv.getFileName().c_str()) < 0)
+        perror("remove");
+    srv.clearFileName();
 }
 
 void Client::handle_request(Server& srv)
@@ -74,14 +71,14 @@ void Client::handle_request(Server& srv)
     request.display();
     if (!request.get("method").compare("POST"))
     {
-        this->saveFile(request);
-    }
-    if (!request.get("method").compare("DELETE"))
-    {
-        this->deleteFile();
+        this->saveFile(request, srv);
     }
 	Response resp(_fd, request, srv);
 	resp.run();
+    if (!request.get("method").compare("DELETE"))
+    {
+        this->deleteFile(srv);
+    }
 }
 
 void Client::close_connection(Server &srv)

@@ -19,8 +19,8 @@
 Server::~Server() {}
 
 Server::Server(const Server &copy):
-	_port(copy._port), _ip(copy._ip), _name(copy._name),
-	index(copy.index),
+	_port(copy._port), _ip(copy._ip), _name(copy._name), 
+	fileName(copy.fileName), index(copy.index), 
 	config(copy.config){}
 
 Server::Server(std::vector<t_server>& data, size_t ind): 
@@ -107,6 +107,21 @@ int Server::get_fd() const
 std::string Server::get_name()
 {
 	return _name;
+}
+
+std::string Server::getFileName()
+{
+	return fileName;
+}
+
+void Server::setFileName(std::string& fileName)
+{
+	this->fileName = fileName;
+}
+
+void Server::clearFileName()
+{
+	this->fileName.clear();
 }
 
 void Server::set_port(const int &port)
