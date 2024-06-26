@@ -52,7 +52,7 @@ std::string Response::deleteResp()
 
 std::string Response::load_index()
 {
-	std::ifstream file("www/index.html");
+	std::ifstream file("www/index_cgi.html");
 	if (!file.is_open())
 		return ("HTTP/1.1 404 Not Found\nContent-Type: text/plain\n\nError: index.html not found");
 	
