@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/06/26 13:46:45 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/06/26 14:53:09 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,6 +24,7 @@ void Response::run()
 		: (method == "DELETE") ? deleteResp()
 		: "HTTP/1.1 501 Not Implemented\nContent-Type: text/plain\n\nError: Method not recognized or not implemented";
 	
+	std::cout << "Response\n" << response << std::endl;
 	if (send(_fd, response.c_str(), response.size(), 0) < 0)
 		perror("Send error");
 }
@@ -33,9 +34,7 @@ std::string Response::get()
 	std::string method = _req.get("method");
 	std::string dir = _req.get("target");
 	
-	std::string response = "HTTP/1.1 200 OK\nContent-Type: text/plain\n\nYour request: " + method + " " + dir;
-	std::cout << response << std::endl;
-	response.append(" srv: " + _srv.get_name());
+	std::string response = "HTTP/1.1 200 OK\nContent-Type: text/plain";
 	if (dir == "/")
 		return load_index();
 	if (dir == "/delete")
@@ -46,7 +45,12 @@ std::string Response::get()
 std::string Response::post()
 {
 	saveFile();
-	return ("HTTP/1.1 204 No Content");
+	// int status = saveFile();
+	// return status == 500 ? "HTTP/1.1 500 Internal Server Error" :
+	// 	status == 400 ? "HTTP/1.1 400 Bad Request" :
+	// 	status == 201 ? "HTTP/1.1 201 Created" :
+	// 	"HTTP/1.1 204 No Content";
+	return ("HTTP/1.1 204 No Content"); //No reloading
 }
 
 std::string Response::deleteResp()
@@ -56,8 +60,9 @@ std::string Response::deleteResp()
 
 	replacePercent20withSpace(target);
 	target = dir + target;
-	deleteFile(target);
-	return ("HTTP/1.1 204 No Content");
+	if (deleteFile(target) == 202)
+		return ("HTTP/1.1 202 Accepted");
+	return ("HTTP/1.1 404 Not Found");
 }
 
 std::string Response::load_index()
@@ -79,7 +84,8 @@ std::string Response::load_directory_listing()
     std::string directoryPath = "uploads";
     std::stringstream buffer;
 
-    if ((dir = opendir(directoryPath.c_str())) != NULL) {
+    if ((dir = opendir(directoryPath.c_str())) != NULL) 
+	{
         buffer << "<html><head><title>Directory Listing</title></head><body>";
         buffer << "<h2>Directory Listing of /uploads</h2>";
         buffer << "<ul>";
@@ -100,7 +106,9 @@ std::string Response::load_directory_listing()
         buffer << "</body></html>";
 
         closedir(dir);
-    } else {
+    } 
+	else 
+	{
 		std::cout << "couldnt open dir" << std::endl;
         return ("HTTP/1.1 500 Internal Server Error\nContent-Type: text/plain\n\nError: Could not open directory");
     }
@@ -108,10 +116,10 @@ std::string Response::load_directory_listing()
     return ("HTTP/1.1 200 OK\nContent-Type: text/html\n\n" + buffer.str());
 }
 
-void Response::saveFile()
+int Response::saveFile()
 {
     if (_req.get("Content-Type").compare(0, 19, "multipart/form-data"))
-        return ;
+        return 400;
     std::string boundary = _req.get("Content-Type").substr(31);
     std::string body = _req.get("body");
     std::string fileName = "";
@@ -120,7 +128,7 @@ void Response::saveFile()
     while (*it != '\"')
         fileName.append(1, *(it++));
     if (fileName.empty())
-        return ;
+        return 400;
     std::string directory = "uploads/";
     mkdir(directory.c_str(), 0777);
     fileName = directory + fileName;
@@ -131,14 +139,17 @@ void Response::saveFile()
     newFile << fileContent;
     newFile.close();
     _srv.setFileName(fileName);
+	return 201;
 }
 
-void Response::deleteFile(std::string &file)
+int Response::deleteFile(std::string &file)
 {
     if (std::remove(file.c_str()) < 0)
+	{
         perror("remove");
-	else
-		std::cout << "deleted " << file << std::endl;
+		return 404;
+	}
+	return 202;
 }
 
 void Response::replacePercent20withSpace(std::string &str)

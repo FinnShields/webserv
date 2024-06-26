@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:06:10 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/06/26 13:46:29 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/06/26 13:55:17 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,8 +34,8 @@ class Response
 		std::string deleteResp();
 		std::string load_index();
 		std::string load_directory_listing();
-		void saveFile();
-        void deleteFile(std::string &);
+		int saveFile();
+        int deleteFile(std::string &);
 		void replacePercent20withSpace(std::string &str);
 
 		Response();
