@@ -6,13 +6,14 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:36 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/06/14 13:05:09 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/06/26 13:47:30 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef CLIENT_HPP
 #define CLIENT_HPP
 
+#include <sys/stat.h>
 #include <string>
 #include <fstream>
 #include <sstream> 
@@ -44,8 +45,6 @@ class Client
         void close_connection(Server &srv);
         int get_socket_fd();
         std::string& get_fileName();
-        void saveFile(Request& request);
-        void deleteFile();
 };
 
 #endif
