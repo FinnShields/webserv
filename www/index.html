@@ -15,9 +15,7 @@
       </form>
       <script>
         document.getElementById("deleteButton").addEventListener("click", function() {
-          var delReq = new XMLHttpRequest();
-          delReq.open("DELETE", "/", false);
-          delReq.send(null);
+          window.location.href = "/delete"
         })
       </script>
     </div>
