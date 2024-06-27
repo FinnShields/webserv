@@ -37,6 +37,7 @@ class Response
 		int saveFile();
         int deleteFile(std::string &);
 		void replacePercent20withSpace(std::string &str);
+		bool checkFileType(std::string& fileName);
 
 		Response();
 		Response(const Response &copy);
