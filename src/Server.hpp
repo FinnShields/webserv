@@ -44,6 +44,7 @@ class Server
         in_addr_t _ip;
         std::string _name;
         std::string fileName;
+        std::string allowedMethods;
         
         void setup_socket();
 		void start_listen();
@@ -61,6 +62,7 @@ class Server
         Client *get_client(int fd);
         int get_port() const;
         int get_fd() const;
+        std::string getAllowedMethods() const;
         std::string get_name();
         std::string getFileName();
         void setFileName(std::string& fileName);

@@ -19,9 +19,9 @@ void Response::run()
 {
 	std::string method = _req.get("method");
     
-	std::string response = (method == "GET") ? get()
-		: (method == "POST") ? post()
-		: (method == "DELETE") ? deleteResp()
+	std::string response = (method == "GET") ? get(_srv)
+		: (method == "POST") ? post(_srv)
+		: (method == "DELETE") ? deleteResp(_srv)
 		: "HTTP/1.1 501 Not Implemented\nContent-Type: text/plain\n\nError: Method not recognized or not implemented";
 	
 	std::cout << "Response\n" << response << std::endl;
@@ -29,8 +29,10 @@ void Response::run()
 		perror("Send error");
 }
 
-std::string Response::get()
+std::string Response::get(Server& _srv)
 {	
+	if (_srv.getAllowedMethods().find("GET") == std::string::npos)
+		return ("HTTP/1.1 501 Not Implemented\nContent-Type: text/plain\n\nError: Method not recognized or not implemented"); 
 	std::string method = _req.get("method");
 	std::string dir = _req.get("target");
 	
@@ -42,8 +44,10 @@ std::string Response::get()
 	return (response);
 }
 
-std::string Response::post()
+std::string Response::post(Server& _srv)
 {
+	if (_srv.getAllowedMethods().find("POST") == std::string::npos)
+		return ("HTTP/1.1 501 Not Implemented\nContent-Type: text/plain\n\nError: Method not recognized or not implemented");
 	saveFile();
 	// int status = saveFile();
 	// return status == 500 ? "HTTP/1.1 500 Internal Server Error" :
@@ -53,8 +57,10 @@ std::string Response::post()
 	return ("HTTP/1.1 204 No Content"); //No reloading
 }
 
-std::string Response::deleteResp()
+std::string Response::deleteResp(Server& _srv)
 {
+	if (_srv.getAllowedMethods().find("DELETE") == std::string::npos)
+		return ("HTTP/1.1 501 Not Implemented\nContent-Type: text/plain\n\nError: Method not recognized or not implemented");
 	std::string target = _req.get("target");
 	std::string dir = "uploads";
 
