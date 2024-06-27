@@ -60,8 +60,8 @@ std::string Response::deleteResp()
 
 	replacePercent20withSpace(target);
 	target = dir + target;
-	if (deleteFile(target) == 202)
-		return ("HTTP/1.1 202 Accepted");
+	if (deleteFile(target) == 204)
+		return ("HTTP/1.1 204 No Content");
 	return ("HTTP/1.1 404 Not Found");
 }
 
@@ -75,7 +75,7 @@ std::string Response::load_index()
 	buffer << file.rdbuf();
 	file.close();
 
-	return ("HTTP/1.1 200 OK\nContent-Type: text/html\n\n" + buffer.str());
+	return ("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n" + buffer.str());
 }
 std::string Response::load_directory_listing()
 {
@@ -96,10 +96,10 @@ std::string Response::load_directory_listing()
 			if (strcmp(ent->d_name, ".") != 0 && strcmp(ent->d_name, "..") != 0)
 			{
 				buffer << "<li>" << ent->d_name
-				<< "<button id=\"" << ent->d_name << "\">Delete</button>" 
+				<< "<input type=\"submit\" id=\"" << ent->d_name << "\" value=\"Delete\" />" 
 				<< "<script>document.getElementById(\"" << ent->d_name << "\").addEventListener(\"click\", function() {var delReq = new XMLHttpRequest();"
 				<< "delReq.open(\"DELETE\", \"/" << ent->d_name << "\", false);"
-				<< "delReq.send(null);})</script></li>";
+				<< "delReq.send(null); location.reload()});</script></li>";
 			}
         }
         buffer << "</ul>";
@@ -114,7 +114,7 @@ std::string Response::load_directory_listing()
         return ("HTTP/1.1 500 Internal Server Error\nContent-Type: text/plain\n\nError: Could not open directory");
     }
 
-    return ("HTTP/1.1 200 OK\nContent-Type: text/html\n\n" + buffer.str());
+    return ("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n" + buffer.str());
 }
 
 int Response::saveFile()
@@ -150,7 +150,7 @@ int Response::deleteFile(std::string &file)
         perror("remove");
 		return 404;
 	}
-	return 202;
+	return 204;
 }
 
 void Response::replacePercent20withSpace(std::string &str)
