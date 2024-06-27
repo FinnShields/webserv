@@ -51,8 +51,7 @@ std::string Response::post(Server& _srv)
 	saveFile();
 	// int status = saveFile();
 	// return status == 500 ? "HTTP/1.1 500 Internal Server Error" :
-	// 	status == 400 ? "HTTP/1.1 400 Bad Request" :
-	// 	status == 201 ? "HTTP/1.1 201 Created" :
+	// 	// status == 400 ? "HTTP/1.1 400 Bad Request" :
 	// 	"HTTP/1.1 204 No Content";
 	return ("HTTP/1.1 204 No Content"); //No reloading
 }
@@ -123,6 +122,15 @@ std::string Response::load_directory_listing()
     return ("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n" + buffer.str());
 }
 
+bool Response::checkFileType(std::string& fileName)
+{
+	if (!fileName.compare(fileName.length() - 4, 4,  ".txt"))
+		return true;
+	else
+		return false;
+
+}
+
 int Response::saveFile()
 {
     if (_req.get("Content-Type").compare(0, 19, "multipart/form-data"))
@@ -135,7 +143,13 @@ int Response::saveFile()
     while (*it != '\"')
         fileName.append(1, *(it++));
     if (fileName.empty())
+	{
         return 400;
+	}
+	if (checkFileType(fileName) == false)
+	{
+		return 400;
+	}
     std::string directory = "uploads/";
     mkdir(directory.c_str(), 0777);
     fileName = directory + fileName;
@@ -146,7 +160,7 @@ int Response::saveFile()
     newFile << fileContent;
     newFile.close();
     _srv.setFileName(fileName);
-	return 201;
+	return 204;
 }
 
 int Response::deleteFile(std::string &file)
