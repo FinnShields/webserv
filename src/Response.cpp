@@ -35,7 +35,7 @@ std::string Response::get()
 	std::string dir = _req.get("target");
 	
 	std::string response = "HTTP/1.1 200 OK\nContent-Type: text/plain";
-	if (dir == "/")
+	if (dir == "/" || dir == "/?Submit=Go+back")
 		return load_index();
 	if (dir == "/delete")
 		return load_directory_listing();
@@ -103,6 +103,7 @@ std::string Response::load_directory_listing()
 			}
         }
         buffer << "</ul>";
+		buffer << "<form action=\"/\" method=\"get\"><input type=\"submit\" value=\"Go back\" name=\"Submit\" id=\"back\" /></form>";
         buffer << "</body></html>";
 
         closedir(dir);

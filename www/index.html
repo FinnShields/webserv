@@ -3,7 +3,7 @@
   <head>
     <title>FAB WebServer</title>
   </head>
-  <body onload="init()">
+  <body>
     <p>Welcome to FAB WebServer.</p>
     <form method="post" enctype="multipart/form-data">
       <label for="fileInput">Upload a .txt file!</label>
@@ -11,7 +11,7 @@
       <button id="uploadButton">Upload</button>
     </form>
     <div>
-      <button id="deleteButton">Delete</button>
+      <button id="deleteButton">Delete some files?</button>
       </form>
       <script>
         document.getElementById("deleteButton").addEventListener("click", function() {
