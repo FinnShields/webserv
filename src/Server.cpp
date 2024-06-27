@@ -20,7 +20,8 @@ Server::~Server() {}
 
 Server::Server(const Server &copy):
 	_port(copy._port), _ip(copy._ip), _name(copy._name), 
-	fileName(copy.fileName), index(copy.index), 
+	fileName(copy.fileName), allowedMethods(copy.allowedMethods),
+	index(copy.index), 
 	config(copy.config){}
 
 Server::Server(std::vector<t_server>& data, size_t ind): 
@@ -104,6 +105,11 @@ int Server::get_fd() const
 	return _server_fd;
 }
 
+std::string Server::getAllowedMethods() const
+{
+	return (allowedMethods);
+}
+
 std::string Server::get_name()
 {
 	return _name;
@@ -149,4 +155,5 @@ void Server::set_all_config(){
 	_port = config.getFirst("main", "listen", DEFAULT_PORT);
 	_ip = inet_addr(config.getFirst("main", "host", "0.0.0.0").c_str());
 	_name = config.getFirst("main", "server_name", "srv-" + std::to_string(index));
+	allowedMethods = config.getFirst("main", "limit_except", "GET POST DELETE");
 }
