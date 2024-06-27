@@ -1,40 +1,27 @@
 #include "Parser.hpp"	
 
-/*
-enum class Parser::tok {
-	server, group, word, 
-	semicol, //newline,   comment,
-	open, close, eof};
-*/
-
 Parser::Parser(){}
 
 Parser::~Parser(){}
 
-Parser::Parser(Parser& other){
+Parser::Parser(const Parser& other){
 	(void)other;
 }
 
-Parser& Parser::operator=(Parser& other){
+Parser& Parser::operator=(const Parser& other){
 	(void)other;
 	return *this;
 }
 
-Parser::Parser(std::string filename):
-	_filecontent(""),
-	_token(tok::eof),
-	_endcontent(0),
-	_size(0),
-	_position(0),
-	_tok_begin(0),
-	_tok_end(0)
+Parser::Parser(const std::string filename): _filecontent(""), _token(tok::eof),	_endcontent(0),	_size(0), _position(0),	_tok_begin(0), _tok_end(0)
 {
 	_filecontent = readFile(filename);
 	_size = _filecontent.size();
 	parseFile();
 }
 
-std::string Parser::readFile(std::string filename) const{
+std::string Parser::readFile(const std::string filename) const
+{
 	std::ifstream	infile(filename);
 	if (!infile.is_open())
 		throw  std::ios_base::failure("Parser::readFile can't open " + filename);
@@ -46,14 +33,12 @@ std::string Parser::readFile(std::string filename) const{
 }
 
 Parser::tok Parser::peek(){
-	size_t i;
-	for (i = _position; i < _size && isspace(_filecontent.at(i));){
-		++i;
-	}
-	_position = i;
+	while (_position < _size && isspace(_filecontent.at(_position)))
+		++_position;
 	if (_position >= _size)
 		return tok::eof;
-	switch (_filecontent.at(_position)){
+	switch (_filecontent.at(_position))
+	{
 		case '#':
 			if (_filecontent.find('\n',_position) == std::string::npos)
 				return tok::eof;
@@ -82,108 +67,76 @@ Parser::tok Parser::peek(){
 Parser::tok Parser::getToken(){
 	_token = peek();
 	_tok_begin = _position;
-	_tok_end = _position;
-	switch (_token){
-		case tok::server:
-			_position += 6;
-			_tok_end = _position;
-			break;
-		case tok::group:
-			_position += 5;
-			_tok_end = _position;
-			break;
-		case tok::word:
-			while (_tok_end < _size && 
-					!std::isspace(_filecontent.at(_tok_end)) &&
-					_filecontent.at(_tok_end) != ';'){
+	_tok_end = _position +
+		(_token == tok::server ? 6 :
+		_token == tok::group ? 5 :
+		_token == tok::semicol ? 1 :
+		_token == tok::open ? 1 :
+		_token == tok::close ? 1 : 0);
+	if (_token == tok::word)
+		while (_tok_end < _size && !std::isspace(_filecontent.at(_tok_end)) && _filecontent.at(_tok_end) != ';')
      			++_tok_end;
-    		}
-			_position = _tok_end;
-			break;
-		case tok::semicol:
-			_position ++;
-			_tok_end = _position;
-			break;
-		case tok::open:
-			_position ++;
-			_tok_end = _position;
-			break;
-		case tok::close:
-			_position++;
-			_tok_end = _position;
-			break;
-		case tok::eof:
-			break;
-		default:
-			break;
-	}
+	_position = _tok_end;
 	return _token;
 }
 
-bool Parser::isAnyWord(tok token){
+bool Parser::isAnyWord(tok token)
+{
 	return (token == tok::word ||
 		token == tok::group ||
 		token == tok::server);
 }
 
-std::string Parser::parseWord(){
-	if (isAnyWord(peek()) == 0){
-		throw std::runtime_error(
-			"Syntax error: expected word, but got: "
-			+ leftoverString());
-	}
-	getToken();
+std::string Parser::parseWord()
+{
+	if (isAnyWord(getToken()) == 0)
+		throw std::runtime_error("Syntax error: expected word, but got: " + leftoverString());
 	size_t len = _tok_end - _tok_begin;
 	return _filecontent.substr(_tok_begin, len);
 }
 
-t_vector_str	Parser::parseWordList(){
+t_vector_str	Parser::parseWordList()
+{
 	t_vector_str value_list;
-	while (isAnyWord(peek())){
+	while (isAnyWord(peek()))
 		value_list.push_back(parseWord());
-	}
-	if (peek() == tok::semicol)
-		getToken();
-	else
-		throw std::runtime_error(
-			"Syntax error: expected semicolumn, but got: "
-			+ leftoverString());
+	if (getToken() != tok::semicol)
+		throw std::runtime_error("Syntax error: expected semicolumn, but got: " + leftoverString());
 	return value_list;
 }
 
-t_group Parser::parseGroupSetting(){
-	if (peek() != tok::open)
+t_group Parser::parseGroupSetting()
+{
+	if (getToken() != tok::open)
 		throw std::runtime_error(
 			"Syntax error: expected {, but got: "
 			+ leftoverString());
-	getToken();
 	t_group group;
 	std::string keyword; // = parseWord();
 	t_vector_str value_list;
-	while (isAnyWord(peek())){
+	while (isAnyWord(peek()))
+	{
 		keyword = parseWord();
 		value_list = parseWordList();
 		group[keyword] = value_list;
 	}
-	if (peek() != tok::close)
+	if (getToken() != tok::close)
 		throw std::runtime_error(
 			"Syntax error: expected } or group, but got: "
 			+ leftoverString());
-	getToken();
 	return group;
 	}
 
-t_server Parser::parseServer(){
-	if (peek() != tok::server)
+t_server Parser::parseServer()
+{
+	if (getToken() != tok::server)
 		throw std::runtime_error(
 			"Syntax error: expected keyword server, but got: "
 			+ leftoverString());
-	getToken();
-	if (peek() != tok::open)
+	if (getToken() != tok::open)
 		throw std::runtime_error(
 			"Syntax error: expected {, but got: "
 			+ leftoverString());
-	getToken();
 	_token = peek();
 	if (!(_token == tok::group || _token == tok::close))
 		throw std::runtime_error(
@@ -192,7 +145,8 @@ t_server Parser::parseServer(){
 	t_server server;
 	std::string dir;
 	t_group	group;
-	while (peek() == tok::group){
+	while (peek() == tok::group)
+	{
 		getToken();
 		dir = parseWord();
 		group = parseGroupSetting();
@@ -206,10 +160,10 @@ t_server Parser::parseServer(){
 	return server;
 }
 
-std::vector<t_server>& Parser::parseFile(){
-	while (peek() == tok::server){
+std::vector<t_server>& Parser::parseFile()
+{
+	while (peek() == tok::server)
 		_data.push_back(parseServer());
-	}
 	if (peek() != tok::eof)
 		throw std::runtime_error(
 			"Syntax error: expected server or EOF, but got: "
@@ -217,7 +171,8 @@ std::vector<t_server>& Parser::parseFile(){
 	return _data;
 }
 
-std::string Parser::leftoverString(){
+std::string Parser::leftoverString()
+{
 	//if (getToken() == tok::eof)
 	if (peek() == tok::eof)
 		return "EOF";
@@ -235,7 +190,8 @@ std::string Parser::leftoverString(){
 	getToken();
 	std::string line = _filecontent.substr(new_line_prev, new_line_next - new_line_prev);
 	std::string line_err = line;
-	for (size_t i = 0; i < line_err.size(); ++i){
+	for (size_t i = 0; i < line_err.size(); ++i)
+	{
 		if (!isspace(line_err[i]) &&
 			i > _tok_begin - new_line_prev && 
 			i < _tok_end - new_line_prev)
@@ -256,13 +212,15 @@ std::string Parser::leftoverString(){
 }
 
 
-std::ostream& operator<<(std::ostream& os, const t_vector_str& vs){
+std::ostream& operator<<(std::ostream& os, const t_vector_str& vs)
+{
     for (const std::string& s : vs)
         os << s << ", ";
     return os;
 }
 
-std::ostream& operator<<(std::ostream& os, const  t_group& l){
+std::ostream& operator<<(std::ostream& os, const  t_group& l)
+{
 	for (auto& pair : l)
 		std::cout << "\t\t" 
             << pair.first << "=(" 
@@ -270,14 +228,16 @@ std::ostream& operator<<(std::ostream& os, const  t_group& l){
 	return os;
 }
 
-std::ostream& operator<<(std::ostream& os, const  t_server& l){
+std::ostream& operator<<(std::ostream& os, const  t_server& l)
+{
 	for (auto& [key, value] : l)
 		std::cout << "\tsettings group:" << key << "\n"
             << value;
 	return os;
 }
 
-std::ostream& operator<<(std::ostream& os, const  std::vector<t_server>& file){
+std::ostream& operator<<(std::ostream& os, const  std::vector<t_server>& file)
+{
     int i = -1;
 	for (auto& server : file)
 		std::cout << "server " << ++i << "\n"
@@ -285,34 +245,39 @@ std::ostream& operator<<(std::ostream& os, const  std::vector<t_server>& file){
 	return os;
 }
 
-size_t Parser::size(){
+size_t Parser::size()
+{
 	return _data.size();
 }
 
-std::vector<t_server>& Parser::get(){
+std::vector<t_server>& Parser::get()
+{
 	return _data;
 }
 
-t_server Parser::get(size_t server){
+t_server Parser::get(size_t server)
+{
 	t_server ret;
 	if (server < _data.size())
 		ret = _data.at(server);
 	return ret;
 }
 
-t_group Parser::get(size_t server, std::string group){
+t_group Parser::get(size_t server, std::string group)
+{
 	return get(server)[group];
 }
 
-t_vector_str Parser::get(size_t server, std::string group, std::string key){
+t_vector_str Parser::get(size_t server, std::string group, std::string key)
+{
 	return get(server, group)[key];
 }
 
-std::string Parser::get(size_t server, std::string group, std::string key, size_t num){
+std::string Parser::get(size_t server, std::string group, std::string key, size_t num)
+{
 	t_vector_str vec = get(server, group, key);
 	std::string str;
 	if (num < vec.size())
 		str = vec[num];
 	return str;
 }
-
