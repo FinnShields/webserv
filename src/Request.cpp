@@ -129,6 +129,8 @@ void	Request::extractBody(std::string& input)
 	if (i == std::string::npos)
 		return ;
 	i += 4;
+	if (i >= input.length())
+		return ;
 	if (!this->get("Transfer-Encoding").compare("chunked"))
 		return (this->handleChunks(input, i));
 	len = atoi(this->get("Content-Length").c_str());

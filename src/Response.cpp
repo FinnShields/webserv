@@ -137,6 +137,8 @@ int Response::saveFile()
         return 400;
     std::string boundary = _req.get("Content-Type").substr(31);
     std::string body = _req.get("body");
+	if (body.empty())
+		return 400;
     std::string fileName = "";
     std::string::iterator it = body.begin();
     it += body.find("filename") + 10;
