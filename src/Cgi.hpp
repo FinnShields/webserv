@@ -9,12 +9,12 @@ class Request;
 class Cgi
 {
     private:
-        const Request& _request;
+        Request& _request;
         std::map<std::string,std::string> _env_map;
 
         Cgi();
     public:
-        Cgi(const Request&);
+        Cgi(Request&);
         Cgi(const Cgi&);
         Cgi &operator=(const Cgi&);
         ~Cgi();

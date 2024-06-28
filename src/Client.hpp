@@ -25,8 +25,8 @@
 #define MAX_BUFFER_SIZE 2048
 
 class Server;
-
 class Request;
+//class Cgi;
 
 class Client
 {

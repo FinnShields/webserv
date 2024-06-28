@@ -27,11 +27,21 @@
       Last Name: <input type = "text" name = "last_name" />
       <input type = "submit" value = "Submit" />
    </form>
-   <form action = "/cgi-bin/cpp_textarea.cgi" method = "post" target = "_blank">
-    <textarea name = "textcontent" cols = "40" rows = "4">
-       Type your text here...
-    </textarea>
-    <input type = "submit" value = "Submit" />
- </form>
+   <form action = "/cgi-bin/cpp_get.cgi/info" method = "get">
+      Name: <input type = "text" name = "last_name" />
+    <input type = "submit" value = "Submit with /info" />
+    </form>
+    <form action = "/cgi-bin/cpp_textarea.cgi" method = "post" target = "_blank">
+      <textarea name = "textcontent" cols = "40" rows = "1">
+         Type your text here...
+      </textarea>
+      <input type = "submit" value = "Submit" />
+    </form>
+    <form action = "/cgi-bin/cpp_textarea.cgi/info" method = "post" target = "_blank">
+      <textarea name = "textcontent" cols = "40" rows = "1">
+         Type your text here...
+      </textarea>
+      <input type = "submit" value = "Submit with /info" />
+    </form>
   </body>
 </html>
