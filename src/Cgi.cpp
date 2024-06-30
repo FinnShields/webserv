@@ -21,12 +21,15 @@ Cgi::~Cgi(){
 void Cgi::start(std::string str){
     std::cout << "This is Cgi request. To be implemented.\n"
         << str << "\n";
+    setEnvMap();
     setEnv();
     std::cout << "------ CGI ENV ---------.\n";
+    /*
     for (auto& [key, value] : _env_map){
         std::cout << key << "=>" << value << "<-\n";
     }
     std::cout << "--------------------.\n";
+    */
     for (size_t i = 0; i < _env_map.size(); ++i){
         std::cout << _env[i] << "\n";
     }
@@ -47,33 +50,28 @@ void Cgi::cleanEnv(){
 }
 
 void Cgi::setEnv(){
-    setEnvMap();
     _env = new char*[_env_map.size() + 1];
     char* line_pnt;
     std::string line;
     int i = 0;
-//    std::cout << "making envp\n";
     for (auto& [key, value] : _env_map){
-        //if (!value.empty()){  //value != ""){
         line = key + "=" + value;
         line_pnt = new char[line.size() + 1];
         std::strcpy(line_pnt, line.c_str());
         _env[i] = line_pnt;
-        //}
-    //    std::cout << "making envp\n";
         ++i;
     }
 }
 
 void Cgi::setEnvMap(){
     _env_map["AUTH_TYPE"] = "basic";
-    _env_map["CONTENT_LENGTH"] = _request.getValue("Content-Length");
-	_env_map["CONTENT_TYPE"] = _request.getValue("Content-Type");
+    _env_map["CONTENT_LENGTH"] = _request.get("Content-Length");
+	_env_map["CONTENT_TYPE"] = _request.get("Content-Type");
     _env_map["DOCUMENT_ROOT"] = _server.config.getFirst("main","root","");
     _env_map["GATEWAY_INTERFACE"] = "CGI/1.1";
-    _env_map["HTTP_COOKIE"] = _request.getValue("Cookie");
-    _env_map["HTTP_USER_AGENT"] = _request.getValue("User-Agent");
-    std::string target = _request.getValue("target");
+    _env_map["HTTP_COOKIE"] = _request.get("Cookie");
+    _env_map["HTTP_USER_AGENT"] = _request.get("User-Agent");
+    std::string target = _request.get("target");
     size_t pos_query = target.find('?');
     size_t pos_info = target.rfind('/', pos_query);
     size_t pos_cgi = target.find('/', 1);
@@ -92,22 +90,23 @@ void Cgi::setEnvMap(){
     // SCRIPT_NAME  ???
     _env_map["PATH_TRANSLATED"] = _env_map["DOCUMENT_ROOT"] + _env_map["PATH_INFO"];
     _env_map["REDIRECT_STATUS"] = "200";
-    _env_map["REQUEST_METHOD"] = _request.getValue("method");
+    _env_map["REQUEST_METHOD"] = _request.get("method");
     _env_map["SERVER_PROTOCOL"] = "HTTP/1.1";
 	_env_map["SERVER_SOFTWARE"] = "Webserv_FAB/1.0";
-    _env_map["SERVER_NAME"] = _request.getValue("Host");
+    _env_map["SERVER_NAME"] = _request.get("Host");
     size_t pos = _env_map["SERVER_NAME"].find(':');
     if (pos != std::string::npos)
         _env_map["SERVER_PORT"] = _env_map["SERVER_NAME"].substr(pos + 1);
     else
         _env_map["SERVER_PORT"] = "80";
-
-    /*
-    for (auto& [key, value] : _env_map){
-        if (value.empty())
-            _env_map.erase(key);
+    for (auto it = _env_map.begin(); it != _env_map.end();) {
+        if (it->second.empty()) {
+            //std::cout << "Erasing empty key=>" << it->first << "<-\n";
+            it = _env_map.erase(it);
+        } else
+            ++it;
     }
-    */
+    
 
 /*
     std::cout << pos_cgi << "\n";
@@ -119,7 +118,7 @@ void Cgi::setEnvMap(){
     std::cout << _env_map["PATH_INFO"] << "\n";
     std::cout << _env_map["QUERY_STRING"] << "\n";
     */    
-}   
+}  
 
 /*
    // /cgi-bin/script.cgi   /info   ?   query=python
