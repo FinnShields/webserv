@@ -6,7 +6,7 @@
 /*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/06/28 05:42:44 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/06/30 05:34:06 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,7 +70,7 @@ void Client::handle_request(Server& srv)
     request.read(_fd);
     request.display();
     if (!request.get("target").substr(0, 9).compare("/cgi-bin/"))
-        Cgi cgi(request);
+        Cgi cgi(request, srv);
     if (!request.get("method").compare("POST"))
     {
         this->saveFile(request, srv);
