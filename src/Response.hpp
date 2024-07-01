@@ -15,6 +15,7 @@
 
 #include <dirent.h>
 #include <iostream>
+#include <algorithm>
 #include <string>
 #include <cstring>
 #include "Request.hpp"
