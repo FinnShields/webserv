@@ -15,9 +15,10 @@ class Cgi
         Request& _request;
         const Server& _server;
         std::map<std::string,std::string> _env_map;
-        char** _env;
+        char** _envp;
 
         Cgi();
+        void setEnvMap();
         void setEnv();
         void cleanEnv();
     public:
@@ -26,8 +27,8 @@ class Cgi
         Cgi &operator=(const Cgi&);
         ~Cgi();
         
-        void start(std::string);
-        void setEnvMap();
+        void start();
+        void runCmd();
 };
 
 #endif

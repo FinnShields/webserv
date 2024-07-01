@@ -18,9 +18,8 @@ Cgi::~Cgi(){
     cleanEnv();
 };
 
-void Cgi::start(std::string str){
-    std::cout << "This is Cgi request. To be implemented.\n"
-        << str << "\n";
+void Cgi::start(){
+    std::cout << "This is Cgi request. To be implemented.\n";
     setEnvMap();
     setEnv();
     std::cout << "------ CGI ENV ---------.\n";
@@ -31,26 +30,48 @@ void Cgi::start(std::string str){
     std::cout << "--------------------.\n";
     */
     for (size_t i = 0; i < _env_map.size(); ++i){
-        std::cout << _env[i] << "\n";
+        std::cout << _envp[i] << "\n";
     }
     std::cout << "------ END ---------.\n";
+
+}
+
+/*   // types of error in Cgi
+"PATH NOT FOUND", 404
+"PERMISSION DENIED", 403
+"UNKNOWN METHOD", 405
+"INTERNAL SERVER ERROR", 500
+"NOT IMPLEMENTED", 501
+OK:
+"TEAPOT", 418
+*/
+
+void Cgi::runCmd(){
+     if (_env_map["SCRIPT_FILENAME"] == "www/cgi-bin/hello.cgi"){
+        const char* cmd = _env_map["SCRIPT_FILENAME"].c_str();
+        char* const argv[] = {const_cast<char*>(cmd), nullptr};
+        char* const envp[] = {nullptr};
+        if (execve(argv[0], argv, envp) == -1) {
+            throw std::runtime_error("execve error occurred!");
+        }
+    }
 }
 
 void Cgi::cleanEnv(){
-    if (!_env)
+    if (!_envp)
         return ;
     int i = 0;
-    while (_env[i]){
-        delete[] _env[i];
-        _env[i] = nullptr;
+    while (_envp[i]){
+        delete[] _envp[i];
+        _envp[i] = nullptr;
     }
-    delete[] _env;
-    _env = nullptr;
+    delete[] _envp;
+    _envp = nullptr;
     std::cout << "Destructor call\n";
 }
 
 void Cgi::setEnv(){
-    _env = new char*[_env_map.size() + 1];
+    _envp = new char*[_env_map.size() + 1];
     char* line_pnt;
     std::string line;
     int i = 0;
@@ -58,7 +79,7 @@ void Cgi::setEnv(){
         line = key + "=" + value;
         line_pnt = new char[line.size() + 1];
         std::strcpy(line_pnt, line.c_str());
-        _env[i] = line_pnt;
+        _envp[i] = line_pnt;
         ++i;
     }
 }
