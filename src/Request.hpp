@@ -39,7 +39,7 @@ class Request
 		Request& operator=(const Request&);
 		~Request();
 		void read(int _fd);
-		const std::string& get(std::string toGet);
+		const std::string get(std::string toGet);
 		void display();
 };
 
