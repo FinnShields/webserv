@@ -105,7 +105,7 @@ int Server::get_fd() const
 	return _server_fd;
 }
 
-std::string Server::getAllowedMethods() const
+t_vector_str Server::getAllowedMethods() const
 {
 	return (allowedMethods);
 }
@@ -155,5 +155,14 @@ void Server::set_all_config(){
 	_port = config.getFirst("main", "listen", DEFAULT_PORT);
 	_ip = inet_addr(config.getFirst("main", "host", "0.0.0.0").c_str());
 	_name = config.getFirst("main", "server_name", "srv-" + std::to_string(index));
-	allowedMethods = config.getFirst("main", "limit_except", "GET POST DELETE");
+	allowedMethods = config.getList("main", "limit_except", "");
+	if (allowedMethods[0].empty())
+		setDefaultMethods();
+}
+
+void Server::setDefaultMethods()
+{
+	allowedMethods.insert(allowedMethods.begin(), "GET");
+	allowedMethods.insert(allowedMethods.begin(), "POST");
+	allowedMethods.insert(allowedMethods.begin(), "DELETE");
 }

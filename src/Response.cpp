@@ -31,7 +31,8 @@ void Response::run()
 
 std::string Response::get(Server& _srv)
 {	
-	if (_srv.getAllowedMethods().find("GET") == std::string::npos)
+	t_vector_str mtd = _srv.getAllowedMethods();
+	if (find(mtd.begin(), mtd.end(), "GET") == mtd.end())
 		return ("HTTP/1.1 501 Not Implemented\nContent-Type: text/plain\n\nError: Method not recognized or not implemented"); 
 	std::string method = _req.get("method");
 	std::string dir = _req.get("target");
@@ -46,7 +47,8 @@ std::string Response::get(Server& _srv)
 
 std::string Response::post(Server& _srv)
 {
-	if (_srv.getAllowedMethods().find("POST") == std::string::npos)
+	t_vector_str mtd = _srv.getAllowedMethods();
+	if (find(mtd.begin(), mtd.end(), "POST") == mtd.end())
 		return ("HTTP/1.1 501 Not Implemented\nContent-Type: text/plain\n\nError: Method not recognized or not implemented");
 	saveFile();
 	// int status = saveFile();
@@ -58,7 +60,8 @@ std::string Response::post(Server& _srv)
 
 std::string Response::deleteResp(Server& _srv)
 {
-	if (_srv.getAllowedMethods().find("DELETE") == std::string::npos)
+	t_vector_str mtd = _srv.getAllowedMethods();
+	if (find(mtd.begin(), mtd.end(), "DELETE") == mtd.end())
 		return ("HTTP/1.1 501 Not Implemented\nContent-Type: text/plain\n\nError: Method not recognized or not implemented");
 	std::string target = _req.get("target");
 	std::string dir = "uploads";
