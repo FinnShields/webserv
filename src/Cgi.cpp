@@ -7,7 +7,7 @@ Cgi::Cgi(const Cgi& other):
     _server(other._server){};
 
 Cgi::Cgi(Request& r, const Server& s):_request(r),_server(s){
-    start("");
+    start();
 };
 
 Cgi& Cgi::operator=(const Cgi&){
@@ -33,7 +33,7 @@ void Cgi::start(){
         std::cout << _envp[i] << "\n";
     }
     std::cout << "------ END ---------.\n";
-
+    runCmd();
 }
 
 /*   // types of error in Cgi
@@ -47,13 +47,24 @@ OK:
 */
 
 void Cgi::runCmd(){
-     if (_env_map["SCRIPT_FILENAME"] == "www/cgi-bin/hello.cgi"){
-        const char* cmd = _env_map["SCRIPT_FILENAME"].c_str();
-        char* const argv[] = {const_cast<char*>(cmd), nullptr};
-        char* const envp[] = {nullptr};
-        if (execve(argv[0], argv, envp) == -1) {
+    char* const cmd = strdup(_env_map["SCRIPT_FILENAME"].c_str());
+    char* const argv[] = {cmd, nullptr};
+    char* const envp[] = {nullptr};
+    /*int fd[2];
+    if (pipe(fd) == -1)
+        throw std::runtime_error("pipe error occurred!");
+    
+    dup2(fd[1], STDOUT_FILENO);
+	close(fd[0]);
+	close(fd[1]);
+    */
+    pid_t pid = fork();
+    if (pid){
+        //do  parent
+    }
+    else {
+        if (execve(argv[0], argv, envp) == -1)
             throw std::runtime_error("execve error occurred!");
-        }
     }
 }
 
@@ -122,7 +133,6 @@ void Cgi::setEnvMap(){
         _env_map["SERVER_PORT"] = "80";
     for (auto it = _env_map.begin(); it != _env_map.end();) {
         if (it->second.empty()) {
-            //std::cout << "Erasing empty key=>" << it->first << "<-\n";
             it = _env_map.erase(it);
         } else
             ++it;
