@@ -145,16 +145,12 @@ int Response::saveFile()
     std::string fileName = "";
     std::string::iterator it = body.begin();
     it += body.find("filename") + 10;
-    while (*it != '\"')
-        fileName.append(1, *(it++));
-    if (fileName.empty())
-	{
-        return 400;
-	}
-	if (checkFileType(fileName) == false)
-	{
+	while (*it != '\"')
+		fileName.append(1, *(it++));
+	if (fileName.empty())
 		return 400;
-	}
+	if (checkFileType(fileName) == false)
+		return 400;
     std::string directory = "uploads/";
     mkdir(directory.c_str(), 0777);
     fileName = directory + fileName;
