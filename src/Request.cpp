@@ -151,7 +151,7 @@ void	Request::parse(char *buffer)
 	this->extractBody(input);
 }
 
-const std::string&	Request::get(std::string toGet)
+const std::string	Request::get(std::string toGet)
 {
 	if (!toGet.compare("method"))
 		return (this->method);
@@ -162,7 +162,7 @@ const std::string&	Request::get(std::string toGet)
 	if (!toGet.compare("body"))
 		return (this->body);
 	if (!this->headers.count(toGet))
-		return (this->method);
+		return ("");
 	return (this->headers[toGet]);
 }
 
