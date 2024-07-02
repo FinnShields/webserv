@@ -6,6 +6,8 @@
 #include "Server.hpp"
 #include "Request.hpp"
 
+#define STDOUT_FILENO  1
+#define STDIN_FILENO  0
 class Server;
 class Request;
 
@@ -14,6 +16,7 @@ class Cgi
     private:
         Request& _request;
         const Server& _server;
+        std::string& _body;
         std::map<std::string,std::string> _env_map;
         char** _envp;
 

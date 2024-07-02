@@ -4,9 +4,11 @@
 
 Cgi::Cgi(const Cgi& other):
     _request(other._request),
-    _server(other._server){};
+    _server(other._server),
+    _body(other._body){};
 
-Cgi::Cgi(Request& r, const Server& s):_request(r),_server(s){
+Cgi::Cgi(Request& r, const Server& s):_request(r),_server(s),
+    _body(_request.getRef("body")){
     start();
 };
 
@@ -33,7 +35,7 @@ void Cgi::start(){
         std::cout << _envp[i] << "\n";
     }
     std::cout << "------ END ---------.\n";
-    runCmd();
+  //  runCmd();
 }
 
 /*   // types of error in Cgi
@@ -47,25 +49,34 @@ OK:
 */
 
 void Cgi::runCmd(){
+    /*
     char* const cmd = strdup(_env_map["SCRIPT_FILENAME"].c_str());
     char* const argv[] = {cmd, nullptr};
     char* const envp[] = {nullptr};
-    /*int fd[2];
-    if (pipe(fd) == -1)
+    int fd_in[2];
+    int fd_out[2];
+    if (pipe(fd_in) == -1)
         throw std::runtime_error("pipe error occurred!");
-    
-    dup2(fd[1], STDOUT_FILENO);
-	close(fd[0]);
-	close(fd[1]);
-    */
+    if (pipe(fd_out) == -1){
+        close(fd_in[0]);
+        close(fd_in[1]);
+        throw std::runtime_error("pipe error occurred!");
+    }
     pid_t pid = fork();
     if (pid){
-        //do  parent
+        close(fd_in[STDIN_FILENO]);
+        close(fd_out[STDOUT_FILENO]);
+        write(fd_in[STDOUT_FILENO], _body.c_str(), _body.size());
     }
     else {
+        close(fd_out[STDIN_FILENO]);
+        close(fd_in[STDOUT_FILENO]);
+        dub2(fd_in[STDIN_FILENO], STDIN_FILENO);
+        dub2(fd_out[STDOUT_FILENO], STDOUT_FILENO);
         if (execve(argv[0], argv, envp) == -1)
             throw std::runtime_error("execve error occurred!");
     }
+    */
 }
 
 void Cgi::cleanEnv(){

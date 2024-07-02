@@ -6,7 +6,7 @@
 /*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/06/30 09:53:55 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/07/02 06:29:49 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -149,7 +149,7 @@ void	Request::parse(char *buffer)
 	this->extractBody(input);
 }
 
-const std::string&	Request::get(std::string toGet)
+const std::string	Request::get(std::string toGet)
 {
 	if (!toGet.compare("method"))
 		return (this->method);
@@ -159,22 +159,22 @@ const std::string&	Request::get(std::string toGet)
 		return (this->version);
 	if (!toGet.compare("body"))
 		return (this->body);
-//	if (!this->headers.count(toGet))
-//		return (this->method);
+	if (!this->headers.count(toGet))
+		return ("");
 	return (this->headers[toGet]);
 }
 
 
-const std::string Request::getValue(std::string toGet)
+std::string& Request::getRef(std::string toGet)
 {
+	if (!toGet.compare("body"))
+		return (this->body);
 	if (!toGet.compare("method"))
 		return (this->method);
 	if (!toGet.compare("target"))
 		return (this->target);
 	if (!toGet.compare("version"))
 		return (this->version);
-	if (!toGet.compare("body"))
-		return (this->body);
 	return (this->headers[toGet]);
 }
 
