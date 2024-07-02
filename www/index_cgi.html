@@ -55,6 +55,30 @@
       <a href="/cgi-bin/script.py">Run .py </a>
       <p>    </p>
       <a href="/cgi-bin/script.php">Run .php </a>
+      <p>    </p>
+      <a href="#" onclick="sendPostRequest()">Run .cgi POST with body</a>
+      <script>
+        function sendPostRequest() {
+          const url = '/cgi-bin/hello.cgi';
+          const body = '"body msg here"';
+          fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: body,
+          })
+          .then(response => {
+            // Handle response here
+            console.log('Response:', response);
+          })
+          .catch(error => {
+            // Handle error here
+            console.error('Error:', error);
+          });
+        }
+      </script>
+
       </body>
    </html>
 

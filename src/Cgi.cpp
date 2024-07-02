@@ -35,7 +35,7 @@ void Cgi::start(){
         std::cout << _envp[i] << "\n";
     }
     std::cout << "------ END ---------.\n";
-  //  runCmd();
+    runCmd();
 }
 
 /*   // types of error in Cgi
@@ -48,35 +48,59 @@ OK:
 "TEAPOT", 418
 */
 
+std::string readFromFd(int fd) {
+    std::string result;
+    char buffer[1024];
+    ssize_t size;
+    while ((size = read(fd, buffer, sizeof(buffer))) > 0) {
+        result.append(buffer, size);
+    }
+    if (size < 0) {
+        throw std::runtime_error("readFromFd: read error occured!");
+    }
+    return result;
+}
+
+
 void Cgi::runCmd(){
-    /*
     char* const cmd = strdup(_env_map["SCRIPT_FILENAME"].c_str());
     char* const argv[] = {cmd, nullptr};
     char* const envp[] = {nullptr};
-    int fd_in[2];
-    int fd_out[2];
-    if (pipe(fd_in) == -1)
+    int fd_from_cgi[2];
+    int fd_to_cgi[2];
+    if (pipe(fd_to_cgi) == -1)
         throw std::runtime_error("pipe error occurred!");
-    if (pipe(fd_out) == -1){
-        close(fd_in[0]);
-        close(fd_in[1]);
+    if (pipe(fd_from_cgi) == -1){
+        close(fd_to_cgi[0]);
+        close(fd_to_cgi[1]);
         throw std::runtime_error("pipe error occurred!");
     }
     pid_t pid = fork();
     if (pid){
-        close(fd_in[STDIN_FILENO]);
-        close(fd_out[STDOUT_FILENO]);
-        write(fd_in[STDOUT_FILENO], _body.c_str(), _body.size());
+        close(fd_to_cgi[0]);
+        close(fd_from_cgi[1]);
+        write(fd_to_cgi[1], _body.c_str(), _body.size());
+        close(fd_to_cgi[1]);
+        _cgi_answer = readFromFd(fd_from_cgi[0]);
+        close(fd_from_cgi[0]);
     }
     else {
-        close(fd_out[STDIN_FILENO]);
-        close(fd_in[STDOUT_FILENO]);
-        dub2(fd_in[STDIN_FILENO], STDIN_FILENO);
-        dub2(fd_out[STDOUT_FILENO], STDOUT_FILENO);
+        std::cout << "execve for " << argv[0] << "\n";
+        close(fd_to_cgi[1]);
+        close(fd_from_cgi[0]);
+        dup2(fd_to_cgi[0], 0);
+        dup2(fd_from_cgi[1], 1);
         if (execve(argv[0], argv, envp) == -1)
             throw std::runtime_error("execve error occurred!");
     }
-    */
+//    int status;
+  //  waitpid(pid, &status, 0);
+//	return ((status & 0xff00) >> 8);
+    
+    std::cout 
+        << "----- MSG from CGI -------\n"
+        << _cgi_answer  << "\n"
+        << "-----     END      -------\n";
 }
 
 void Cgi::cleanEnv(){

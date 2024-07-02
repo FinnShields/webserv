@@ -3,11 +3,13 @@
 
 #include <iostream>
 #include <cstring>
+//#include <unistd.h> 
+//#include <fcntl.h> 
 #include "Server.hpp"
 #include "Request.hpp"
 
-#define STDOUT_FILENO  1
-#define STDIN_FILENO  0
+//#define STDOUT_FILENO  1
+//#define STDIN_FILENO  0
 class Server;
 class Request;
 
@@ -19,6 +21,7 @@ class Cgi
         std::string& _body;
         std::map<std::string,std::string> _env_map;
         char** _envp;
+        std::string _cgi_answer;
 
         Cgi();
         void setEnvMap();
