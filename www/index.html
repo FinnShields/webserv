@@ -2,22 +2,32 @@
 <html>
   <head>
     <title>FAB WebServer</title>
+    <script>
+      function beforeSubmit()
+      {
+        var fileName =  document.getElementById('fileInput').value.toLowerCase();
+        if (!fileName.endsWith('.txt'))
+        {
+          alert("Wrong file type!");
+          return false;
+        }
+        return true;
+      }
+    </script>
   </head>
-  <body onload="init()">
+  <body>
     <p>Welcome to FAB WebServer.</p>
-    <form method="post" enctype="multipart/form-data">
+    <form method="post" enctype="multipart/form-data" onsubmit="return beforeSubmit()">
       <label for="fileInput">Upload a .txt file!</label>
-      <input id="fileInput" name="fileInput" type="file" accept=".txt" placeholder="Upload a .txt file"/>
+      <input id="fileInput" name="fileInput" type="file" placeholder="Upload a .txt file"/>
       <button id="uploadButton">Upload</button>
     </form>
     <div>
-      <button id="deleteButton">Delete</button>
+      <button id="deleteButton">Delete some files?</button>
       </form>
       <script>
         document.getElementById("deleteButton").addEventListener("click", function() {
-          var delReq = new XMLHttpRequest();
-          delReq.open("DELETE", "/", false);
-          delReq.send(null);
+          window.location.href = "/delete"
         })
       </script>
     </div>

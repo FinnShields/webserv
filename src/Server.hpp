@@ -44,9 +44,12 @@ class Server
         in_addr_t _ip;
         std::string _name;
         std::string fileName;
+        t_vector_str allowedMethods;
         
         void setup_socket();
 		void start_listen();
+
+        void setDefaultMethods();
         
         Server();
         Server &operator=(const Server &copy);
@@ -61,6 +64,7 @@ class Server
         Client *get_client(int fd);
         int get_port() const;
         int get_fd() const;
+        t_vector_str getAllowedMethods() const;
         std::string get_name();
         std::string getFileName();
         void setFileName(std::string& fileName);
