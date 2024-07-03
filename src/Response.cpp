@@ -18,11 +18,24 @@ Response::~Response() {}
 void Response::run()
 {
 	std::string method = _req.get("method");
-    
-	std::string response = (method == "GET") ? get(_srv)
+	t_vector_str mtd = _srv.getAllowedMethods();
+	std::string response;
+	if (find(mtd.begin(), mtd.end(), method) == mtd.end())
+		response = RESPONSE_501;
+	else if (_req.get("target").substr(0, 9).compare("/cgi-bin/") == 0)
+	{
+        Cgi cgi(_req, _srv);
+		response = cgi.getResponse();
+		if (response.empty())
+			response = "HTTP/1.1 500 Internal Server Error\nContent-Type: text/plain\n\nError: Internal Server Error.";
+	}
+	else 
+	{
+    	response = (method == "GET") ? get(_srv)
 		: (method == "POST") ? post(_srv)
 		: (method == "DELETE") ? deleteResp(_srv)
-		: "HTTP/1.1 501 Not Implemented\nContent-Type: text/plain\n\nError: Method not recognized or not implemented";
+		: RESPONSE_501;
+	}
 	
 	std::cout << "Response\n" << response << std::endl;
 	if (send(_fd, response.c_str(), response.size(), 0) < 0)
@@ -33,7 +46,7 @@ std::string Response::get(Server& _srv)
 {	
 	t_vector_str mtd = _srv.getAllowedMethods();
 	if (find(mtd.begin(), mtd.end(), "GET") == mtd.end())
-		return ("HTTP/1.1 501 Not Implemented\nContent-Type: text/plain\n\nError: Method not recognized or not implemented"); 
+		return (RESPONSE_501); 
 	std::string method = _req.get("method");
 	std::string dir = _req.get("target");
 	
@@ -49,7 +62,7 @@ std::string Response::post(Server& _srv)
 {
 	t_vector_str mtd = _srv.getAllowedMethods();
 	if (find(mtd.begin(), mtd.end(), "POST") == mtd.end())
-		return ("HTTP/1.1 501 Not Implemented\nContent-Type: text/plain\n\nError: Method not recognized or not implemented");
+		return (RESPONSE_501);
 	saveFile();
 	// int status = saveFile();
 	// return status == 500 ? "HTTP/1.1 500 Internal Server Error" :
@@ -62,7 +75,7 @@ std::string Response::deleteResp(Server& _srv)
 {
 	t_vector_str mtd = _srv.getAllowedMethods();
 	if (find(mtd.begin(), mtd.end(), "DELETE") == mtd.end())
-		return ("HTTP/1.1 501 Not Implemented\nContent-Type: text/plain\n\nError: Method not recognized or not implemented");
+		return (RESPONSE_501);
 	std::string target = _req.get("target");
 	std::string dir = "uploads";
 

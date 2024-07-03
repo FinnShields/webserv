@@ -21,6 +21,8 @@
 #include "Request.hpp"
 #include "Server.hpp"
 
+#define RESPONSE_501 "HTTP/1.1 501 Not Implemented\nContent-Type: text/plain\n\nError: Method not recognized or not implemented"
+
 class Request;
 class Server;
 

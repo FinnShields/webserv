@@ -38,9 +38,6 @@ void Client::handle_request(Server& srv)
 	Request request;
     request.read(_fd);
     request.display();
-    /*if (!request.get("target").substr(0, 9).compare("/cgi-bin/"))
-        Cgi cgi(request, srv);
-    */
 	Response resp(_fd, request, srv);
 	resp.run();
 }

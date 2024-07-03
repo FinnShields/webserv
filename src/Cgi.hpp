@@ -24,7 +24,7 @@ class Cgi
         std::string& _body;
         std::map<std::string,std::string> _env_map;
         char** _envp;
-        std::string _cgi_answer;
+        std::string _cgi_response;
         int _status;
 
         Cgi();
@@ -32,7 +32,6 @@ class Cgi
         void setEnv();
         void cleanEnv();
         std::string readFromFd(int);
-        std::string getAnswer();
     public:
         Cgi(Request&, const Server&);
         Cgi(const Cgi&);
@@ -41,6 +40,7 @@ class Cgi
         
         void start();
         void runCmd();
+        std::string getResponse();
 };
 
 #endif

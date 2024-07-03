@@ -22,6 +22,7 @@ int main(int argc, char** argv, char** envp) {
     (void)argv;
 
     std::string request_body = readFromFd(0);
+    std::cout << "HTTP/1.1 200 OK\r\n";
     std::cout << "Content-Type: text/html\r\n\r\n";
     std::cout << "<html><head><title>Hello, World!  I am CGI script</title></head><body>";
     //std::cout << "<h1>Hello, <br> World!</h1>";

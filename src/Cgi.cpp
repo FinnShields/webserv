@@ -54,8 +54,8 @@ OK:
 "TEAPOT", 418
 */
 
-std::string Cgi::getAnswer() {
-    return _cgi_answer;
+std::string Cgi::getResponse() {
+    return _cgi_response;
 }
 
 std::string Cgi::readFromFd(int fd) {
@@ -91,7 +91,7 @@ void Cgi::runCmd(){
         close(fd_from_cgi[1]);
         write(fd_to_cgi[1], _body.c_str(), _body.size());
         close(fd_to_cgi[1]);
-        _cgi_answer = readFromFd(fd_from_cgi[0]);
+        _cgi_response = readFromFd(fd_from_cgi[0]);
         close(fd_from_cgi[0]);
     }
     else {
@@ -108,12 +108,13 @@ void Cgi::runCmd(){
     int status;
     waitpid(pid, &status, 0);
     _status = (status & 0xff00) >> 8;
-
+/*
     std::cout 
         << "status=" << _status << "\n"
         << "----- MSG from CGI -------\n"
-        << _cgi_answer  << "\n"
+        << _cgi_response  << "\n"
         << "-----     END      -------\n";
+*/
 }
 
 void Cgi::cleanEnv(){
