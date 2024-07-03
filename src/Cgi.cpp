@@ -21,7 +21,13 @@ Cgi::~Cgi(){
 };
 
 void Cgi::start(){
-    std::cout << "This is Cgi request. To be implemented.\n";
+    std::cout << "This is Cgi request. Work in progress.\n";
+    std::cout << "Method =>" << _request.get("method") << "<=\n";
+    std::cout << "Target =>" << _request.get("target") << "<=\n";
+    if (_body.empty())
+        std::cout << "Body is empty\n";
+    else
+        std::cout << "Body =>" << _body << "<=\n";
     setEnvMap();
     setEnv();
     /*
@@ -94,14 +100,17 @@ void Cgi::runCmd(){
         close(fd_from_cgi[0]);
         dup2(fd_to_cgi[0], 0);
         dup2(fd_from_cgi[1], 1);
+        execve(argv[0], argv,_envp);
         if (execve(argv[0], argv,_envp) == -1)
             throw std::runtime_error("execve error occurred!");
+        // what will be the status if execve failed?
     }
-//    int status;
-  //  waitpid(pid, &status, 0);
-//	return ((status & 0xff00) >> 8);
+    int status;
+    waitpid(pid, &status, 0);
+    _status = (status & 0xff00) >> 8;
 
     std::cout 
+        << "status=" << _status << "\n"
         << "----- MSG from CGI -------\n"
         << _cgi_answer  << "\n"
         << "-----     END      -------\n";
@@ -117,7 +126,6 @@ void Cgi::cleanEnv(){
     }
     delete[] _envp;
     _envp = nullptr;
-    std::cout << "Destructor call\n";
 }
 
 void Cgi::setEnv(){

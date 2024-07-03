@@ -4,7 +4,10 @@
 #include <iostream>
 #include <cstring>
 //#include <unistd.h> 
-//#include <fcntl.h> 
+//#include <fcntl.h>  
+#include <sys/wait.h>
+
+
 #include "Server.hpp"
 #include "Request.hpp"
 
@@ -22,6 +25,7 @@ class Cgi
         std::map<std::string,std::string> _env_map;
         char** _envp;
         std::string _cgi_answer;
+        int _status;
 
         Cgi();
         void setEnvMap();

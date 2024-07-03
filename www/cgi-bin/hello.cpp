@@ -37,5 +37,5 @@ int main(int argc, char** argv, char** envp) {
     std::cout << "</body></html>";
     //close(0);
 
-    return 0;
+    return 120;
 }
