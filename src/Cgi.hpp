@@ -27,6 +27,8 @@ class Cgi
         void setEnvMap();
         void setEnv();
         void cleanEnv();
+        std::string readFromFd(int);
+        std::string getAnswer();
     public:
         Cgi(Request&, const Server&);
         Cgi(const Cgi&);

@@ -24,17 +24,17 @@ void Cgi::start(){
     std::cout << "This is Cgi request. To be implemented.\n";
     setEnvMap();
     setEnv();
-    std::cout << "------ CGI ENV ---------.\n";
     /*
-    for (auto& [key, value] : _env_map){
-        std::cout << key << "=>" << value << "<-\n";
-    }
-    std::cout << "--------------------.\n";
-    */
+    std::cout << "------ CGI ENV ---------.\n";
+    // for (auto& [key, value] : _env_map){
+    //     std::cout << key << "=>" << value << "<-\n";
+    // }
+    //std::cout << "--------------------.\n";
     for (size_t i = 0; i < _env_map.size(); ++i){
         std::cout << _envp[i] << "\n";
     }
     std::cout << "------ END ---------.\n";
+    */
     runCmd();
 }
 
@@ -48,7 +48,11 @@ OK:
 "TEAPOT", 418
 */
 
-std::string readFromFd(int fd) {
+std::string Cgi::getAnswer() {
+    return _cgi_answer;
+}
+
+std::string Cgi::readFromFd(int fd) {
     std::string result;
     char buffer[1024];
     ssize_t size;
@@ -65,7 +69,7 @@ std::string readFromFd(int fd) {
 void Cgi::runCmd(){
     char* const cmd = strdup(_env_map["SCRIPT_FILENAME"].c_str());
     char* const argv[] = {cmd, nullptr};
-    char* const envp[] = {nullptr};
+    //char* const envp[] = {nullptr};
     int fd_from_cgi[2];
     int fd_to_cgi[2];
     if (pipe(fd_to_cgi) == -1)
@@ -90,13 +94,13 @@ void Cgi::runCmd(){
         close(fd_from_cgi[0]);
         dup2(fd_to_cgi[0], 0);
         dup2(fd_from_cgi[1], 1);
-        if (execve(argv[0], argv, envp) == -1)
+        if (execve(argv[0], argv,_envp) == -1)
             throw std::runtime_error("execve error occurred!");
     }
 //    int status;
   //  waitpid(pid, &status, 0);
 //	return ((status & 0xff00) >> 8);
-    
+
     std::cout 
         << "----- MSG from CGI -------\n"
         << _cgi_answer  << "\n"

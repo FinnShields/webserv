@@ -16,22 +16,24 @@ std::string readFromFd(int fd) {
     return result;
 }
 
-int main() {
 
-    //std::string request_body = "dummy body"
-    // Output the HTTP headers
-    std::cout << "---- CGI got msg-------\n";
+int main(int argc, char** argv, char** envp) {
+    (void)argc;
+    (void)argv;
+
     std::string request_body = readFromFd(0);
-    std::cout << request_body << "\n";
-    std::cout << "---- END of msg -------\n\n";
-    std::cout << "---- CGI answer: -------\n";
     std::cout << "Content-Type: text/html\r\n\r\n";
-
-    // Output the HTML content
-    std::cout << "<html><head><title>Hello, World!</title></head><body>";
-    std::cout << "<h1>Hello, World!</h1>";
-    std::cout << "<h1>you send me msg=>" 
-        << request_body << "<-  </h1>";
+    std::cout << "<html><head><title>Hello, World!  I am CGI script</title></head><body>";
+    //std::cout << "<h1>Hello, <br> World!</h1>";
+    std::cout << "<h1>You send me http request, with the body:<br>" 
+        << request_body << "<br><br>\n";
+    std::cout << "My enviroment variables:<br>\n";
+    int i = 0;
+    while (envp[i]){
+        std::cout << envp[i] << "<br>\n";
+        ++i;
+    }
+    std::cout << "</h1>";
     std::cout << "</body></html>";
     //close(0);
 
