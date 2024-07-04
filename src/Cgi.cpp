@@ -5,10 +5,14 @@
 Cgi::Cgi(const Cgi& other):
     _request(other._request),
     _server(other._server),
-    _body(other._body){};
+    _body(other._body){
+    _argv = new char*[4];
+    };
 
 Cgi::Cgi(Request& r, const Server& s):_request(r),_server(s),
-    _body(_request.getRef("body")){};
+    _body(_request.getRef("body")){
+        _argv = new char*[4];
+    };
 
 Cgi& Cgi::operator=(const Cgi&){
     return *this;
@@ -16,35 +20,28 @@ Cgi& Cgi::operator=(const Cgi&){
 
 Cgi::~Cgi(){
     cleanEnv();
+    int i = 0;
+    if (_argv){
+        while (_argv[i]){
+            free(_argv[i]);
+            i++;
+        }
+        free(_argv);
+    }
 };
 
 void Cgi::start(){
     std::cout << "This is Cgi request. Work in progress.\n";
     std::cout << "Method =>" << _request.get("method") << "<=\n";
     std::cout << "Target =>" << _request.get("target") << "<=\n";
-    /*
-    if (_body.empty())
-        std::cout << "Body is empty\n";
-    else
-        std::cout << "Body =>" << _body << "<=\n";
-    */
     setEnvMap();
     setEnv();
-    /*
-    std::cout << "------ CGI ENV ---------.\n";
-    // for (auto& [key, value] : _env_map){
-    //     std::cout << key << "=>" << value << "<-\n";
-    // }
-    //std::cout << "--------------------.\n";
-    for (size_t i = 0; i < _env_map.size(); ++i){
-        std::cout << _envp[i] << "\n";
-    }
-    std::cout << "------ END ---------.\n";
-    */
     runCmd();
+    std::cout << "status =" << _status << "\n";
 }
 
 /*   // types of error in Cgi
+ 502 "Bad Gateway: The server received an empty response from the CGI script.";
 "PATH NOT FOUND", 404
 "PERMISSION DENIED", 403
 "UNKNOWN METHOD", 405
@@ -55,7 +52,7 @@ OK:
 */
 
 std::string Cgi::getResponse() {
-    return _cgi_response;
+    return _response;
 }
 
 std::string Cgi::readFromFd(int fd) {
@@ -71,11 +68,8 @@ std::string Cgi::readFromFd(int fd) {
     return result;
 }
 
-
 void Cgi::runCmd(){
-    char* const cmd = strdup(_env_map["SCRIPT_FILENAME"].c_str());
-    char* const argv[] = {cmd, nullptr};
-    //char* const envp[] = {nullptr};
+    _argv[0] = strdup(_env_map["SCRIPT_FILENAME"].c_str());
     int fd_from_cgi[2];
     int fd_to_cgi[2];
     if (pipe(fd_to_cgi) == -1)
@@ -91,30 +85,27 @@ void Cgi::runCmd(){
         close(fd_from_cgi[1]);
         write(fd_to_cgi[1], _body.c_str(), _body.size());
         close(fd_to_cgi[1]);
-        _cgi_response = readFromFd(fd_from_cgi[0]);
+        _response = readFromFd(fd_from_cgi[0]);
         close(fd_from_cgi[0]);
     }
     else {
-        std::cout << "execve for " << argv[0] << "\n";
+        std::cout << "CGI: execve for " << _argv[0] << "\n";
         close(fd_to_cgi[1]);
         close(fd_from_cgi[0]);
         dup2(fd_to_cgi[0], 0);
         dup2(fd_from_cgi[1], 1);
-        execve(argv[0], argv,_envp);
-        if (execve(argv[0], argv,_envp) == -1)
-            throw std::runtime_error("execve error occurred!");
-        // what will be the status if execve failed?
+        execve(_argv[0], _argv, _envp);
+        close(fd_to_cgi[0]);
+        close(fd_from_cgi[1]);
+        throw std::runtime_error("CGI:execve error occurred!");
     }
     int status;
     waitpid(pid, &status, 0);
     _status = (status & 0xff00) >> 8;
-/*
-    std::cout 
-        << "status=" << _status << "\n"
-        << "----- MSG from CGI -------\n"
-        << _cgi_response  << "\n"
-        << "-----     END      -------\n";
-*/
+    //if (WIFEXITED(status))
+    //    _status = WEXITSTATUS(status);
+    if (_response.empty())
+			_response = "HTTP/1.1 500 Internal Server Error\nContent-Type: text/plain\n";
 }
 
 void Cgi::cleanEnv(){

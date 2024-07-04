@@ -18,7 +18,8 @@ Response::~Response() {}
 void Response::run()
 {
 	std::string method = _req.get("method");
-	t_vector_str mtd = _srv.getAllowedMethods(); // this must be target dependent
+	t_vector_str mtd = _srv.getAllowedMethods(); 
+	// method validation must be target dependent
 	std::string response;
 	if (find(mtd.begin(), mtd.end(), method) == mtd.end())
 		response = RESPONSE_501;
@@ -29,8 +30,6 @@ void Response::run()
 		cgi.start();
 		response = cgi.getResponse();
 		std::cout << "------- END ----------\n";
-		if (response.empty())
-			response = "HTTP/1.1 500 Internal Server Error\nContent-Type: text/plain\n\nError: Internal Server Error.";
 	}
 	else 
 	{
@@ -39,8 +38,9 @@ void Response::run()
 		: (method == "DELETE") ? deleteResp(_srv)
 		: RESPONSE_501;
 	}
-	
-	std::cout << "Response\n" << response << std::endl;
+	std::cout << "------- Response ----------\n";
+	std::cout << response << "\n";
+	std::cout << "------- END ---------------\n";
 	if (send(_fd, response.c_str(), response.size(), 0) < 0)
 		perror("Send error");
 }

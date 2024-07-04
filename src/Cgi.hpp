@@ -23,8 +23,9 @@ class Cgi
         const Server& _server;
         std::string& _body;
         std::map<std::string,std::string> _env_map;
+        char** _argv;
         char** _envp;
-        std::string _cgi_response;
+        std::string _response;
         int _status;
 
         Cgi();
