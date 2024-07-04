@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/06/26 14:53:09 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/07/04 06:37:04 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,14 +18,17 @@ Response::~Response() {}
 void Response::run()
 {
 	std::string method = _req.get("method");
-	t_vector_str mtd = _srv.getAllowedMethods();
+	t_vector_str mtd = _srv.getAllowedMethods(); // this must be target dependent
 	std::string response;
 	if (find(mtd.begin(), mtd.end(), method) == mtd.end())
 		response = RESPONSE_501;
 	else if (_req.get("target").substr(0, 9).compare("/cgi-bin/") == 0)
 	{
+		std::cout << "------- CGI ----------\n";
         Cgi cgi(_req, _srv);
+		cgi.start();
 		response = cgi.getResponse();
+		std::cout << "------- END ----------\n";
 		if (response.empty())
 			response = "HTTP/1.1 500 Internal Server Error\nContent-Type: text/plain\n\nError: Internal Server Error.";
 	}

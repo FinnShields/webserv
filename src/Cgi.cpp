@@ -8,9 +8,7 @@ Cgi::Cgi(const Cgi& other):
     _body(other._body){};
 
 Cgi::Cgi(Request& r, const Server& s):_request(r),_server(s),
-    _body(_request.getRef("body")){
-    start();
-};
+    _body(_request.getRef("body")){};
 
 Cgi& Cgi::operator=(const Cgi&){
     return *this;
@@ -24,10 +22,12 @@ void Cgi::start(){
     std::cout << "This is Cgi request. Work in progress.\n";
     std::cout << "Method =>" << _request.get("method") << "<=\n";
     std::cout << "Target =>" << _request.get("target") << "<=\n";
+    /*
     if (_body.empty())
         std::cout << "Body is empty\n";
     else
         std::cout << "Body =>" << _body << "<=\n";
+    */
     setEnvMap();
     setEnv();
     /*
