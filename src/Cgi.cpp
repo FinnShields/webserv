@@ -38,6 +38,20 @@ void Cgi::start(){
     setEnv();
     runCmd();
     std::cout << "status =" << _status << "\n";
+        /*
+    try{
+        runCmd();
+    }
+    catch (const std::runtime_error& e){
+        std::cerr << e.what() << "\n";
+        _response = RESPONSE_500;
+    }
+    catch (...) {
+        std::cerr << "Caught unknown exception." << std::endl;
+        _response = RESPONSE_500;
+    }
+    std::cout << "status =" << _status << "\n";
+    */
 }
 
 /*   // types of error in Cgi
