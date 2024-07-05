@@ -26,33 +26,36 @@ using t_vector_str = std::vector<std::string>;
 using t_group = std::map<std::string, t_vector_str>;
 using t_server = std::map<std::string, t_group>;
 
+
 class Parser
 {
 	public:
+		enum class tok {server, group, word, semicol, open, close, eof};
+
 		Parser();
 		~Parser();
-		Parser(Parser &);
-		Parser& operator=(Parser&);
-		Parser(std::string);
-		std::string readFile(std::string filename) const;
-		enum class tok {server, group, word, semicol, //newline, 
-			open, close, eof};
-		void skipComment();
-		tok peek();
-		bool isAnyWord(tok token);
-		tok getToken();
-		std::vector<t_server>& parseFile();
-		t_server parseServer();
-		t_group parseGroupSetting();
-		t_vector_str parseWordList();
-		std::string parseWord();
-		std::string leftoverString();
-		size_t	size();
-		std::vector<t_server>& get();
-		t_server get(size_t server);
-		t_group get(size_t server, std::string group);
-		t_vector_str get(size_t server, std::string group, std::string key);
-		std::string get(size_t server, std::string group, std::string key, size_t num);
+		Parser(const Parser &);
+		Parser& operator=(const Parser&);
+		Parser(const std::string);
+
+		std::string 			readFile(const std::string filename) const;
+		void					skipComment();
+		tok 					peek();
+		bool					isAnyWord(tok token);
+		tok						getToken();
+		std::vector<t_server>&	parseFile();
+		t_server 				parseServer();
+		t_group 				parseGroupSetting();
+		t_vector_str 			parseWordList();
+		std::string 			parseWord();
+		std::string 			leftoverString();
+		size_t					size();
+
+		std::vector<t_server>&	get();
+		t_server				get(size_t server);
+		t_group					get(size_t server, std::string group);
+		t_vector_str			get(size_t server, std::string group, std::string key);
+		std::string				get(size_t server, std::string group, std::string key, size_t num);
 		
 		/*class SyntaxError: public std::exception {
 			public:

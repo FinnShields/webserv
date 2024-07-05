@@ -3,16 +3,17 @@
 /*                                                        :::      ::::::::   */
 /*   Client.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:36 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/06/14 13:05:09 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/06/28 04:30:50 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef CLIENT_HPP
 #define CLIENT_HPP
 
+#include <sys/stat.h>
 #include <string>
 #include <fstream>
 #include <sstream> 
@@ -20,12 +21,13 @@
 #include "Server.hpp"
 #include "Request.hpp"
 #include "Response.hpp"
+#include "Cgi.hpp"
 
 #define MAX_BUFFER_SIZE 2048
 
 class Server;
-
 class Request;
+//class Cgi;
 
 class Client
 {
@@ -44,8 +46,6 @@ class Client
         void close_connection(Server &srv);
         int get_socket_fd();
         std::string& get_fileName();
-        void saveFile(Request& request, Server& srv);
-        void deleteFile(Server& srv);
 };
 
 #endif
