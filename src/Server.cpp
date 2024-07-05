@@ -20,7 +20,7 @@ Server::~Server() {}
 
 Server::Server(const Server &copy):
 	_port(copy._port), _ip(copy._ip), _name(copy._name), 
-	fileName(copy.fileName), allowedMethods(copy.allowedMethods),
+	fileName(copy.fileName),
 	index(copy.index), 
 	config(copy.config){}
 
@@ -105,11 +105,6 @@ int Server::get_fd() const
 	return _server_fd;
 }
 
-t_vector_str Server::getAllowedMethods() const
-{
-	return (allowedMethods);
-}
-
 std::string Server::get_name()
 {
 	return _name;
@@ -153,16 +148,6 @@ void Server::set_name(const std::string &name)
 //"0.0.0.0" is string for INADDR_ANY
 void Server::set_all_config(){
 	_port = config.getFirst("main", "listen", DEFAULT_PORT);
-	_ip = inet_addr(config.getFirst("main", "host", "0.0.0.0").c_str());
-	_name = config.getFirst("main", "server_name", "srv-" + std::to_string(index));
-	allowedMethods = config.getList("main", "limit_except", "");
-	if (allowedMethods[0].empty())
-		setDefaultMethods();
-}
-
-void Server::setDefaultMethods()
-{
-	allowedMethods.insert(allowedMethods.begin(), "GET");
-	allowedMethods.insert(allowedMethods.begin(), "POST");
-	allowedMethods.insert(allowedMethods.begin(), "DELETE");
+	_ip = inet_addr(config.getFirst("main", "host", DEFAULT_IP).c_str());
+	_name = config.getFirst("main", "server_name", DEFAULT_SRV_NAME + std::to_string(index));
 }
