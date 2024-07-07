@@ -18,12 +18,12 @@ Response::~Response() {}
 void Response::run()
 {
 	std::string method = _req.get("method");
-	t_vector_str mtd = _srv.getAllowedMethods(); 
-	// method validation must be target dependent
+	std::string target = _req.get("target");
+	t_vector_str mtd = _srv.config.getValues(target, "limit_except", DEFAULT_METHOD);
 	std::string response;
 	if (find(mtd.begin(), mtd.end(), method) == mtd.end())
 		response = RESPONSE_501;
-	else if (_req.get("target").substr(0, 9).compare("/cgi-bin/") == 0)
+	else if (target.size() > 9 && target.substr(0, 9).compare("/cgi-bin/") == 0)
 	{
 		std::cout << "------- CGI ----------\n";
         Cgi cgi(_req, _srv);
@@ -31,7 +31,7 @@ void Response::run()
 		response = cgi.getResponse();
 		std::cout << "------- END ----------\n";
 	}
-	else 
+	else
 	{
     	response = (method == "GET") ? get(_srv)
 		: (method == "POST") ? post(_srv)
@@ -47,9 +47,7 @@ void Response::run()
 
 std::string Response::get(Server& _srv)
 {	
-	t_vector_str mtd = _srv.getAllowedMethods();
-	if (find(mtd.begin(), mtd.end(), "GET") == mtd.end())
-		return (RESPONSE_501); 
+	(void)_srv;
 	std::string method = _req.get("method");
 	std::string dir = _req.get("target");
 	
@@ -63,9 +61,7 @@ std::string Response::get(Server& _srv)
 
 std::string Response::post(Server& _srv)
 {
-	t_vector_str mtd = _srv.getAllowedMethods();
-	if (find(mtd.begin(), mtd.end(), "POST") == mtd.end())
-		return (RESPONSE_501);
+	(void)_srv;
 	saveFile();
 	// int status = saveFile();
 	// return status == 500 ? "HTTP/1.1 500 Internal Server Error" :
@@ -76,9 +72,7 @@ std::string Response::post(Server& _srv)
 
 std::string Response::deleteResp(Server& _srv)
 {
-	t_vector_str mtd = _srv.getAllowedMethods();
-	if (find(mtd.begin(), mtd.end(), "DELETE") == mtd.end())
-		return (RESPONSE_501);
+	(void)_srv;
 	std::string target = _req.get("target");
 	std::string dir = "uploads";
 

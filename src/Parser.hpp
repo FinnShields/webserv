@@ -56,6 +56,11 @@ class Parser
 		t_group					get(size_t server, std::string group);
 		t_vector_str			get(size_t server, std::string group, std::string key);
 		std::string				get(size_t server, std::string group, std::string key, size_t num);
+
+		bool isValidIP(const t_vector_str& vec);
+		bool isValidPort(const t_vector_str& vec);
+		bool isValidNumber(const t_vector_str& vec, int limit_min, int limit_max);
+		void					isValid();
 		
 		/*class SyntaxError: public std::exception {
 			public:

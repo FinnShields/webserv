@@ -37,9 +37,19 @@ class Config
 
 		t_vector_str 		getList(std::string group, std::string key, std::string default_value) const;
 		std::vector<int> 	getList(std::string group, std::string key, int default_value) const;
+
+		//std::string 		getOne(std::string target, std::string key, std::string default_value) const;
+		//int			 		get0ne(std::string target, std::string key, int default_value) const;
+
+		t_vector_str 		getValues(std::string target, std::string key,  t_vector_str default_values) const;
+		//std::vector<int> 	getAll(std::string target, std::string key, int default_value) const;
+
+		bool				isValid();
 	private:
 		Config();
 		std::vector<t_server>& _data;
+		size_t scoreMatch(const std::string& target, const std::string& location) const;
+		std::string selectLocation(std::string target) const;
 };
 
 #endif
