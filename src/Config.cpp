@@ -174,3 +174,7 @@ t_vector_str Config::getValues(std::string target, std::string key, t_vector_str
 		return vec;
 	return default_values;
 }
+
+bool Config::isValid(){
+	return false;
+};
