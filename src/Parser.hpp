@@ -60,7 +60,8 @@ class Parser
 		bool isValidIP(const t_vector_str& vec);
 		bool isValidPort(const t_vector_str& vec);
 		bool isValidNumber(const t_vector_str& vec, int limit_min, int limit_max);
-		void					isValid();
+		bool isValidMethod(const t_vector_str& vec);
+		void isValid();
 		
 		/*class SyntaxError: public std::exception {
 			public:

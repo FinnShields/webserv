@@ -345,33 +345,46 @@ bool Parser::isValidNumber(const t_vector_str& vec, int limit_min, int limit_max
 	return true;
 }
 
+bool Parser::isValidMethod(const t_vector_str& vec){
+	t_vector_str mtd =  {"GET", "POST", "DELETE"};
+	for (auto& m: vec){
+		if (find(mtd.begin(), mtd.end(), m) == mtd.end())
+			return false;
+	}
+	return true;
+}
+
 void Parser::isValid(){
 	int srv_num = -1;
-	std::cout << "Server " << ++srv_num << "  ";
 	if (_data.empty())
-		throw std::runtime_error("Parser::isValid: no server in config file.\n");
+		throw std::runtime_error(", no server in config file.\n");
 	for (auto& server : _data){
+		std::cout << "Server " << ++srv_num << "  ";
 		if (server.empty())
-			throw std::runtime_error("Parser::isValid: empty server.\n");
+			throw std::runtime_error(", empty server.\n");
 		if (server["main"].empty())
-			throw std::runtime_error("Parser::isValid: no main or it is empty\n");
+			throw std::runtime_error(", no main or it is empty\n");
 		if (!isValidPort(server["main"]["listen"]))
-			throw std::runtime_error("Parser::isValid: none or invalid port\n");
+			throw std::runtime_error(", none or invalid port\n");
 		if (!isValidIP(server["main"]["host"]))
-			throw std::runtime_error("Parser::isValid: none or invalid IP\n");
+			throw std::runtime_error(", none or invalid IP\n");
 		
 		for (auto& [group_name, group_data]: server){
 			if (group_data.empty())
-				throw std::runtime_error("Parser:: empty group\n");
+				throw std::runtime_error(", empty group\n");
 			if (group_name.empty())
-				throw std::runtime_error("Parser::isValid empty group name");
+				throw std::runtime_error(", empty group name");
 			if (!(group_name == "main" || group_name[0] == '/'))
-				throw std::runtime_error("Parser::invalid group: " + group_name + "\n");
+				throw std::runtime_error(", invalid group: " + group_name + "\n");
 			t_vector_str values = group_data["client_max_body_size"];
 			//std::cout << "->" << values <<  "<-n";
 			if (!values.empty() && !isValidNumber(values, 10000, 30000000))
-				throw std::runtime_error("Parser::invalid client_max_body_size in group: " + group_name + "\n");
+				throw std::runtime_error(", invalid client_max_body_size in group: " + group_name + "\n");
+			values = group_data["limit_except"];
+//			std::cout << values;
+			if (!values.empty() && !isValidMethod(values))
+				throw std::runtime_error(", invalid limit_except in group: " + group_name + "\n");
 		}
+		std::cout <<  " is OK.\n";
 	}
-	std::cout <<  " is OK.\n";
 }
