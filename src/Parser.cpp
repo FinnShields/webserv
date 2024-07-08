@@ -345,7 +345,10 @@ bool Parser::isValidNumber(const t_vector_str& vec, int limit_min, int limit_max
 	return true;
 }
 
-bool Parser::isValidMethod(const t_vector_str& vec){
+bool Parser::isValidMethod(t_group& group_data){
+	t_vector_str vec = group_data["limit_except"];
+	if (vec.empty())
+		return true;
 	t_vector_str mtd =  {"GET", "POST", "DELETE"};
 	for (auto& m: vec){
 		if (find(mtd.begin(), mtd.end(), m) == mtd.end())
@@ -377,12 +380,12 @@ void Parser::isValid(){
 			if (!(group_name == "main" || group_name[0] == '/'))
 				throw std::runtime_error(", invalid group: " + group_name + "\n");
 			t_vector_str values = group_data["client_max_body_size"];
-			//std::cout << "->" << values <<  "<-n";
 			if (!values.empty() && !isValidNumber(values, 10000, 30000000))
 				throw std::runtime_error(", invalid client_max_body_size in group: " + group_name + "\n");
-			values = group_data["limit_except"];
+			//values = group_data["limit_except"];
 //			std::cout << values;
-			if (!values.empty() && !isValidMethod(values))
+			//if (!values.empty() && !isValidMethod(values))
+			if (!isValidMethod(group_data))
 				throw std::runtime_error(", invalid limit_except in group: " + group_name + "\n");
 		}
 		std::cout <<  " is OK.\n";
