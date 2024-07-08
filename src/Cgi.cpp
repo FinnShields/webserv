@@ -63,6 +63,11 @@ void Cgi::start(){
 "NOT IMPLEMENTED", 501
 OK:
 "TEAPOT", 418
+
+If found and executable, the server runs the script.
+If not found, a 404 error is returned.
+If found but not executable, a 403 error or similar may be returned.
+If execution fails, a 500 error may be returned.
 */
 
 std::string Cgi::getResponse() {
