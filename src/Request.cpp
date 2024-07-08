@@ -3,14 +3,14 @@
 /*                                                        :::      ::::::::   */
 /*   Request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fshields <fshields@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/06/18 11:07:03 by fshields         ###   ########.fr       */
+/*   Updated: 2024/07/02 06:29:49 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "Request.hpp"
+#include "Request.hpp"		
 
 Request::Request()
 {}
@@ -163,6 +163,20 @@ const std::string	Request::get(std::string toGet)
 		return (this->body);
 	if (!this->headers.count(toGet))
 		return ("");
+	return (this->headers[toGet]);
+}
+
+
+std::string& Request::getRef(std::string toGet)
+{
+	if (!toGet.compare("body"))
+		return (this->body);
+	if (!toGet.compare("method"))
+		return (this->method);
+	if (!toGet.compare("target"))
+		return (this->target);
+	if (!toGet.compare("version"))
+		return (this->version);
 	return (this->headers[toGet]);
 }
 

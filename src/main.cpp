@@ -6,7 +6,7 @@
 /*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:39 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/06/21 10:06:02 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/07/07 12:09:05 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
 		<< "----- EXTRACTED DATA ------------\n"
 		<< data.get()
 		<< "----- END of DATA ---------------\n";
-        
+        data.isValid();
         //Config config(argv[1]);
         //WebServer webserv(config);
         WebServer webserv(data.get());

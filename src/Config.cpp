@@ -138,3 +138,43 @@ std::vector<int> Config::getList(std::string group, std::string key, int default
 	}
 	return ret;
 }
+
+size_t Config::scoreMatch(const std::string& target, const std::string& location) const {
+	size_t len = location.length();
+	if (target.length() < len)
+		return 0;
+	if (target.substr(0, len).compare(location) == 0)
+		return len;
+	return 0;
+}
+
+
+std::string Config::selectLocation(std::string target) const {
+	std::map<std::string, size_t> scores;
+	std::string best_location;
+	size_t best_score = 0;
+	for (const auto& [location, value]: get()){
+		size_t score = scoreMatch(target, location);
+		scores[location] = score;
+		if (score > best_score){
+			best_score = score;
+			best_location = location;
+		}
+	}
+	if (best_location.empty())
+		best_location = "main";
+	return best_location;
+}
+
+t_vector_str Config::getValues(std::string target, std::string key, t_vector_str default_values) const
+{
+	std::string group = selectLocation(target);
+	t_vector_str vec = get()[group][key];
+	if (0 < vec.size())
+		return vec;
+	return default_values;
+}
+
+bool Config::isValid(){
+	return false;
+};

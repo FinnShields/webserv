@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fshields <fshields@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:41 by fshields          #+#    #+#             */
-/*   Updated: 2024/06/17 13:14:52 by fshields         ###   ########.fr       */
+/*   Updated: 2024/07/02 06:29:55 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,9 @@
 # include <iostream>
 # include <map>
 # include "Client.hpp"
+# include "Cgi.hpp"
+
+class Cgi;
 
 class Request
 {
@@ -40,6 +43,7 @@ class Request
 		~Request();
 		void read(int _fd);
 		const std::string get(std::string toGet);
+		std::string& getRef(std::string toGet);
 		void display();
 };
 

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/06/26 14:53:09 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/07/04 06:37:04 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,22 +18,36 @@ Response::~Response() {}
 void Response::run()
 {
 	std::string method = _req.get("method");
-    
-	std::string response = (method == "GET") ? get(_srv)
+	std::string target = _req.get("target");
+	t_vector_str mtd = _srv.config.getValues(target, "limit_except", DEFAULT_METHOD);
+	std::string response;
+	if (find(mtd.begin(), mtd.end(), method) == mtd.end())
+		response = RESPONSE_501;
+	else if (target.size() > 9 && target.substr(0, 9).compare("/cgi-bin/") == 0)
+	{
+		std::cout << "------- CGI ----------\n";
+        Cgi cgi(_req, _srv);
+		cgi.start();
+		response = cgi.getResponse();
+		std::cout << "------- END ----------\n";
+	}
+	else
+	{
+    	response = (method == "GET") ? get(_srv)
 		: (method == "POST") ? post(_srv)
 		: (method == "DELETE") ? deleteResp(_srv)
-		: "HTTP/1.1 501 Not Implemented\nContent-Type: text/plain\n\nError: Method not recognized or not implemented";
-	
-	std::cout << "Response\n" << response << std::endl;
+		: RESPONSE_501;
+	}
+	std::cout << "------- Response ----------\n";
+	std::cout << response << "\n";
+	std::cout << "------- END ---------------\n";
 	if (send(_fd, response.c_str(), response.size(), 0) < 0)
 		perror("Send error");
 }
 
 std::string Response::get(Server& _srv)
 {	
-	t_vector_str mtd = _srv.getAllowedMethods();
-	if (find(mtd.begin(), mtd.end(), "GET") == mtd.end())
-		return ("HTTP/1.1 501 Not Implemented\nContent-Type: text/plain\n\nError: Method not recognized or not implemented"); 
+	(void)_srv;
 	std::string method = _req.get("method");
 	std::string dir = _req.get("target");
 	
@@ -47,9 +61,7 @@ std::string Response::get(Server& _srv)
 
 std::string Response::post(Server& _srv)
 {
-	t_vector_str mtd = _srv.getAllowedMethods();
-	if (find(mtd.begin(), mtd.end(), "POST") == mtd.end())
-		return ("HTTP/1.1 501 Not Implemented\nContent-Type: text/plain\n\nError: Method not recognized or not implemented");
+	(void)_srv;
 	saveFile();
 	// int status = saveFile();
 	// return status == 500 ? "HTTP/1.1 500 Internal Server Error" :
@@ -60,9 +72,7 @@ std::string Response::post(Server& _srv)
 
 std::string Response::deleteResp(Server& _srv)
 {
-	t_vector_str mtd = _srv.getAllowedMethods();
-	if (find(mtd.begin(), mtd.end(), "DELETE") == mtd.end())
-		return ("HTTP/1.1 501 Not Implemented\nContent-Type: text/plain\n\nError: Method not recognized or not implemented");
+	(void)_srv;
 	std::string target = _req.get("target");
 	std::string dir = "uploads";
 
@@ -75,7 +85,7 @@ std::string Response::deleteResp(Server& _srv)
 
 std::string Response::load_index()
 {
-	std::ifstream file("www/index.html");
+	std::ifstream file("www/index_cgi.html");
 	if (!file.is_open())
 		return ("HTTP/1.1 404 Not Found\nContent-Type: text/plain\n\nError: index.html not found");
 	
