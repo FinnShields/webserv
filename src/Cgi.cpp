@@ -76,9 +76,10 @@ std::string Cgi::getResponse() {
 
 std::string Cgi::readFromFd(int fd) {
     std::string result;
-    char buffer[1024];
+    char buffer[MAX_BUFFER_SIZE];
     ssize_t size;
     while ((size = read(fd, buffer, sizeof(buffer))) > 0) {
+        //std::cout << "size=" << size <<"\n";
         result.append(buffer, size);
     }
     if (size < 0) {
@@ -99,32 +100,38 @@ void Cgi::runCmd(){
         throw std::runtime_error("pipe error occurred!");
     }
     pid_t pid = fork();
-    if (pid){
-        close(fd_to_cgi[0]);
-        close(fd_from_cgi[1]);
-        write(fd_to_cgi[1], _body.c_str(), _body.size());
-        close(fd_to_cgi[1]);
-        _response = readFromFd(fd_from_cgi[0]);
-        close(fd_from_cgi[0]);
+    if (pid == -1){
+        throw std::runtime_error("fork error occurred!");
     }
-    else {
-        std::cout << "CGI: execve for " << _argv[0] << "\n";
+    else if (pid == 0)
+    {
+        std::cout << "CGI: execve for ->" << _argv[0] << "<-\n";
         close(fd_to_cgi[1]);
         close(fd_from_cgi[0]);
         dup2(fd_to_cgi[0], 0);
         dup2(fd_from_cgi[1], 1);
-        execve(_argv[0], _argv, _envp);
         close(fd_to_cgi[0]);
         close(fd_from_cgi[1]);
+        execve(_argv[0], _argv, _envp);
+        close(0);
+        close(1);
         throw std::runtime_error("CGI:execve error occurred!");
     }
+    close(fd_to_cgi[0]);
+    close(fd_from_cgi[1]);
+    write(fd_to_cgi[1], _body.c_str(), _body.size());
+    close(fd_to_cgi[1]);
+    _response = readFromFd(fd_from_cgi[0]);
+    close(fd_from_cgi[0]);
     int status;
     waitpid(pid, &status, 0);
     _status = (status & 0xff00) >> 8;
     //if (WIFEXITED(status))
     //    _status = WEXITSTATUS(status);
-    if (_response.empty())
-			_response = "HTTP/1.1 500 Internal Server Error\nContent-Type: text/plain\n";
+    if (_response.empty()){
+		_response = "HTTP/1.1 500 Internal Server Error\nContent-Type: text/plain\n";
+        std::cout << "ERROR Empty response\n";
+    }
 }
 
 void Cgi::cleanEnv(){
