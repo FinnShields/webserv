@@ -37,7 +37,6 @@ void WebServer::setup()
 		perror(e);
 		exit(EXIT_FAILURE);
 	}
-	
 }
 
 bool WebServer::fd_is_server(int fd)

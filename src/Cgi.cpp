@@ -10,8 +10,9 @@ Cgi::Cgi(const Cgi& other):
     };
 
 Cgi::Cgi(Request& r, const Server& s):_request(r),_server(s),
-    _body(_request.getRef("body")){
-        _argv = new char*[4];
+    //_body(_request.getRef("body")){
+    _body(_request.get("body")){
+        _argv = new char*[4]; // {0};
     };
 
 Cgi& Cgi::operator=(const Cgi&){
@@ -90,6 +91,7 @@ std::string Cgi::readFromFd(int fd) {
 
 void Cgi::runCmd(){
     _argv[0] = strdup(_env_map["SCRIPT_FILENAME"].c_str());
+    _argv[1] = NULL;
     int fd_from_cgi[2];
     int fd_to_cgi[2];
     if (pipe(fd_to_cgi) == -1)
@@ -106,25 +108,31 @@ void Cgi::runCmd(){
     else if (pid == 0)
     {
         std::cout << "CGI: execve for ->" << _argv[0] << "<-\n";
-        close(fd_to_cgi[1]);
-        close(fd_from_cgi[0]);
-        dup2(fd_to_cgi[0], 0);
-        dup2(fd_from_cgi[1], 1);
-        close(fd_to_cgi[0]);
-        close(fd_from_cgi[1]);
+        std::cout << "CGI: execve for envp[0]->" << _envp[0] << "<-"
+            << "envp size=" << _env_map.size() << "\n";
+        int i = close(fd_to_cgi[1]);
+        int j = close(fd_from_cgi[0]);
+        std::cout << "1. closed" << i << j << std::endl;
+        i = dup2(fd_to_cgi[0], 0);
+        j = dup2(fd_from_cgi[1], 1);
+        std::cerr << "1. dup" << i << j << std::endl;
+        i = close(fd_to_cgi[0]);
+        j = close(fd_from_cgi[1]);
+        std::cerr << "2. closed" << i << j << std::endl;
         execve(_argv[0], _argv, _envp);
         close(0);
         close(1);
-        throw std::runtime_error("CGI:execve error occurred!");
+        throw std::runtime_error("CGI:execve error occurred!"); //this throw in child occurs when execve fails.
     }
     close(fd_to_cgi[0]);
     close(fd_from_cgi[1]);
+    std::cout << "parent body: " << _body.c_str() << std::endl;
     write(fd_to_cgi[1], _body.c_str(), _body.size());
     close(fd_to_cgi[1]);
-    _response = readFromFd(fd_from_cgi[0]);
-    close(fd_from_cgi[0]);
     int status;
     waitpid(pid, &status, 0);
+    _response = readFromFd(fd_from_cgi[0]);
+    close(fd_from_cgi[0]);
     _status = (status & 0xff00) >> 8;
     //if (WIFEXITED(status))
     //    _status = WEXITSTATUS(status);
@@ -147,22 +155,30 @@ void Cgi::cleanEnv(){
 }
 
 void Cgi::setEnv(){
-    _envp = new char*[_env_map.size() + 1];
+    _envp = new char*[_env_map.size() + 1] {0};
+    std::cout << "_env_map.size() + 1" << _env_map.size() << "\n";
     char* line_pnt;
     std::string line;
     int i = 0;
     for (auto& [key, value] : _env_map){
         line = key + "=" + value;
+        if (_envp[i] == nullptr)
+            std::cout << "making envp[" << i << "] is NULL \n";
+        std::cout << "making envp[" << i << "] :" << line << "\n";  
         line_pnt = new char[line.size() + 1];
         std::strcpy(line_pnt, line.c_str());
         _envp[i] = line_pnt;
         ++i;
     }
+    if (_envp[i] == nullptr)
+        std::cout << "making envp[" << i << "] is NULL \n";
+    else 
+        _envp[i] = nullptr;
 }
 
 void Cgi::setEnvMap(){
     _env_map["AUTH_TYPE"] = "basic";
-    _env_map["CONTENT_LENGTH"] = _request.get("Content-Length");
+    _env_map["CONTENT_LENGTH"] = _request.get("Content-length");
 	_env_map["CONTENT_TYPE"] = _request.get("Content-Type");
     _env_map["DOCUMENT_ROOT"] = _server.config.getFirst("main","root","");
     _env_map["GATEWAY_INTERFACE"] = "CGI/1.1";
@@ -196,12 +212,14 @@ void Cgi::setEnvMap(){
         _env_map["SERVER_PORT"] = _env_map["SERVER_NAME"].substr(pos + 1);
     else
         _env_map["SERVER_PORT"] = "80";
+    
     for (auto it = _env_map.begin(); it != _env_map.end();) {
         if (it->second.empty()) {
             it = _env_map.erase(it);
         } else
             ++it;
     }
+    
     
 
 /*
