@@ -85,6 +85,8 @@ void	Request::extractHeaders(std::string& input)
 			if (i + (++len) == input.size() || input.at(i + len) == '\n')
 				return ;
 		first = input.substr(i, len);
+		for (size_t i = 0; i < first.size(); i++)
+			first[i] = std::tolower(first[i]);
 		i += len + 2;
 		len = 0;
 		while (input.at(i + len) != '\r' && i + len < input.size())
@@ -115,7 +117,7 @@ void	Request::handleChunks(std::string& input, size_t i)
 			it ++;
 		chunkLength = atoi(input.c_str() + std::distance(input.begin(), it));
 	}
-	this->headers["Content-Length"] = std::to_string(contentLength);
+	this->headers["content-length"] = std::to_string(contentLength);
 	this->body = content;
 }
 
@@ -131,11 +133,9 @@ void	Request::extractBody(std::string& input)
 	i += 4;
 	if (i >= input.length())
 		return ;
-	if (!this->get("Transfer-Encoding").compare("chunked"))
+	if (!this->get("transfer-encoding").compare("chunked"))
 		return (this->handleChunks(input, i));
-	len = atoi(this->get("Content-Length").c_str());
-	if (!len)
-		len = atoi(this->get("content-length").c_str());
+	len = atoi(this->get("content-length").c_str());
 	for (size_t j = 0; j < len; j++)
 		this->body.append(1, input[i++]);
 }
@@ -153,6 +153,8 @@ void	Request::parse(char *buffer)
 
 const std::string	Request::get(std::string toGet)
 {
+	for (size_t i = 0; i < toGet.size(); i++)
+		toGet[i] = std::tolower(toGet[i]);
 	if (!toGet.compare("method"))
 		return (this->method);
 	if (!toGet.compare("target"))
