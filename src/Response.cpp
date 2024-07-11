@@ -17,18 +17,36 @@ Response::~Response() {}
 
 void Response::run()
 {
+	std::string response;
 	std::string method = _req.get("method");
 	std::string target = _req.get("target");
+	t_vector_str mtd_default = DEFAULT_METHOD;
 	t_vector_str mtd = _srv.config.getValues(target, "limit_except", DEFAULT_METHOD);
-	std::string response;
-	if (find(mtd.begin(), mtd.end(), method) == mtd.end())
+	if (find(mtd_default.begin(), mtd_default.end(), method) == mtd_default.end())
 		response = RESPONSE_501;
+	else if (find(mtd.begin(), mtd.end(), method) == mtd.end())
+		response = RESPONSE_405;
 	else if (target.size() > 9 && target.substr(0, 9).compare("/cgi-bin/") == 0)
 	{
 		std::cout << "------- CGI ----------\n";
         Cgi cgi(_req, _srv);
 		cgi.start();
-		response = cgi.getResponse();
+		int status = cgi.getStatus();
+		if (status == 0)
+		{
+			response = cgi.getResponse();
+			//if (response.empty())
+			//	response = RESPONSE_502;	
+			// Add other validation of CGI response for status = 0;
+			response = STATUS_LINE_200 + response;
+		}
+		else if (status == 500)
+			response = RESPONSE_500;
+		//else if  (status == 502)
+			//response = RESPONSE_500; //"502 Bad Gateway: "PATH NOT FOUND""
+		// to be extended:
+		//else if (status == XXX)
+		//	response = RESPONSE_XXX;
 		std::cout << "------- END ----------\n";
 	}
 	else

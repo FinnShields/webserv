@@ -42,6 +42,8 @@ class Cgi
         void start();
         void runCmd();
         std::string getResponse();
+        int getStatus();
+        
 };
 
 #endif

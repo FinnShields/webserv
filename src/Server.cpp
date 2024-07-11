@@ -145,7 +145,7 @@ void Server::set_name(const std::string &name)
 	_name = name;
 }
 
-//"0.0.0.0" is string for INADDR_ANY
+// "0.0.0.0" is string for INADDR_ANY
 void Server::set_all_config(){
 	_port = config.getFirst("main", "listen", DEFAULT_PORT);
 	_ip = inet_addr(config.getFirst("main", "host", DEFAULT_IP).c_str());

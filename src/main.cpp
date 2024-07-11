@@ -35,7 +35,8 @@ int main(int argc, char *argv[]) {
         webserv.setup();
         webserv.run();
     }
-    catch (const std::ios_base::failure& e) {
+    catch (const std::ios_base::failure& e)
+    {
         std::cerr << e.what() << std::endl;
     }
     catch (const std::runtime_error& e){

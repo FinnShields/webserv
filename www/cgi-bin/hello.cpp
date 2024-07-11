@@ -17,7 +17,6 @@ std::string readFromFd(int fd) {
     return result;
 }
 
-
 int main(int argc, char** argv, char** envp) {
     (void)argc;
     (void)argv;

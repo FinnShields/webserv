@@ -13,7 +13,7 @@ Cgi::Cgi(Request& r, const Server& s):_request(r),_server(s),
     //_body(_request.getRef("body")){
     _body(_request.getRef("body")){
         _argv = new char*[4]; // {0};
-    };
+};
 
 Cgi& Cgi::operator=(const Cgi&){
     return *this;
@@ -31,38 +31,54 @@ Cgi::~Cgi(){
     }
 };
 
+int Cgi::getStatus(){
+    return _status;
+}
+
 void Cgi::start(){
-    std::cout << "This is Cgi request. Work in progress.\n";
+    std::cout << "__________This is Cgi request._____________\n";
     std::cout << "Method =>" << _request.get("method") << "<=\n";
     std::cout << "Target =>" << _request.get("target") << "<=\n";
     setEnvMap();
     setEnv();
-    runCmd();
-    std::cout << "status =" << _status << "\n";
-        /*
+    //runCmd();
+    //std::cout << "status =" << _status << "\n";*
     try{
         runCmd();
     }
     catch (const std::runtime_error& e){
         std::cerr << e.what() << "\n";
-        _response = RESPONSE_500;
+        _response = "";
+        _status = 500;
     }
     catch (...) {
         std::cerr << "Caught unknown exception." << std::endl;
-        _response = RESPONSE_500;
+        _response = "";
+        _status = 500;
     }
-    std::cout << "status =" << _status << "\n";
-    */
+    std::cout << "_status =" << _status << "\n";
 }
 
-/*   // types of error in Cgi
+/*
+   // /cgi-bin/script.cgi   /info   ?   query=python
+DOCUMENT_ROOT: This is a server-specific configuration.
+REMOTE_PORT:  This is information about the client's connection.
+QUERY_STRING: The query string is part of the URL in the GET request, 
+        not a header. It appears after the ? in the URL.
+PATH_INFO:   This is additional path information in the URL.
+PATH_TRANSLATED:  This is a server-specific mapping.
+SCRIPT_FILENAME:   This is a server-specific configuration.
+SERVER_NAME:  However, the Host header typically includes the server name 
+        or IP address and the port number (if not the default port).
+SERVER_PORT:  This is part of the URL in the request line and also implicitly included in the Host header if it's not the default port.
+
+// types of error in Cgi
  502 "Bad Gateway: The server received an empty response from the CGI script.";
 "PATH NOT FOUND", 404
 "PERMISSION DENIED", 403
 "UNKNOWN METHOD", 405
 "INTERNAL SERVER ERROR", 500
 "NOT IMPLEMENTED", 501
-OK:
 "TEAPOT", 418
 
 If found and executable, the server runs the script.
@@ -70,6 +86,8 @@ If not found, a 404 error is returned.
 If found but not executable, a 403 error or similar may be returned.
 If execution fails, a 500 error may be returned.
 */
+
+
 
 std::string Cgi::getResponse() {
     return _response;
@@ -91,6 +109,8 @@ std::string Cgi::readFromFd(int fd) {
 
 void Cgi::runCmd(){
     _argv[0] = strdup(_env_map["SCRIPT_FILENAME"].c_str());
+    if (!_argv[0])
+        throw std::runtime_error("strdup error occurred!");
     _argv[1] = NULL;
     int fd_from_cgi[2];
     int fd_to_cgi[2];
@@ -108,37 +128,35 @@ void Cgi::runCmd(){
     else if (pid == 0)
     {
         std::cout << "CGI: execve for ->" << _argv[0] << "<-\n";
-        int i = close(fd_to_cgi[1]);
-        int j = close(fd_from_cgi[0]);
-        //protect close and dub2
-        i = dup2(fd_to_cgi[0], 0);
-        j = dup2(fd_from_cgi[1], 1);
-        //std::cerr << "1. dup" << i << j << std::endl;
-        i = close(fd_to_cgi[0]);
-        j = close(fd_from_cgi[1]);
-        (void)i;
-        (void)j;
-        //std::cerr << "2. closed" << i << j << std::endl;
+        if (close(fd_to_cgi[1]) == -1 || close(fd_from_cgi[0]) == -1)
+            throw std::runtime_error("close error occurred!");
+        if (dup2(fd_to_cgi[0], 0) == -1 || dup2(fd_from_cgi[1], 1) == -1)
+            throw std::runtime_error("dub2 error occurred!");
+        if (close(fd_to_cgi[0]) == -1 || close(fd_from_cgi[1]) == -1)
+            throw std::runtime_error("close error occurred!");
         execve(_argv[0], _argv, _envp);
         close(0);
         close(1);
         throw std::runtime_error("CGI:execve error occurred!"); //this throw in child occurs when execve fails.
     }
-    close(fd_to_cgi[0]);
-    close(fd_from_cgi[1]);
-    std::cout << "parent body: " << _body.c_str() << std::endl;
+    if (close(fd_to_cgi[0]) == -1 || close(fd_from_cgi[1]) == -1)
+        throw std::runtime_error("close error occurred!");
+    //std::cout << "parent body: " << _body.c_str() << std::endl;
     write(fd_to_cgi[1], _body.c_str(), _body.size());
-    close(fd_to_cgi[1]);
-    int status;
-    waitpid(pid, &status, 0);
+    if (close(fd_to_cgi[1]) == -1)
+        throw std::runtime_error("close error occurred!");
+    waitpid(pid, &_status, 0);
     _response = readFromFd(fd_from_cgi[0]);
-    close(fd_from_cgi[0]);
-    _status = (status & 0xff00) >> 8;
-    //if (WIFEXITED(status))
-    //    _status = WEXITSTATUS(status);
+    if (close(fd_from_cgi[0]) == -1)
+        throw std::runtime_error("close error occurred!");
+    if ((_status & 0xff00) >> 8 != 0)
+        _status = 500;
+    //if (WIFEXITED(_status))
+    //    __status = WEXITSTATUS(status);
     if (_response.empty()){
-		_response = "HTTP/1.1 500 Internal Server Error\nContent-Type: text/plain\n";
+		_response = "Internal Server Error\nContent-Type: text/plain\n";
         std::cout << "ERROR Empty response\n";
+        _status = 500;
     }
 }
 
@@ -233,19 +251,3 @@ void Cgi::setEnvMap(){
     */    
 }  
 
-/*
-   // /cgi-bin/script.cgi   /info   ?   query=python
-
-DOCUMENT_ROOT: This is a server-specific configuration.
-REMOTE_PORT:  This is information about the client's connection.
-QUERY_STRING: The query string is part of the URL in the GET request, 
-    not a header. It appears after the ? in the URL.
-PATH_INFO:   This is additional path information in the URL.
-PATH_TRANSLATED:  This is a server-specific mapping.
-SCRIPT_FILENAME:   This is a server-specific configuration.
-SERVER_NAME:  However, the Host header typically includes the server name 
-    or IP address and the port number (if not the default port).
-SERVER_PORT:  This is part of the URL in the request line and also implicitly included in the Host header if it's not the default port.
-
-
-*/
