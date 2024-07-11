@@ -22,7 +22,7 @@ int main(int argc, char** argv, char** envp) {
     (void)argc;
     (void)argv;
 
-    std::cerr << "-------argc: " << argc << std::endl;
+    //std::cerr << "-------argc: " << argc << std::endl;
     std::string request_body = readFromFd(0);
     std::cout << "HTTP/1.1 200 OK\r\n";
     std::cout << "Content-Type: text/html\r\n\r\n";

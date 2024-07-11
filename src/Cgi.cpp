@@ -11,7 +11,7 @@ Cgi::Cgi(const Cgi& other):
 
 Cgi::Cgi(Request& r, const Server& s):_request(r),_server(s),
     //_body(_request.getRef("body")){
-    _body(_request.get("body")){
+    _body(_request.getRef("body")){
         _argv = new char*[4]; // {0};
     };
 
@@ -108,17 +108,17 @@ void Cgi::runCmd(){
     else if (pid == 0)
     {
         std::cout << "CGI: execve for ->" << _argv[0] << "<-\n";
-        std::cout << "CGI: execve for envp[0]->" << _envp[0] << "<-"
-            << "envp size=" << _env_map.size() << "\n";
         int i = close(fd_to_cgi[1]);
         int j = close(fd_from_cgi[0]);
-        std::cout << "1. closed" << i << j << std::endl;
+        //protect close and dub2
         i = dup2(fd_to_cgi[0], 0);
         j = dup2(fd_from_cgi[1], 1);
-        std::cerr << "1. dup" << i << j << std::endl;
+        //std::cerr << "1. dup" << i << j << std::endl;
         i = close(fd_to_cgi[0]);
         j = close(fd_from_cgi[1]);
-        std::cerr << "2. closed" << i << j << std::endl;
+        (void)i;
+        (void)j;
+        //std::cerr << "2. closed" << i << j << std::endl;
         execve(_argv[0], _argv, _envp);
         close(0);
         close(1);
@@ -162,9 +162,9 @@ void Cgi::setEnv(){
     int i = 0;
     for (auto& [key, value] : _env_map){
         line = key + "=" + value;
-        if (_envp[i] == nullptr)
-            std::cout << "making envp[" << i << "] is NULL \n";
-        std::cout << "making envp[" << i << "] :" << line << "\n";  
+        //if (_envp[i] == nullptr)
+        //    std::cout << "making envp[" << i << "] is NULL \n";
+        //std::cout << "making envp[" << i << "] :" << line << "\n";  
         line_pnt = new char[line.size() + 1];
         std::strcpy(line_pnt, line.c_str());
         _envp[i] = line_pnt;
@@ -177,13 +177,19 @@ void Cgi::setEnv(){
 }
 
 void Cgi::setEnvMap(){
-    _env_map["AUTH_TYPE"] = "basic";
-    _env_map["CONTENT_LENGTH"] = _request.get("Content-length");
-	_env_map["CONTENT_TYPE"] = _request.get("Content-Type");
-    _env_map["DOCUMENT_ROOT"] = _server.config.getFirst("main","root","");
     _env_map["GATEWAY_INTERFACE"] = "CGI/1.1";
-    _env_map["HTTP_COOKIE"] = _request.get("Cookie");
-    _env_map["HTTP_USER_AGENT"] = _request.get("User-Agent");
+    _env_map["AUTH_TYPE"] = "basic";
+    _env_map["REDIRECT_STATUS"] = "200";
+    _env_map["SERVER_PROTOCOL"] = "HTTP/1.1";
+	_env_map["SERVER_SOFTWARE"] = "Webserv_FAB/1.0";
+    _env_map["DOCUMENT_ROOT"] = _server.config.getFirst("main","root","");
+
+    _env_map["CONTENT_LENGTH"] = _request.getHeader("content-length");
+	_env_map["CONTENT_TYPE"] = _request.getHeader("content-type");
+    _env_map["HTTP_COOKIE"] = _request.getHeader("cookie");
+    _env_map["HTTP_USER_AGENT"] = _request.getHeader("user-agent");
+    _env_map["SERVER_NAME"] = _request.getHeader("Host");
+    _env_map["REQUEST_METHOD"] = _request.get("method");
     std::string target = _request.get("target");
     size_t pos_query = target.find('?');
     size_t pos_info = target.rfind('/', pos_query);
@@ -202,11 +208,6 @@ void Cgi::setEnvMap(){
     }
     // SCRIPT_NAME  ???
     _env_map["PATH_TRANSLATED"] = _env_map["DOCUMENT_ROOT"] + _env_map["PATH_INFO"];
-    _env_map["REDIRECT_STATUS"] = "200";
-    _env_map["REQUEST_METHOD"] = _request.get("method");
-    _env_map["SERVER_PROTOCOL"] = "HTTP/1.1";
-	_env_map["SERVER_SOFTWARE"] = "Webserv_FAB/1.0";
-    _env_map["SERVER_NAME"] = _request.get("Host");
     size_t pos = _env_map["SERVER_NAME"].find(':');
     if (pos != std::string::npos)
         _env_map["SERVER_PORT"] = _env_map["SERVER_NAME"].substr(pos + 1);
@@ -219,8 +220,6 @@ void Cgi::setEnvMap(){
         } else
             ++it;
     }
-    
-    
 
 /*
     std::cout << pos_cgi << "\n";
@@ -236,9 +235,6 @@ void Cgi::setEnvMap(){
 
 /*
    // /cgi-bin/script.cgi   /info   ?   query=python
-    
-    
-
 
 DOCUMENT_ROOT: This is a server-specific configuration.
 REMOTE_PORT:  This is information about the client's connection.

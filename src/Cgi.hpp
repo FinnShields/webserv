@@ -21,7 +21,7 @@ class Cgi
     private:
         Request& _request;
         const Server& _server;
-        std::string _body;
+        std::string& _body;
         std::map<std::string,std::string> _env_map;
         char** _argv;
         char** _envp;
