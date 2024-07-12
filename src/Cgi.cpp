@@ -5,21 +5,29 @@
 Cgi::Cgi(const Cgi& other):
     _request(other._request),
     _server(other._server),
-    _body(other._body){
-    _argv = new char*[4];
-    };
+    _body(other._body),
+    _target(other._target)
+{
+    _argv = new char*[4] {nullptr};
+    _envp = nullptr;
+}
 
-Cgi::Cgi(Request& r, const Server& s):_request(r),_server(s),
-    //_body(_request.getRef("body")){
-    _body(_request.getRef("body")){
-        _argv = new char*[4]; // {0};
-};
+Cgi::Cgi(Request& r, const Server& s):
+    _request(r),
+    _server(s),
+    _body(_request.getRef("body")),
+    _target(_request.get("target"))
+{
+    _argv = new char*[4] {nullptr};
+    _envp = nullptr;
+}
 
 Cgi& Cgi::operator=(const Cgi&){
     return *this;
 }
 
 Cgi::~Cgi(){
+    //std::cerr << "Cgi destructor call\n";
     cleanEnv();
     int i = 0;
     if (_argv){
@@ -38,7 +46,15 @@ int Cgi::getStatus(){
 void Cgi::start(){
     std::cout << "__________This is Cgi request._____________\n";
     std::cout << "Method =>" << _request.get("method") << "<=\n";
-    std::cout << "Target =>" << _request.get("target") << "<=\n";
+    std::cout << "Target =>" << _target << "<=\n";
+    //std::cout << "Target =>" << _request.get("target") << "<=\n";
+    if (!isImplemented())
+    {
+        std::cerr << "ext is not implemented\n";
+        _response = "";
+        _status = 501;
+        return ;
+    }
     setEnvMap();
     setEnv();
     //runCmd();
@@ -73,12 +89,13 @@ SERVER_NAME:  However, the Host header typically includes the server name
 SERVER_PORT:  This is part of the URL in the request line and also implicitly included in the Host header if it's not the default port.
 
 // types of error in Cgi
+"NOT IMPLEMENTED", 501       -- checked in Response
+"UNKNOWN METHOD", 405        -- checked in Response
+"PATH NOT FOUND", 404        -- here
+"PERMISSION DENIED", 403     -- here
+
  502 "Bad Gateway: The server received an empty response from the CGI script.";
-"PATH NOT FOUND", 404
-"PERMISSION DENIED", 403
-"UNKNOWN METHOD", 405
 "INTERNAL SERVER ERROR", 500
-"NOT IMPLEMENTED", 501
 "TEAPOT", 418
 
 If found and executable, the server runs the script.
@@ -87,7 +104,19 @@ If found but not executable, a 403 error or similar may be returned.
 If execution fails, a 500 error may be returned.
 */
 
-
+bool Cgi::isImplemented()
+{
+    size_t pos = _target.rfind('.');
+    //std::cerr << "pos =" << pos << "\n";
+    if (pos == std::string::npos)
+        return false;
+    std::string ext = _target.substr(pos);
+    //std::cerr << "ext =" << ext << "\n";
+    t_vector_str ext_list = _server.config.getValues(_target, "cgi_ext", {});
+    if (find(ext_list.begin(), ext_list.end(), ext) == ext_list.end())
+        return false;
+    return true;
+}
 
 std::string Cgi::getResponse() {
     return _response;
@@ -112,6 +141,16 @@ void Cgi::runCmd(){
     if (!_argv[0])
         throw std::runtime_error("strdup error occurred!");
     _argv[1] = NULL;
+    if (access(_argv[0], F_OK) != 0)
+    {
+        _status = 404; //"PATH NOT FOUND"
+        return ;
+    }
+    if (access(_argv[0], X_OK) != 0)
+    {
+        _status = 403; //"PERMISSION DENIED"
+        return ;
+    }
     int fd_from_cgi[2];
     int fd_to_cgi[2];
     if (pipe(fd_to_cgi) == -1)
@@ -188,10 +227,12 @@ void Cgi::setEnv(){
         _envp[i] = line_pnt;
         ++i;
     }
+    /*
     if (_envp[i] == nullptr)
         std::cout << "making envp[" << i << "] is NULL \n";
     else 
         _envp[i] = nullptr;
+    */
 }
 
 void Cgi::setEnvMap(){
@@ -208,21 +249,20 @@ void Cgi::setEnvMap(){
     _env_map["HTTP_USER_AGENT"] = _request.getHeader("user-agent");
     _env_map["SERVER_NAME"] = _request.getHeader("Host");
     _env_map["REQUEST_METHOD"] = _request.get("method");
-    std::string target = _request.get("target");
-    size_t pos_query = target.find('?');
-    size_t pos_info = target.rfind('/', pos_query);
-    size_t pos_cgi = target.find('/', 1);
+    size_t pos_query = _target.find('?');
+    size_t pos_info = _target.rfind('/', pos_query);
+    size_t pos_cgi = _target.find('/', 1);
     if (pos_query != std::string::npos)
-        _env_map["QUERY_STRING"] = target.substr(pos_query + 1);
+        _env_map["QUERY_STRING"] = _target.substr(pos_query + 1);
     else
         _env_map["QUERY_STRING"] = "";
     if (pos_info != pos_cgi){
-        _env_map["PATH_INFO"] = target.substr(pos_info, pos_query - pos_info);
-        _env_map["SCRIPT_FILENAME"] = _env_map["DOCUMENT_ROOT"] + target.substr(0, pos_info);
+        _env_map["PATH_INFO"] = _target.substr(pos_info, pos_query - pos_info);
+        _env_map["SCRIPT_FILENAME"] = _env_map["DOCUMENT_ROOT"] + _target.substr(0, pos_info);
     }
     else{
         _env_map["PATH_INFO"] = "";
-        _env_map["SCRIPT_FILENAME"] = _env_map["DOCUMENT_ROOT"] + target.substr(0, pos_query);
+        _env_map["SCRIPT_FILENAME"] = _env_map["DOCUMENT_ROOT"] + _target.substr(0, pos_query);
     }
     // SCRIPT_NAME  ???
     _env_map["PATH_TRANSLATED"] = _env_map["DOCUMENT_ROOT"] + _env_map["PATH_INFO"];

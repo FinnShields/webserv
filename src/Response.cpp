@@ -32,18 +32,29 @@ void Response::run()
         Cgi cgi(_req, _srv);
 		cgi.start();
 		int status = cgi.getStatus();
+		std::cerr << "status =" << status << "\n";
 		if (status == 0)
 		{
 			response = cgi.getResponse();
-			//if (response.empty())
-			//	response = RESPONSE_502;	
+			if (response.empty())
+				response = RESPONSE_500;
+			else
+				response = STATUS_LINE_200 + response;
 			// Add other validation of CGI response for status = 0;
-			response = STATUS_LINE_200 + response;
+			// Alternatevly we could put validation inside of Cgi class
 		}
+		else if (status == 403)
+			response = RESPONSE_500;
+		else if (status == 404)
+			response = RESPONSE_500;
 		else if (status == 500)
 			response = RESPONSE_500;
+		else if (status == 501)
+			response = RESPONSE_500;
+		else 
+			response = RESPONSE_500;
 		//else if  (status == 502)
-			//response = RESPONSE_500; //"502 Bad Gateway: "PATH NOT FOUND""
+			//response = RESPONSE_502; //Bad Gateway
 		// to be extended:
 		//else if (status == XXX)
 		//	response = RESPONSE_XXX;
@@ -56,6 +67,7 @@ void Response::run()
 		: (method == "DELETE") ? deleteResp(_srv)
 		: RESPONSE_501;
 	}
+	//std::cerr << "------- Err:Response ----------\n";
 	std::cout << "------- Response ----------\n";
 	std::cout << response << "\n";
 	std::cout << "------- END ---------------\n";
