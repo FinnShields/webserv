@@ -6,7 +6,7 @@
 /*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/07/02 06:29:49 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/07/11 06:24:20 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -168,6 +168,14 @@ const std::string	Request::get(std::string toGet)
 	return (this->headers[toGet]);
 }
 
+const std::string	Request::getHeader(std::string toGet)
+{
+	for (size_t i = 0; i < toGet.size(); i++)
+		toGet[i] = std::tolower(toGet[i]);
+	if (!this->headers.count(toGet))
+		return ("");
+	return (this->headers[toGet]);
+}
 
 std::string& Request::getRef(std::string toGet)
 {

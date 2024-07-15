@@ -2,7 +2,18 @@
 <html>
   <head>
     <title>FAB WebServer</title>
-  </head>
+    <script>
+      function beforeSubmit()
+      {
+        var fileName =  document.getElementById('fileInput').value.toLowerCase();
+        if (!fileName.endsWith('.txt'))
+        {
+          alert("Wrong file type!");
+          return false;
+        }
+        return true;
+      }
+    </script>  </head>
   <body onload="init()">
     <p>Welcome to FAB WebServer.</p>
     <form method="post" enctype="multipart/form-data">

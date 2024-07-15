@@ -1,7 +1,7 @@
 #include <iostream>
 #include <unistd.h>
-
-
+#include <thread>
+#include <chrono>
 
 std::string readFromFd(int fd) {
     std::string result;
@@ -21,9 +21,12 @@ int main(int argc, char** argv, char** envp) {
     (void)argc;
     (void)argv;
 
+    std::cerr << "Sleeping for 10 seconds..." << std::endl;
+    std::this_thread::sleep_for(std::chrono::seconds(10));
+    std::cerr << "Awake!" << std::endl;
+
     //std::cerr << "-------argc: " << argc << std::endl;
     std::string request_body = readFromFd(0);
-    std::cout << "HTTP/1.1 200 OK\r\n";
     std::cout << "Content-Type: text/html\r\n\r\n";
 
     std::cout << "<html><head><title>Hello, World!  I am CGI script</title></head><body>";

@@ -22,6 +22,8 @@ class Cgi
         Request& _request;
         const Server& _server;
         std::string& _body;
+        std::string _target;
+        
         std::map<std::string,std::string> _env_map;
         char** _argv;
         char** _envp;
@@ -29,6 +31,7 @@ class Cgi
         int _status;
 
         Cgi();
+        bool isImplemented();
         void setEnvMap();
         void setEnv();
         void cleanEnv();
@@ -42,6 +45,8 @@ class Cgi
         void start();
         void runCmd();
         std::string getResponse();
+        int getStatus();
+        
 };
 
 #endif

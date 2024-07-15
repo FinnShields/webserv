@@ -22,6 +22,11 @@
 #include "Server.hpp"
 
 #define RESPONSE_501 "HTTP/1.1 501 Not Implemented\nContent-Type: text/plain\n\nError: Method not recognized or not implemented"
+#define RESPONSE_500 "HTTP/1.1 500 Internal Server Error\nContent-Type: text/plain\n"
+#define RESPONSE_405 "HTTP/1.1 405 Method Not Allowed\nContent-Type: text/plain\n"
+#define STATUS_LINE_200 "HTTP/1.1 200 OK\n" 
+
+
 
 class Request;
 class Server;

@@ -6,7 +6,7 @@
 /*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:41 by fshields          #+#    #+#             */
-/*   Updated: 2024/07/02 06:29:55 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/07/11 06:04:41 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,6 +43,7 @@ class Request
 		~Request();
 		void read(int _fd);
 		const std::string get(std::string toGet);
+		const std::string getHeader(std::string toGet);
 		std::string& getRef(std::string toGet);
 		void display();
 };
