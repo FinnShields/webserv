@@ -110,6 +110,21 @@ std::string Response::deleteResp()
 	return ("HTTP/1.1 404 Not Found");
 }
 
+std::string Response::createCookie()
+{
+	size_t newSessionId;
+
+	srand((size_t) time(NULL));
+	newSessionId = (size_t) rand();
+	while (_srv.checkCookieExist(newSessionId))
+	{
+		srand((size_t) time(NULL));
+		newSessionId = (size_t) rand();
+	}
+	_srv.setNewCookie(newSessionId);
+	return ("Set-Cookie: session-id=" + std::to_string(newSessionId) + "\r\n");
+}
+
 std::string Response::load_index()
 {
 	std::ifstream file("www/index_cgi.html");
@@ -117,10 +132,15 @@ std::string Response::load_index()
 		return ("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nError: index.html not found");
 	
 	std::stringstream buffer;
+	if (_req.get("cookie").empty())
+		buffer << createCookie();
+	else
+		_srv.saveCookieInfo(_req.getRef("cookie"));
+	buffer << "\r\n";
 	buffer << file.rdbuf();
 	file.close();
 
-	return ("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n" + buffer.str());
+	return ("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n" + buffer.str());
 }
 std::string Response::load_directory_listing()
 {
