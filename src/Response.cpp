@@ -58,7 +58,7 @@ void Response::run()
 		// to be extended:
 		//else if (status == XXX)
 		//	response = RESPONSE_XXX;
-		std::cout << "------- END ----------\n";
+		std::cout << "------- END ----------" << std::endl;
 	}
 	else
 	{
@@ -69,7 +69,7 @@ void Response::run()
 	}
 	//std::cerr << "------- Err:Response ----------\n";
 	std::cout << "------- Response ----------\n";
-	std::cout << response << "\n";
+	std::cout << response << std::endl;
 	std::cout << "------- END ---------------\n";
 	if (send(_fd, response.c_str(), response.size(), 0) < 0)
 		perror("Send error");
@@ -80,7 +80,7 @@ std::string Response::get()
 	std::string method = _req.get("method");
 	std::string dir = _req.get("target");
 	
-	std::string response = "HTTP/1.1 200 OK\nContent-Type: text/plain";
+	std::string response = "HTTP/1.1 200 OK\r\nContent-Type: text/plain";
 	if (dir == "/" || dir == "/?Submit=Go+back")
 		return load_index();
 	if (dir == "/delete")
@@ -114,7 +114,7 @@ std::string Response::load_index()
 {
 	std::ifstream file("www/index_cgi.html");
 	if (!file.is_open())
-		return ("HTTP/1.1 404 Not Found\nContent-Type: text/plain\n\nError: index.html not found");
+		return ("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nError: index.html not found");
 	
 	std::stringstream buffer;
 	buffer << file.rdbuf();
@@ -156,7 +156,7 @@ std::string Response::load_directory_listing()
 	else 
 	{
 		std::cout << "couldnt open dir" << std::endl;
-        return ("HTTP/1.1 500 Internal Server Error\nContent-Type: text/plain\n\nError: Could not open directory");
+        return ("HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\n\r\nError: Could not open directory");
     }
 
     return ("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n" + buffer.str());
