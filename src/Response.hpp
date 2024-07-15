@@ -37,9 +37,9 @@ class Response
 		int	_fd;
 		Request &_req;
 		Server &_srv;
-		std::string get(Server& _srv);
-		std::string post(Server& _srv);
-		std::string deleteResp(Server& _srv);
+		std::string get();
+		std::string post();
+		std::string deleteResp();
 		std::string load_index();
 		std::string load_directory_listing();
 		int saveFile();

@@ -62,9 +62,9 @@ void Response::run()
 	}
 	else
 	{
-    	response = (method == "GET") ? get(_srv)
-		: (method == "POST") ? post(_srv)
-		: (method == "DELETE") ? deleteResp(_srv)
+    	response = (method == "GET") ? get()
+		: (method == "POST") ? post()
+		: (method == "DELETE") ? deleteResp()
 		: RESPONSE_501;
 	}
 	//std::cerr << "------- Err:Response ----------\n";
@@ -75,9 +75,8 @@ void Response::run()
 		perror("Send error");
 }
 
-std::string Response::get(Server& _srv)
+std::string Response::get()
 {	
-	(void)_srv;
 	std::string method = _req.get("method");
 	std::string dir = _req.get("target");
 	
@@ -89,9 +88,8 @@ std::string Response::get(Server& _srv)
 	return (response);
 }
 
-std::string Response::post(Server& _srv)
+std::string Response::post()
 {
-	(void)_srv;
 	saveFile();
 	// int status = saveFile();
 	// return status == 500 ? "HTTP/1.1 500 Internal Server Error" :
@@ -100,9 +98,8 @@ std::string Response::post(Server& _srv)
 	return ("HTTP/1.1 204 No Content"); //No reloading
 }
 
-std::string Response::deleteResp(Server& _srv)
+std::string Response::deleteResp()
 {
-	(void)_srv;
 	std::string target = _req.get("target");
 	std::string dir = "uploads";
 
