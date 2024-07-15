@@ -33,9 +33,13 @@ Request::Request(const Request& r)
 	*this = r;
 }
 
-void Request::extractMethod(std::string& input)
+bool Request::extractMethod(std::string& input)
 {
 	this->method = input.substr(0, input.find_first_of(' '));
+	t_vector_str mtd_default = DEFAULT_METHOD;
+	if (find(mtd_default.begin(), mtd_default.end(), method) == mtd_default.end())
+		return (false);
+	return (true);
 }
 
 void Request::extractTarget(std::string& input)
@@ -45,6 +49,7 @@ void Request::extractTarget(std::string& input)
 
 	start = input.find_first_of(' ') + 1;
 	end = 0;
+	std::cout << "input: " << input << std::endl;
 	while (input.at(start + end) != ' ')
 		end++;
 	this->target = input.substr(start, end);
@@ -53,6 +58,8 @@ void Request::extractTarget(std::string& input)
 void Request::extractVersion(std::string& input)
 {
 	size_t start = input.find("HTTP");
+	if (start == std::string::npos)
+		perror("No http version");
 	size_t end = 0;
 	while (input.at(start + end) != '\r')
 		end++;
@@ -144,7 +151,8 @@ void	Request::parse(char *buffer)
 {
 	std::string	input(buffer);
 
-	this->extractMethod(input);
+	if (!this->extractMethod(input))
+		return ;
 	this->extractTarget(input);
 	this->extractVersion(input);
 	this->extractHeaders(input);

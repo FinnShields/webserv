@@ -30,7 +30,7 @@ class Request
 		std::map<std::string, std::string> headers;
 		std::string body;
 		void parse(char *buffer);
-		void extractMethod(std::string& input);
+		bool extractMethod(std::string& input);
 		void extractTarget(std::string& input);
 		void extractVersion(std::string& input);
 		void extractHeaders(std::string& input);
