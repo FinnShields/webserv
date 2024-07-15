@@ -18,6 +18,7 @@
 #include <netinet/in.h>
 #include <stdexcept>
 #include <map>
+#include <unordered_map>
 #include <vector>
 #include <iostream>
 #include <poll.h>
@@ -38,6 +39,7 @@ class Server
 {
     private:
         std::vector<Client> _clients;
+        std::unordered_map<size_t, size_t> cookies;
 		
         struct sockaddr_in _address;
 		int _opt = 1;
@@ -73,6 +75,9 @@ class Server
         void set_ip(const int &ip);
         void set_name(const std::string &);
         void set_all_config ();
+        bool checkCookieExist(size_t value);
+        void setNewCookie(size_t value);
+        void saveCookieInfo(std::string& cookie);
 
         const size_t index;
         const Config config;

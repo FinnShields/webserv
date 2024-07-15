@@ -151,3 +151,23 @@ void Server::set_all_config(){
 	_ip = inet_addr(config.getFirst("main", "host", DEFAULT_IP).c_str());
 	_name = config.getFirst("main", "server_name", DEFAULT_SRV_NAME + std::to_string(index));
 }
+
+bool Server::checkCookieExist(size_t value)
+{
+	for (size_t i = 0; i < cookies.size(); i++)
+		if (cookies[i] == value)
+			return (true);
+	return (false);
+}
+
+void Server::setNewCookie(size_t value)
+{
+	static size_t key = 0;
+	cookies[key++] = value;
+}
+
+void Server::saveCookieInfo(std::string& cookie)
+{
+	size_t value = (size_t) atoi(cookie.c_str() + 11);
+	setNewCookie(value);
+}
