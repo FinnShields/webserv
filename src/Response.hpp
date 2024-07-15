@@ -21,10 +21,10 @@
 #include "Request.hpp"
 #include "Server.hpp"
 
-#define RESPONSE_501 "HTTP/1.1 501 Not Implemented\nContent-Type: text/plain\n\nError: Method not recognized or not implemented"
-#define RESPONSE_500 "HTTP/1.1 500 Internal Server Error\nContent-Type: text/plain\n"
-#define RESPONSE_405 "HTTP/1.1 405 Method Not Allowed\nContent-Type: text/plain\n"
-#define STATUS_LINE_200 "HTTP/1.1 200 OK\n" 
+#define RESPONSE_501 "HTTP/1.1 501 Not Implemented\r\nContent-Type: text/plain\r\n\r\nError: Method not recognized or not implemented"
+#define RESPONSE_500 "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\n"
+#define RESPONSE_405 "HTTP/1.1 405 Method Not Allowed\r\nContent-Type: text/plain\r\n"
+#define STATUS_LINE_200 "HTTP/1.1 200 OK\r\n" 
 
 
 
@@ -37,9 +37,9 @@ class Response
 		int	_fd;
 		Request &_req;
 		Server &_srv;
-		std::string get(Server& _srv);
-		std::string post(Server& _srv);
-		std::string deleteResp(Server& _srv);
+		std::string get();
+		std::string post();
+		std::string deleteResp();
 		std::string load_index();
 		std::string load_directory_listing();
 		int saveFile();
