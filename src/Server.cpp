@@ -163,7 +163,8 @@ bool Server::checkCookieExist(size_t value)
 void Server::setNewCookie(size_t value)
 {
 	static size_t key = 0;
-	cookies[key++] = value;
+	if (!checkCookieExist(value))
+		cookies[key++] = value;
 }
 
 void Server::saveCookieInfo(std::string& cookie)
