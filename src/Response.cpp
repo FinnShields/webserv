@@ -51,10 +51,12 @@ void Response::run()
 			response = RESPONSE_500;
 		else if (status == 501)
 			response = RESPONSE_500;
-		else 
+		else
 			response = RESPONSE_500;
 		//else if  (status == 502)
 			//response = RESPONSE_502; //Bad Gateway
+		//else if  (status == 504)
+			//response = RESPONSE_504; // time out
 		// to be extended:
 		//else if (status == XXX)
 		//	response = RESPONSE_XXX;

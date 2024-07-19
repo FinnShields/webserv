@@ -136,7 +136,7 @@ std::string Cgi::readFromFd(int fd) {
     return result;
 }
 
-void Cgi::runCmd(){
+int Cgi::_access(){
     _argv[0] = strdup(_env_map["SCRIPT_FILENAME"].c_str());
     if (!_argv[0])
         throw std::runtime_error("strdup error occurred!");
@@ -144,59 +144,89 @@ void Cgi::runCmd(){
     if (access(_argv[0], F_OK) != 0)
     {
         _status = 404; //"PATH NOT FOUND"
-        return ;
+        return -1;
     }
     if (access(_argv[0], X_OK) != 0)
     {
         _status = 403; //"PERMISSION DENIED"
+        return -1;
+    }
+    return 0;
+}
+
+void Cgi::_runChildCgi(){
+    std::cout << "CGI: execve for ->" << _argv[0] << "<-\n";
+    if (close(_fd_to_cgi[1]) == -1 || close(_fd_from_cgi[0]) == -1)
+        throw std::runtime_error("close error occurred!");
+    if (dup2(_fd_to_cgi[0], 0) == -1 || dup2(_fd_from_cgi[1], 1) == -1)
+        throw std::runtime_error("dub2 error occurred!");
+    if (close(_fd_to_cgi[0]) == -1 || close(_fd_from_cgi[1]) == -1)
+            throw std::runtime_error("close error occurred!");
+    execve(_argv[0], _argv, _envp);
+    close(0);
+    close(1);
+    throw std::runtime_error("CGI:execve error occurred!");
+}
+
+bool Cgi::_wait(){
+    time_t	start;
+	int		waitResult;
+
+	start = std::time(NULL);
+	while (difftime(std::time(NULL), start) <= CGI_TIMEOUT)
+	{
+		waitResult = waitpid(_pid, &_status, WNOHANG);
+		if (waitResult > 0)
+			return true;
+	}
+	kill(_pid, SIGKILL);
+	waitpid(_pid, &_status, 0);
+    //_status = 504;
+    std::cerr << "toooo long CGI was killed\n";
+	return false;
+}
+
+void Cgi::runCmd(){
+    if (_access() != 0)
         return ;
-    }
-    int fd_from_cgi[2];
-    int fd_to_cgi[2];
-    if (pipe(fd_to_cgi) == -1)
+    //int _fd_from_cgi[2];
+    //int _fd_to_cgi[2];
+    if (pipe(_fd_to_cgi) == -1)
         throw std::runtime_error("pipe error occurred!");
-    if (pipe(fd_from_cgi) == -1){
-        close(fd_to_cgi[0]);
-        close(fd_to_cgi[1]);
+    if (pipe(_fd_from_cgi) == -1){
+        close(_fd_to_cgi[0]);
+        close(_fd_to_cgi[1]);
         throw std::runtime_error("pipe error occurred!");
     }
-    pid_t pid = fork();
-    if (pid == -1){
+    _pid = fork();
+    if (_pid == -1){
         throw std::runtime_error("fork error occurred!");
     }
-    else if (pid == 0)
-    {
-        std::cout << "CGI: execve for ->" << _argv[0] << "<-\n";
-        if (close(fd_to_cgi[1]) == -1 || close(fd_from_cgi[0]) == -1)
-            throw std::runtime_error("close error occurred!");
-        if (dup2(fd_to_cgi[0], 0) == -1 || dup2(fd_from_cgi[1], 1) == -1)
-            throw std::runtime_error("dub2 error occurred!");
-        if (close(fd_to_cgi[0]) == -1 || close(fd_from_cgi[1]) == -1)
-            throw std::runtime_error("close error occurred!");
-        execve(_argv[0], _argv, _envp);
-        close(0);
-        close(1);
-        throw std::runtime_error("CGI:execve error occurred!"); //this throw in child occurs when execve fails.
-    }
-    if (close(fd_to_cgi[0]) == -1 || close(fd_from_cgi[1]) == -1)
+    else if (_pid == 0)
+        _runChildCgi();
+    if (close(_fd_to_cgi[0]) == -1 || close(_fd_from_cgi[1]) == -1)
         throw std::runtime_error("close error occurred!");
     //std::cout << "parent body: " << _body.c_str() << std::endl;
-    write(fd_to_cgi[1], _body.c_str(), _body.size());
-    if (close(fd_to_cgi[1]) == -1)
+    write(_fd_to_cgi[1], _body.c_str(), _body.size());
+    if (close(_fd_to_cgi[1]) == -1)
         throw std::runtime_error("close error occurred!");
-    waitpid(pid, &_status, 0);
-    _response = readFromFd(fd_from_cgi[0]);
-    if (close(fd_from_cgi[0]) == -1)
-        throw std::runtime_error("close error occurred!");
-    if ((_status & 0xff00) >> 8 != 0)
+    if (!_wait())
+        _status = 504;
+    else if ((_status & 0xff00) >> 8 != 0)
         _status = 500;
-    //if (WIFEXITED(_status))
-    //    __status = WEXITSTATUS(status);
-    if (_response.empty()){
-		_response = "Internal Server Error\nContent-Type: text/plain\n";
+    else
+    {
+        _response = readFromFd(_fd_from_cgi[0]);
+        _status = 0;
+    }
+    if (!_status && _response.empty())
+    {
+	    _response = "Internal Server Error\nContent-Type: text/plain\n";
         std::cout << "ERROR Empty response\n";
         _status = 500;
     }
+    if (close(_fd_from_cgi[0]) == -1)
+        throw std::runtime_error("close error occurred!");
 }
 
 void Cgi::cleanEnv(){

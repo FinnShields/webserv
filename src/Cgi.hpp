@@ -5,6 +5,7 @@
 #include <cstring>
 //#include <unistd.h> 
 //#include <fcntl.h>  
+#include <ctime>
 #include <sys/wait.h>
 
 
@@ -13,6 +14,7 @@
 
 //#define STDOUT_FILENO  1
 //#define STDIN_FILENO  0
+#define CGI_TIMEOUT	 5
 class Server;
 class Request;
 
@@ -28,6 +30,9 @@ class Cgi
         char** _argv;
         char** _envp;
         std::string _response;
+        int _fd_from_cgi[2];
+        int _fd_to_cgi[2];
+        int _pid;
         int _status;
 
         Cgi();
@@ -36,6 +41,9 @@ class Cgi
         void setEnv();
         void cleanEnv();
         std::string readFromFd(int);
+        int _access();
+        void _runChildCgi();
+        bool _wait();
     public:
         Cgi(Request&, const Server&);
         Cgi(const Cgi&);
