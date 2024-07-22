@@ -2,6 +2,39 @@
 
 //Cgi::Cgi();
 
+/*
+   // /cgi-bin/script.cgi   /info   ?   query=python
+DOCUMENT_ROOT: This is a server-specific configuration.
+REMOTE_PORT:  This is information about the client's connection.
+QUERY_STRING: The query string is part of the URL in the GET request, 
+        not a header. It appears after the ? in the URL.
+PATH_INFO:   This is additional path information in the URL.
+PATH_TRANSLATED:  This is a server-specific mapping.
+SCRIPT_FILENAME:   This is a server-specific configuration.
+SERVER_NAME:  However, the Host header typically includes the server name 
+        or IP address and the port number (if not the default port).
+SERVER_PORT:  This is part of the URL in the request line and also implicitly included in the Host header if it's not the default port.
+
+// types of error in Cgi
+If found and executable, the server runs the script.
+If not found, a 404 error is returned.
+If found but not executable, a 403 error or similar may be returned.
+If execution fails, a 502 error may be returned.
+any other error 500
+
+404 "PATH NOT FOUND" 
+403 "PERMISSION DENIED"
+500 unknown cgi problem 
+501 method is not implemented. it is double checked in Response class also
+502 cgi execution problem 
+504 time out
+
+not implemented
+"TEAPOT", 418   
+
+*/
+
+
 Cgi::Cgi(const Cgi& other):
     _request(other._request),
     _server(other._server),
@@ -57,8 +90,6 @@ void Cgi::start(){
     }
     setEnvMap();
     setEnv();
-    //runCmd();
-    //std::cout << "status =" << _status << "\n";*
     try{
         runCmd();
     }
@@ -72,46 +103,24 @@ void Cgi::start(){
         _response = "";
         _status = 500;
     }
-    std::cout << "_status =" << _status << "\n";
+    if (!_status && _response.empty())
+        _status = 502;
+    // Add other validation of CGI if needed;
 }
-
-/*
-   // /cgi-bin/script.cgi   /info   ?   query=python
-DOCUMENT_ROOT: This is a server-specific configuration.
-REMOTE_PORT:  This is information about the client's connection.
-QUERY_STRING: The query string is part of the URL in the GET request, 
-        not a header. It appears after the ? in the URL.
-PATH_INFO:   This is additional path information in the URL.
-PATH_TRANSLATED:  This is a server-specific mapping.
-SCRIPT_FILENAME:   This is a server-specific configuration.
-SERVER_NAME:  However, the Host header typically includes the server name 
-        or IP address and the port number (if not the default port).
-SERVER_PORT:  This is part of the URL in the request line and also implicitly included in the Host header if it's not the default port.
-
-// types of error in Cgi
-"NOT IMPLEMENTED", 501       -- checked in Response
-"UNKNOWN METHOD", 405        -- checked in Response
-"PATH NOT FOUND", 404        -- here
-"PERMISSION DENIED", 403     -- here
-
- 502 "Bad Gateway: The server received an empty response from the CGI script.";
-"INTERNAL SERVER ERROR", 500
-"TEAPOT", 418
-
-If found and executable, the server runs the script.
-If not found, a 404 error is returned.
-If found but not executable, a 403 error or similar may be returned.
-If execution fails, a 500 error may be returned.
-*/
 
 bool Cgi::isImplemented()
 {
     size_t pos = _target.rfind('.');
-    //std::cerr << "pos =" << pos << "\n";
+    size_t pos_query = _target.rfind('?');
+    std::cerr << "pos =" << pos << "\n";
+    std::cerr << "pos_query =" << pos_query << "\n";
     if (pos == std::string::npos)
         return false;
-    std::string ext = _target.substr(pos);
-    //std::cerr << "ext =" << ext << "\n";
+    //if (pos_query == std::string::npos)
+    //    std::string ext = _target.substr(pos);
+    //else
+    std::string ext = _target.substr(pos, pos_query - pos);
+    std::cerr << "ext =" << ext << "\n";
     t_vector_str ext_list = _server.config.getValues(_target, "cgi_ext", {});
     if (find(ext_list.begin(), ext_list.end(), ext) == ext_list.end())
         return false;
@@ -165,7 +174,7 @@ void Cgi::_runChildCgi(){
     execve(_argv[0], _argv, _envp);
     close(0);
     close(1);
-    throw std::runtime_error("CGI:execve error occurred!");
+    throw std::runtime_error("CGI: execve error occurred!");
 }
 
 bool Cgi::_wait(){
@@ -181,16 +190,12 @@ bool Cgi::_wait(){
 	}
 	kill(_pid, SIGKILL);
 	waitpid(_pid, &_status, 0);
-    //_status = 504;
-    std::cerr << "toooo long CGI was killed\n";
 	return false;
 }
 
 void Cgi::runCmd(){
     if (_access() != 0)
         return ;
-    //int _fd_from_cgi[2];
-    //int _fd_to_cgi[2];
     if (pipe(_fd_to_cgi) == -1)
         throw std::runtime_error("pipe error occurred!");
     if (pipe(_fd_from_cgi) == -1){
@@ -204,6 +209,7 @@ void Cgi::runCmd(){
     }
     else if (_pid == 0)
         _runChildCgi();
+    //std::cout << "This is parent CGI part \n";
     if (close(_fd_to_cgi[0]) == -1 || close(_fd_from_cgi[1]) == -1)
         throw std::runtime_error("close error occurred!");
     //std::cout << "parent body: " << _body.c_str() << std::endl;
@@ -213,17 +219,11 @@ void Cgi::runCmd(){
     if (!_wait())
         _status = 504;
     else if ((_status & 0xff00) >> 8 != 0)
-        _status = 500;
+        _status = 502;
     else
     {
         _response = readFromFd(_fd_from_cgi[0]);
         _status = 0;
-    }
-    if (!_status && _response.empty())
-    {
-	    _response = "Internal Server Error\nContent-Type: text/plain\n";
-        std::cout << "ERROR Empty response\n";
-        _status = 500;
     }
     if (close(_fd_from_cgi[0]) == -1)
         throw std::runtime_error("close error occurred!");

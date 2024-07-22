@@ -15,6 +15,20 @@
 Response::Response(int fd, Request &req, Server &srv) : _fd(fd), _req(req), _srv(srv) {}
 Response::~Response() {}
 
+/* Supported status codes
+200 OK
+204 No Content
+404 "PATH NOT FOUND" 
+403 "PERMISSION DENIED"
+405 method not allowed
+500 unknown cgi problem 
+501 method/extention is not implemented. Response (method) and Cgi (ext)
+502 cgi execution problem 
+504 time out
+
+not implemented
+418 "TEAPOT" 
+*/
 void Response::run()
 {
 	std::string response;
@@ -32,34 +46,23 @@ void Response::run()
         Cgi cgi(_req, _srv);
 		cgi.start();
 		int status = cgi.getStatus();
-		std::cerr << "status =" << status << "\n";
+		std::cout << "CGI status =" << status << "\n";
 		if (status == 0)
-		{
-			response = cgi.getResponse();
-			if (response.empty())
-				response = RESPONSE_500;
-			else
-				response = STATUS_LINE_200 + response;
-			// Add other validation of CGI response for status = 0;
-			// Alternatevly we could put validation inside of Cgi class
-		}
+			response = STATUS_LINE_200 + cgi.getResponse();
 		else if (status == 403)
 			response = RESPONSE_500;
 		else if (status == 404)
 			response = RESPONSE_500;
 		else if (status == 500)
 			response = RESPONSE_500;
-		else if (status == 501)
-			response = RESPONSE_500;
+		else if (status == 501)      // method not implemented. also checked above in Response class
+			response = RESPONSE_501;
+		else if  (status == 502)     //Bad Gateway
+			response = RESPONSE_500; 
+		else if  (status == 504)	// time out
+			response = RESPONSE_500; 
 		else
 			response = RESPONSE_500;
-		//else if  (status == 502)
-			//response = RESPONSE_502; //Bad Gateway
-		//else if  (status == 504)
-			//response = RESPONSE_504; // time out
-		// to be extended:
-		//else if (status == XXX)
-		//	response = RESPONSE_XXX;
 		std::cout << "------- END ----------" << std::endl;
 	}
 	else
