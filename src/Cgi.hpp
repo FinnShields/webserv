@@ -6,6 +6,7 @@
 //#include <unistd.h> 
 //#include <fcntl.h>  
 #include <ctime>
+#include <algorithm>
 #include <sys/wait.h>
 
 
@@ -25,6 +26,10 @@ class Cgi
         const Server& _server;
         std::string& _body;
         std::string _target;
+        std::string _ext;
+        size_t _pos_query;
+        size_t _pos_cgi;
+        size_t _pos_info;
         
         std::map<std::string,std::string> _env_map;
         char** _argv;

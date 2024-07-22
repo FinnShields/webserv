@@ -110,16 +110,21 @@ void Cgi::start(){
 
 bool Cgi::isImplemented()
 {
-    size_t pos = _target.rfind('.');
-    size_t pos_query = _target.rfind('?');
-    std::cerr << "pos =" << pos << "\n";
-    std::cerr << "pos_query =" << pos_query << "\n";
-    if (pos == std::string::npos)
+    size_t pos_dot = _target.rfind('.');
+    //_pos_query = _target.rfind('?');
+    //_pos_info = _target.find('/',pos);
+    _pos_query = _target.find('?');
+    _pos_cgi = _target.find('/', 1);
+    _pos_info = _target.find('/', pos_dot);
+    //size_t __pos_info = _target.rfind('/', _pos_query);
+    std::cerr << "pos_dot =" << pos_dot << "\n";
+    std::cerr << "_pos_query =" << _pos_query << "\n";
+    std::cerr << "_pos_info =" << _pos_info << "\n";
+    //std::cerr << "script naem =" << _target.substr(pos_dot, ) << "\n";
+    if (pos_dot == std::string::npos)
         return false;
-    //if (pos_query == std::string::npos)
-    //    std::string ext = _target.substr(pos);
-    //else
-    std::string ext = _target.substr(pos, pos_query - pos);
+    std::string ext;
+    ext = _target.substr(pos_dot, 4); //std::min(_pos_query,_pos_info) - pos_dot);
     std::cerr << "ext =" << ext << "\n";
     t_vector_str ext_list = _server.config.getValues(_target, "cgi_ext", {});
     if (find(ext_list.begin(), ext_list.end(), ext) == ext_list.end())
@@ -279,20 +284,21 @@ void Cgi::setEnvMap(){
     _env_map["HTTP_USER_AGENT"] = _request.getHeader("user-agent");
     _env_map["SERVER_NAME"] = _request.getHeader("Host");
     _env_map["REQUEST_METHOD"] = _request.get("method");
-    size_t pos_query = _target.find('?');
-    size_t pos_info = _target.rfind('/', pos_query);
-    size_t pos_cgi = _target.find('/', 1);
-    if (pos_query != std::string::npos)
-        _env_map["QUERY_STRING"] = _target.substr(pos_query + 1);
+  //  _pos_query = _target.find('?');
+  //  _pos_cgi = _target.find('/', 1);
+  //  _pos_info = _target.find('/', _pos_cgi);
+    //size_t __pos_info = _target.rfind('/', _pos_query);
+    if (_pos_query != std::string::npos)
+        _env_map["QUERY_STRING"] = _target.substr(_pos_query + 1);
     else
         _env_map["QUERY_STRING"] = "";
-    if (pos_info != pos_cgi){
-        _env_map["PATH_INFO"] = _target.substr(pos_info, pos_query - pos_info);
-        _env_map["SCRIPT_FILENAME"] = _env_map["DOCUMENT_ROOT"] + _target.substr(0, pos_info);
+    if (_pos_info != _pos_cgi){
+        _env_map["PATH_INFO"] = _target.substr(_pos_info, _pos_query - _pos_info);
+        _env_map["SCRIPT_FILENAME"] = _env_map["DOCUMENT_ROOT"] + _target.substr(0, _pos_info);
     }
     else{
         _env_map["PATH_INFO"] = "";
-        _env_map["SCRIPT_FILENAME"] = _env_map["DOCUMENT_ROOT"] + _target.substr(0, pos_query);
+        _env_map["SCRIPT_FILENAME"] = _env_map["DOCUMENT_ROOT"] + _target.substr(0, _pos_query);
     }
     // SCRIPT_NAME  ???
     _env_map["PATH_TRANSLATED"] = _env_map["DOCUMENT_ROOT"] + _env_map["PATH_INFO"];
@@ -310,11 +316,11 @@ void Cgi::setEnvMap(){
     }
 
 /*
-    std::cout << pos_cgi << "\n";
-    std::cout << pos_info << "\n";
-    std::cout << pos_query << "\n";
-    (void)pos_cgi;
-    (void)pos_info;
+    std::cout << _pos_cgi << "\n";
+    std::cout << _pos_info << "\n";
+    std::cout << _pos_query << "\n";
+    (void)_pos_cgi;
+    (void)_pos_info;
     std::cout << _env_map["SCRIPT_FILENAME"] << "\n";
     std::cout << _env_map["PATH_INFO"] << "\n";
     std::cout << _env_map["QUERY_STRING"] << "\n";
