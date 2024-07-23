@@ -18,13 +18,15 @@
 #include <algorithm>
 #include <string>
 #include <cstring>
+#include <filesystem>
 #include "Request.hpp"
 #include "Server.hpp"
 
-#define RESPONSE_501 "HTTP/1.1 501 Not Implemented\r\nContent-Type: text/plain\r\n\r\nError: Method not recognized or not implemented"
-#define RESPONSE_500 "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\n"
-#define RESPONSE_405 "HTTP/1.1 405 Method Not Allowed\r\nContent-Type: text/plain\r\n"
 #define STATUS_LINE_200 "HTTP/1.1 200 OK\r\n" 
+#define RESPONSE_404 "HTTP/1.1 404 Page not found\r\nContent-Type: text/plain\r\n"
+#define RESPONSE_405 "HTTP/1.1 405 Method Not Allowed\r\nContent-Type: text/plain\r\n"
+#define RESPONSE_500 "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\n"
+#define RESPONSE_501 "HTTP/1.1 501 Not Implemented\r\nContent-Type: text/plain\r\n\r\nError: Method not recognized or not implemented"
 
 
 
@@ -37,11 +39,13 @@ class Response
 		int	_fd;
 		Request &_req;
 		Server &_srv;
+		std::string _root;
+		std::string _index;
 		std::string get();
 		std::string post();
 		std::string deleteResp();
-		std::string load_index();
-		std::string load_directory_listing();
+		std::string load_file(std::string filename);
+		std::string load_directory_listing(std::string directoryPath);
 		int saveFile();
         int deleteFile(std::string &);
 		void replacePercent20withSpace(std::string &str);

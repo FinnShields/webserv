@@ -33,11 +33,14 @@ void Response::run()
 {
 	std::string response;
 	std::string method = _req.get("method");
-	std::string target = _req.get("target");
+	std::string target = _req.get("target"); // maybe it should became private memeber
 	t_vector_str mtd_default = DEFAULT_METHOD;
 	t_vector_str mtd = _srv.config.getValues(target, "limit_except", DEFAULT_METHOD);
 	if (find(mtd_default.begin(), mtd_default.end(), method) == mtd_default.end())
+	{
+		std::cout << "no supported method="  << method << "\n";
 		response = RESPONSE_501;
+	}
 	else if (find(mtd.begin(), mtd.end(), method) == mtd.end())
 		response = RESPONSE_405;
 	else if (target.size() > 9 && target.substr(0, 9).compare("/cgi-bin/") == 0)
@@ -82,15 +85,31 @@ void Response::run()
 
 std::string Response::get()
 {	
-	std::string method = _req.get("method");
 	std::string dir = _req.get("target");
+	_root = _srv.config.getValues(dir, "root", {""})[0];
+	_index = _srv.config.getValues(dir, "index", {""})[0];
+	std::string loc = _srv.config.selectLocation(dir);
+	loc = loc == "main" ? "" : loc;
+	std::string target = dir.substr(loc.length());
+	bool autoindex = _srv.config.getValues(dir, "autoindex", {"off"})[0] == "on";
 	
-	std::string response = "HTTP/1.1 200 OK\r\nContent-Type: text/plain";
-	if (dir == "/" || dir == "/?Submit=Go+back")
-		return load_index();
+	//Unique for ours website, should be removed
 	if (dir == "/delete")
-		return load_directory_listing();
-	return (response);
+		return load_directory_listing("uploads");
+	if (dir == "/?Submit=Go+back")
+		return load_file(_root + "/" + _index);
+
+	std::string path = _root + target;
+	//1. If regular file, loads it. 
+	if (target.length() > 1 && std::filesystem::is_regular_file(path) && std::filesystem::exists(path))
+		return load_file(path);
+	//2. If no target and index is on, load the index.
+	if (target.length() <=1 && _index.length() > 1) 
+		return load_file(_root + "/" + _index);
+	//3. If directory and autoindex on, list files.
+	if (autoindex && std::filesystem::is_directory(path)) 
+		return load_directory_listing(path);
+	return (RESPONSE_404);
 }
 
 std::string Response::post()
@@ -130,11 +149,30 @@ std::string Response::createCookie()
 	return ("Set-Cookie: session-id=" + std::to_string(newSessionId) + "\r\n");
 }
 
-std::string Response::load_index()
+static bool isHtml(std::string fileName)
 {
-	std::ifstream file("www/index_cgi.html");
+	if (fileName.length() > 5 && !fileName.compare(fileName.length() - 5, 5,  ".html"))
+		return true;
+	return false;
+}
+
+// static std::string getFileType(std::string fileName)
+// {
+// 	std::string filetype = fileName.substr(fileName.find_first_of('.'));
+// 	return filetype;
+// }
+
+static std::string getFileName(std::string fileName)
+{
+	std::string filetype = fileName.substr(fileName.find_last_of('/') + 1);
+	return filetype;
+}
+
+std::string Response::load_file(std::string filepath)
+{
+	std::ifstream file(filepath);
 	if (!file.is_open())
-		return ("HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nError: index.html not found");
+		return ("HTTP/1.1 404 Page Not Found\r\nContent-Type: text/plain\r\n\r\nError: " + filepath + " not found");
 	
 	std::stringstream buffer;
 	if (_req.get("cookie").empty())
@@ -144,14 +182,22 @@ std::string Response::load_index()
 	buffer << "\r\n";
 	buffer << file.rdbuf();
 	file.close();
-
-	return ("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n" + buffer.str());
+	
+	std::string response = STATUS_LINE_200;
+	if (isHtml(filepath))
+		response += "Content-Type: text/html\r\n";
+	else
+	{
+		response += "Content-Type: */*\r\n";
+		response += "Content-Disposition: attachment; filename=\"" + getFileName(filepath) + "\"\r\n";
+	}
+	response += buffer.str();
+	return response;
 }
-std::string Response::load_directory_listing()
+std::string Response::load_directory_listing(std::string directoryPath)
 {
     DIR* dir;
     struct dirent* ent;
-    std::string directoryPath = "uploads";
     std::stringstream buffer;
 
     if ((dir = opendir(directoryPath.c_str())) != NULL) 
