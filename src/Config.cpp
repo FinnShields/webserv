@@ -148,7 +148,6 @@ size_t Config::scoreMatch(const std::string& target, const std::string& location
 	return 0;
 }
 
-
 std::string Config::selectLocation(std::string target) const {
 	std::map<std::string, size_t> scores;
 	std::string best_location;
@@ -177,4 +176,4 @@ t_vector_str Config::getValues(std::string target, std::string key, t_vector_str
 
 bool Config::isValid(){
 	return false;
-};
+}

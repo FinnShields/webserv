@@ -40,6 +40,8 @@ void Response::run()
 		response = RESPONSE_501;
 	else if (find(mtd.begin(), mtd.end(), method) == mtd.end())
 		response = RESPONSE_405;
+//	else if (_srv.config.selectLocation(target) == "main")
+//		response = RESPONSE_501;
 	else if (target.size() > 9 && target.substr(0, 9).compare("/cgi-bin/") == 0)
 	{
 		std::cout << "------- CGI ----------\n";
