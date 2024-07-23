@@ -55,7 +55,7 @@ void Response::run()
 			response = RESPONSE_500;
 		else if (status == 500)
 			response = RESPONSE_500;
-		else if (status == 501)      // method not implemented. also checked above in Response class
+		else if (status == 501)      // cgi's ext is not implemented. 
 			response = RESPONSE_501;
 		else if  (status == 502)     //Bad Gateway
 			response = RESPONSE_500; 
