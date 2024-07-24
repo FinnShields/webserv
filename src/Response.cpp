@@ -56,17 +56,19 @@ void Response::run()
 std::string Response::get()
 {	
 	_root = _srv.config.getValues(_target, "root", {""})[0];
-	_index = _srv.config.getValues(_target, "index", {""})[0];
 	std::string loc = _srv.config.selectLocation(_target);
 	loc = loc == "main" ? "" : loc;
 	std::string target = _target.substr(loc.length());
-	bool autoindex = _srv.config.getValues(_target, "autoindex", {"off"})[0] == "on";
-	
 	std::string path = _root + target;
+	
 	if (target.length() > 1 && std::filesystem::is_regular_file(path) && std::filesystem::exists(path))
 		return load_file(path);
+	
+	_index = _srv.config.getValues(_target, "index", {""})[0];
 	if (target.length() <=1 && _index.length() > 1) 
 		return load_file(_root + "/" + _index);
+	
+	bool autoindex = _srv.config.getValues(_target, "autoindex", {"off"})[0] == "on";
 	if (autoindex && std::filesystem::is_directory(path)) 
 		return load_directory_listing(path);
 	return (RESPONSE_404);
