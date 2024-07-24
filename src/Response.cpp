@@ -116,12 +116,12 @@ std::string Response::createCookie()
 
 std::string Response::runCGI()
 {
-	if (_srv.config.selectLocation(_target) != "/cgi-bin")
-		{
-			std::cout << "CGI is not configured.\n";
-			return RESPONSE_500;
-		}
 	std::cout << "------- CGI ----------\n";
+	if (_srv.config.selectLocation(_target) != "/cgi-bin")
+	{
+		std::cout << "CGI is not configured.\n";
+		return RESPONSE_500;
+	}
 	Cgi cgi(_req, _srv);
 	cgi.start();
 	int status = cgi.getStatus();
