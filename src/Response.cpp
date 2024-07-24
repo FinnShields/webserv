@@ -29,84 +29,44 @@ Response::~Response() {}
 not implemented
 418 "TEAPOT" 
 */
+
 void Response::run()
 {
 	std::string response;
 	std::string method = _req.get("method");
-	std::string target = _req.get("target"); // maybe it should became private memeber
-	t_vector_str mtd_default = DEFAULT_METHOD;
-	t_vector_str mtd = _srv.config.getValues(target, "limit_except", DEFAULT_METHOD);
-	if (find(mtd_default.begin(), mtd_default.end(), method) == mtd_default.end())
-	{
-		std::cout << "no supported method="  << method << "\n";
-		response = RESPONSE_501;
-	}
-	else if (find(mtd.begin(), mtd.end(), method) == mtd.end())
-		response = RESPONSE_405;
-	else if (target.size() > 9 && target.substr(0, 9).compare("/cgi-bin/") == 0)
-	{
-		std::cout << "------- CGI ----------\n";
-        Cgi cgi(_req, _srv);
-		cgi.start();
-		int status = cgi.getStatus();
-		std::cout << "CGI status =" << status << "\n";
-		if (status == 0)
-			response = STATUS_LINE_200 + cgi.getResponse();
-		else if (status == 403)
-			response = RESPONSE_500;
-		else if (status == 404)
-			response = RESPONSE_500;
-		else if (status == 500)
-			response = RESPONSE_500;
-		else if (status == 501)      // cgi's ext is not implemented. 
-			response = RESPONSE_501;
-		else if  (status == 502)     //Bad Gateway
-			response = RESPONSE_500; 
-		else if  (status == 504)	// time out
-			response = RESPONSE_500; 
-		else
-			response = RESPONSE_500;
-		std::cout << "------- END ----------" << std::endl;
-	}
+	_target = _req.get("target"); // maybe it should became private memeber
+
+	if(!isMethodValid(method, response))
+		;
+	else if (_target.size() > 9 && _target.substr(0, 9).compare("/cgi-bin/") == 0)
+		response = runCGI();
 	else
-	{
-    	response = (method == "GET") ? get()
-		: (method == "POST") ? post()
-		: (method == "DELETE") ? deleteResp()
-		: RESPONSE_501;
-	}
-	//std::cerr << "------- Err:Response ----------\n";
-	std::cout << "------- Response ----------\n";
-	std::cout << response << std::endl;
-	std::cout << "------- END ---------------\n";
+    	response = 	(method == "GET") ? get() : 
+					(method == "POST") ? post() :
+					(method == "DELETE") ? deleteResp() : 
+					RESPONSE_501;
+	std::cout << "------- Response ----------\n" << response << "\n------- END ---------------\n";
 	if (send(_fd, response.c_str(), response.size(), 0) < 0)
 		perror("Send error");
 }
 
+//1. If target is regular file, loads it. 
+//2. If index is on, load the index.
+//3. If autoindex on, list files.
 std::string Response::get()
 {	
-	std::string dir = _req.get("target");
-	_root = _srv.config.getValues(dir, "root", {""})[0];
-	_index = _srv.config.getValues(dir, "index", {""})[0];
-	std::string loc = _srv.config.selectLocation(dir);
+	_root = _srv.config.getValues(_target, "root", {""})[0];
+	_index = _srv.config.getValues(_target, "index", {""})[0];
+	std::string loc = _srv.config.selectLocation(_target);
 	loc = loc == "main" ? "" : loc;
-	std::string target = dir.substr(loc.length());
-	bool autoindex = _srv.config.getValues(dir, "autoindex", {"off"})[0] == "on";
+	std::string target = _target.substr(loc.length());
+	bool autoindex = _srv.config.getValues(_target, "autoindex", {"off"})[0] == "on";
 	
-	//Unique for ours website, should be removed
-	if (dir == "/delete")
-		return load_directory_listing("uploads");
-	if (dir == "/?Submit=Go+back")
-		return load_file(_root + "/" + _index);
-
 	std::string path = _root + target;
-	//1. If regular file, loads it. 
 	if (target.length() > 1 && std::filesystem::is_regular_file(path) && std::filesystem::exists(path))
 		return load_file(path);
-	//2. If no target and index is on, load the index.
 	if (target.length() <=1 && _index.length() > 1) 
 		return load_file(_root + "/" + _index);
-	//3. If directory and autoindex on, list files.
 	if (autoindex && std::filesystem::is_directory(path)) 
 		return load_directory_listing(path);
 	return (RESPONSE_404);
@@ -147,6 +107,42 @@ std::string Response::createCookie()
 	}
 	_srv.setNewCookie(newSessionId);
 	return ("Set-Cookie: session-id=" + std::to_string(newSessionId) + "\r\n");
+}
+
+std::string Response::runCGI()
+{
+	std::cout << "------- CGI ----------\n";
+	Cgi cgi(_req, _srv);
+	cgi.start();
+	int status = cgi.getStatus();
+	std::cout << "CGI status =" << status << "\n";
+	std::cout << "------- END ----------" << std::endl;
+	return status == 0 ? STATUS_LINE_200 + cgi.getResponse() :
+			status == 403 ? RESPONSE_500 :
+			status == 404 ? RESPONSE_500 :
+			status == 500 ? RESPONSE_500 :
+			status == 501 ? RESPONSE_501 : // cgi's ext is not implemented. 
+			status == 502 ? RESPONSE_500 : //Bad Gateway
+			status == 504 ? RESPONSE_500 : // time out
+			RESPONSE_500;
+}
+
+bool Response::isMethodValid(std::string &method, std::string &response)
+{
+	t_vector_str mtd_default = DEFAULT_METHOD;
+	t_vector_str mtd_allowed = _srv.config.getValues(_target, "limit_except", DEFAULT_METHOD);
+	if (find(mtd_default.begin(), mtd_default.end(), method) == mtd_default.end())
+	{
+		std::cout << "no supported method="  << method << "\n";
+		response = RESPONSE_501;
+		return false;
+	}
+	if (find(mtd_allowed.begin(), mtd_allowed.end(), method) == mtd_allowed.end())
+	{
+		response = RESPONSE_405;
+		return false;
+	}
+	return true;
 }
 
 static bool isHtml(std::string fileName)
@@ -219,7 +215,7 @@ std::string Response::load_directory_listing(std::string directoryPath)
 			}
         }
         buffer << "</ul>";
-		buffer << "<form action=\"/\" method=\"get\"><input type=\"submit\" value=\"Go back\" name=\"Submit\" id=\"back\" /></form>";
+		// buffer << "<form action=\"/\" method=\"get\"><input type=\"submit\" value=\"Go back\" name=\"Submit\" id=\"back\" /></form>";
         buffer << "</body></html>";
 
         closedir(dir);

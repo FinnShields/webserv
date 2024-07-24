@@ -41,6 +41,7 @@ class Response
 		Server &_srv;
 		std::string _root;
 		std::string _index;
+		std::string _target;
 		std::string get();
 		std::string post();
 		std::string deleteResp();
@@ -51,6 +52,8 @@ class Response
 		void replacePercent20withSpace(std::string &str);
 		bool checkFileType(std::string& fileName);
 		std::string createCookie();
+		bool isMethodValid(std::string &method,  std::string &response);
+		std::string runCGI();
 
 		Response();
 		Response(const Response &copy);
