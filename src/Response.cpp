@@ -40,31 +40,37 @@ void Response::run()
 		response = RESPONSE_501;
 	else if (find(mtd.begin(), mtd.end(), method) == mtd.end())
 		response = RESPONSE_405;
-//	else if (_srv.config.selectLocation(target) == "main")
-//		response = RESPONSE_501;
 	else if (target.size() > 9 && target.substr(0, 9).compare("/cgi-bin/") == 0)
 	{
 		std::cout << "------- CGI ----------\n";
-        Cgi cgi(_req, _srv);
-		cgi.start();
-		int status = cgi.getStatus();
-		std::cout << "CGI status =" << status << "\n";
-		if (status == 0)
-			response = STATUS_LINE_200 + cgi.getResponse();
-		else if (status == 403)
+    	if (_srv.config.selectLocation(target) != "/cgi-bin")
+		{
+			std::cout << "CGI is not configured.\n";
 			response = RESPONSE_500;
-		else if (status == 404)
-			response = RESPONSE_500;
-		else if (status == 500)
-			response = RESPONSE_500;
-		else if (status == 501)      // cgi's ext is not implemented. 
-			response = RESPONSE_501;
-		else if  (status == 502)     //Bad Gateway
-			response = RESPONSE_500; 
-		else if  (status == 504)	// time out
-			response = RESPONSE_500; 
+		}
 		else
-			response = RESPONSE_500;
+		{
+			Cgi cgi(_req, _srv);
+			cgi.start();
+			int status = cgi.getStatus();
+			std::cout << "CGI status =" << status << "\n";
+			if (status == 0)
+				response = STATUS_LINE_200 + cgi.getResponse();
+			else if (status == 500)
+				response = RESPONSE_500;
+			else if (status == 501)
+				response = RESPONSE_501;
+			else if  (status == 502)     //Bad Gateway
+				response = RESPONSE_500; 
+			else if (status == 403)
+				response = RESPONSE_500;
+			else if (status == 404)
+				response = RESPONSE_500;
+			else if  (status == 504)	// time out
+				response = RESPONSE_500; 
+			else
+				response = RESPONSE_500;
+		}
 		std::cout << "------- END ----------" << std::endl;
 	}
 	else
