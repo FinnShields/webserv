@@ -2,6 +2,39 @@
 
 //Cgi::Cgi();
 
+/*
+   // /cgi-bin/script.cgi   /info   ?   query=python
+DOCUMENT_ROOT: This is a server-specific configuration.
+REMOTE_PORT:  This is information about the client's connection.
+QUERY_STRING: The query string is part of the URL in the GET request, 
+        not a header. It appears after the ? in the URL.
+PATH_INFO:   This is additional path information in the URL.
+PATH_TRANSLATED:  This is a server-specific mapping.
+SCRIPT_FILENAME:   This is a server-specific configuration.
+SERVER_NAME:  However, the Host header typically includes the server name 
+        or IP address and the port number (if not the default port).
+SERVER_PORT:  This is part of the URL in the request line and also implicitly included in the Host header if it's not the default port.
+
+// types of error in Cgi
+If found and executable, the server runs the script.
+If not found, a 404 error is returned.
+If found but not executable, a 403 error or similar may be returned.
+If execution fails, a 502 error may be returned.
+any other error 500
+
+404 "PATH NOT FOUND" 
+403 "PERMISSION DENIED"
+500 unknown cgi problem 
+501 method is not implemented. it is double checked in Response class also
+502 cgi execution problem 
+504 time out
+
+not implemented
+"TEAPOT", 418   
+
+*/
+
+
 Cgi::Cgi(const Cgi& other):
     _request(other._request),
     _server(other._server),
@@ -57,8 +90,6 @@ void Cgi::start(){
     }
     setEnvMap();
     setEnv();
-    //runCmd();
-    //std::cout << "status =" << _status << "\n";*
     try{
         runCmd();
     }
@@ -72,46 +103,27 @@ void Cgi::start(){
         _response = "";
         _status = 500;
     }
-    std::cout << "_status =" << _status << "\n";
+    if (!_status && _response.empty())
+        _status = 502;
+    // Add other validation of CGI if needed;
 }
-
-/*
-   // /cgi-bin/script.cgi   /info   ?   query=python
-DOCUMENT_ROOT: This is a server-specific configuration.
-REMOTE_PORT:  This is information about the client's connection.
-QUERY_STRING: The query string is part of the URL in the GET request, 
-        not a header. It appears after the ? in the URL.
-PATH_INFO:   This is additional path information in the URL.
-PATH_TRANSLATED:  This is a server-specific mapping.
-SCRIPT_FILENAME:   This is a server-specific configuration.
-SERVER_NAME:  However, the Host header typically includes the server name 
-        or IP address and the port number (if not the default port).
-SERVER_PORT:  This is part of the URL in the request line and also implicitly included in the Host header if it's not the default port.
-
-// types of error in Cgi
-"NOT IMPLEMENTED", 501       -- checked in Response
-"UNKNOWN METHOD", 405        -- checked in Response
-"PATH NOT FOUND", 404        -- here
-"PERMISSION DENIED", 403     -- here
-
- 502 "Bad Gateway: The server received an empty response from the CGI script.";
-"INTERNAL SERVER ERROR", 500
-"TEAPOT", 418
-
-If found and executable, the server runs the script.
-If not found, a 404 error is returned.
-If found but not executable, a 403 error or similar may be returned.
-If execution fails, a 500 error may be returned.
-*/
 
 bool Cgi::isImplemented()
 {
-    size_t pos = _target.rfind('.');
-    //std::cerr << "pos =" << pos << "\n";
-    if (pos == std::string::npos)
+    _pos_cgi = 9;
+    _pos_dot = _target.find('.', _pos_cgi);
+    _pos_query = _target.find('?', _pos_cgi);
+    _pos_info = _target.find('/', _pos_cgi);
+    std::cerr << "_pos_dot =" << _pos_dot << "\n";
+    std::cerr << "_pos_query =" << _pos_query << "\n";
+    std::cerr << "_pos_info =" << _pos_info << "\n";
+    //std::cerr << "script naem =" << _target.substr(pos_dot, ) << "\n";
+    if (_pos_dot == std::string::npos)
         return false;
-    std::string ext = _target.substr(pos);
-    //std::cerr << "ext =" << ext << "\n";
+    size_t ext_len = std::min(_target.size(), std::min(_pos_query,_pos_info)) - _pos_dot;
+    std::cout << "ext_len =" << ext_len << "\n";
+    std::string ext = _target.substr(_pos_dot, ext_len);
+    std::cout << "ext =" << ext << "\n";
     t_vector_str ext_list = _server.config.getValues(_target, "cgi_ext", {});
     if (find(ext_list.begin(), ext_list.end(), ext) == ext_list.end())
         return false;
@@ -165,7 +177,7 @@ void Cgi::_runChildCgi(){
     execve(_argv[0], _argv, _envp);
     close(0);
     close(1);
-    throw std::runtime_error("CGI:execve error occurred!");
+    throw std::runtime_error("CGI: execve error occurred!");
 }
 
 bool Cgi::_wait(){
@@ -181,16 +193,12 @@ bool Cgi::_wait(){
 	}
 	kill(_pid, SIGKILL);
 	waitpid(_pid, &_status, 0);
-    //_status = 504;
-    std::cerr << "toooo long CGI was killed\n";
 	return false;
 }
 
 void Cgi::runCmd(){
     if (_access() != 0)
         return ;
-    //int _fd_from_cgi[2];
-    //int _fd_to_cgi[2];
     if (pipe(_fd_to_cgi) == -1)
         throw std::runtime_error("pipe error occurred!");
     if (pipe(_fd_from_cgi) == -1){
@@ -204,6 +212,7 @@ void Cgi::runCmd(){
     }
     else if (_pid == 0)
         _runChildCgi();
+    //std::cout << "This is parent CGI part \n";
     if (close(_fd_to_cgi[0]) == -1 || close(_fd_from_cgi[1]) == -1)
         throw std::runtime_error("close error occurred!");
     //std::cout << "parent body: " << _body.c_str() << std::endl;
@@ -213,17 +222,11 @@ void Cgi::runCmd(){
     if (!_wait())
         _status = 504;
     else if ((_status & 0xff00) >> 8 != 0)
-        _status = 500;
+        _status = 502;
     else
     {
         _response = readFromFd(_fd_from_cgi[0]);
         _status = 0;
-    }
-    if (!_status && _response.empty())
-    {
-	    _response = "Internal Server Error\nContent-Type: text/plain\n";
-        std::cout << "ERROR Empty response\n";
-        _status = 500;
     }
     if (close(_fd_from_cgi[0]) == -1)
         throw std::runtime_error("close error occurred!");
@@ -279,22 +282,39 @@ void Cgi::setEnvMap(){
     _env_map["HTTP_USER_AGENT"] = _request.getHeader("user-agent");
     _env_map["SERVER_NAME"] = _request.getHeader("Host");
     _env_map["REQUEST_METHOD"] = _request.get("method");
-    size_t pos_query = _target.find('?');
-    size_t pos_info = _target.rfind('/', pos_query);
-    size_t pos_cgi = _target.find('/', 1);
-    if (pos_query != std::string::npos)
-        _env_map["QUERY_STRING"] = _target.substr(pos_query + 1);
+    //_env_map["SCRIPT_FILENAME"]
+    //_env_map["QUERY_STRING"]
+    //_env_map["PATH_INFO"]
+    if (_pos_info == std::string::npos && _pos_query == std::string::npos)
+        _env_map["SCRIPT_FILENAME"] = _env_map["DOCUMENT_ROOT"] + _target;
+    else if (_pos_info == std::string::npos && _pos_query != std::string::npos)
+    {
+        _env_map["SCRIPT_FILENAME"] = _env_map["DOCUMENT_ROOT"] + _target.substr(0, _pos_query);
+        _env_map["QUERY_STRING"] = _target.substr(_pos_query + 1);
+    }
+    else if (_pos_info != std::string::npos && _pos_query == std::string::npos)
+    {
+        _env_map["SCRIPT_FILENAME"] = _env_map["DOCUMENT_ROOT"] + _target.substr(0, _pos_info);
+        _env_map["PATH_INFO"] = _target.substr(_pos_info);
+    }
+    else if (_pos_info < _pos_query)
+    {
+        _env_map["SCRIPT_FILENAME"] = _env_map["DOCUMENT_ROOT"] + _target.substr(0, _pos_info);
+        _env_map["PATH_INFO"] = _target.substr(_pos_info, _pos_query - _pos_info);
+        _env_map["QUERY_STRING"] = _target.substr(_pos_query + 1);
+    }
     else
-        _env_map["QUERY_STRING"] = "";
-    if (pos_info != pos_cgi){
-        _env_map["PATH_INFO"] = _target.substr(pos_info, pos_query - pos_info);
-        _env_map["SCRIPT_FILENAME"] = _env_map["DOCUMENT_ROOT"] + _target.substr(0, pos_info);
-    }
-    else{
+    {
+        _env_map["SCRIPT_FILENAME"] = _env_map["DOCUMENT_ROOT"] + _target.substr(0, _pos_query);
         _env_map["PATH_INFO"] = "";
-        _env_map["SCRIPT_FILENAME"] = _env_map["DOCUMENT_ROOT"] + _target.substr(0, pos_query);
+        _env_map["QUERY_STRING"] = _target.substr(_pos_query + 1);
     }
-    // SCRIPT_NAME  ???
+    /*
+    std::cout << "-------------------------------------------------\n"
+        << "_env_map[SCRIPT_FILENAME] = ->" << _env_map["SCRIPT_FILENAME"] << "<-\n"
+        << "_env_map[QUERY_STRING] = ->" << _env_map["QUERY_STRING"] << "<-\n"
+        << "_env_map[PATH_INFO] = ->" << _env_map["PATH_INFO"] << "<-\n";
+    */
     _env_map["PATH_TRANSLATED"] = _env_map["DOCUMENT_ROOT"] + _env_map["PATH_INFO"];
     size_t pos = _env_map["SERVER_NAME"].find(':');
     if (pos != std::string::npos)
@@ -308,16 +328,5 @@ void Cgi::setEnvMap(){
         } else
             ++it;
     }
-
-/*
-    std::cout << pos_cgi << "\n";
-    std::cout << pos_info << "\n";
-    std::cout << pos_query << "\n";
-    (void)pos_cgi;
-    (void)pos_info;
-    std::cout << _env_map["SCRIPT_FILENAME"] << "\n";
-    std::cout << _env_map["PATH_INFO"] << "\n";
-    std::cout << _env_map["QUERY_STRING"] << "\n";
-    */    
 }  
 

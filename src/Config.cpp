@@ -178,3 +178,4 @@ t_vector_str Config::getValues(std::string target, std::string key, t_vector_str
 bool Config::isValid(){
 	return false;
 };
+
