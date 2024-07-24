@@ -86,12 +86,15 @@ std::string Response::post()
 
 std::string Response::deleteResp()
 {
-	std::string target = _req.get("target");
-	std::string dir = "uploads";
+	_root = _srv.config.getValues(_target, "root", {""})[0];
+	std::string loc = _srv.config.selectLocation(_target);
+	loc = loc == "main" ? "" : loc;
+	std::string target = _target.substr(loc.length());
+	std::string path = _root + target;
 
-	replacePercent20withSpace(target);
-	target = dir + target;
-	if (deleteFile(target) == 204)
+	replacePercent20withSpace(path);
+	// std::cout << "Deleting " << path << std::endl;
+	if (deleteFile(path) == 204)
 		return ("HTTP/1.1 204 No Content");
 	return ("HTTP/1.1 404 Not Found");
 }
@@ -192,6 +195,21 @@ std::string Response::load_file(std::string filepath)
 	response += buffer.str();
 	return response;
 }
+
+static std::string htmlEscape(const std::string& s) {
+    std::string result;
+    for (char c : s) {
+        switch (c) {
+            case '&': result += "&amp;"; break;
+            case '<': result += "&lt;"; break;
+            case '>': result += "&gt;"; break;
+            case '\"': result += "&quot;"; break;
+            case '\'': result += "&#39;"; break;
+            default: result += c; break;
+        }
+    }
+    return result;
+}
 std::string Response::load_directory_listing(std::string directoryPath)
 {
     DIR* dir;
@@ -200,25 +218,28 @@ std::string Response::load_directory_listing(std::string directoryPath)
 
     if ((dir = opendir(directoryPath.c_str())) != NULL) 
 	{
-        buffer << "<html><head><title>Directory Listing</title></head><body>";
-        buffer << "<h2>Directory Listing of /uploads</h2>";
-        buffer << "<ul>";
+        buffer << "<html><head><title>Directory Listing</title></head><body>"
+				<< "<h2>Directory Listing of " << htmlEscape(_target) << "</h2><ul>";
 
         // List all the files and directories within directory
         while ((ent = readdir(dir)) != NULL) 
 		{
 			if (strcmp(ent->d_name, ".") != 0 && strcmp(ent->d_name, "..") != 0)
 			{
-				buffer << "<li>" << ent->d_name
-				<< "<input type=\"submit\" id=\"" << ent->d_name << "\" value=\"Delete\" />" 
-				<< "<script>document.getElementById(\"" << ent->d_name << "\").addEventListener(\"click\", function() {var delReq = new XMLHttpRequest();"
-				<< "delReq.open(\"DELETE\", \"/" << ent->d_name << "\", false);"
-				<< "delReq.send(null); location.reload()});</script></li>";
+				std::string fileName = htmlEscape(ent->d_name);
+				buffer << "<li><a href=\"" << _target << "/" << fileName << "\" download>"
+                       << fileName << "</a>"
+                       // Add a delete button with an onclick event calling deleteFile function
+                       << "<button onclick=\"deleteFile('" << fileName << "')\">Delete</button></li>";
 			}
         }
-        buffer << "</ul>";
-		// buffer << "<form action=\"/\" method=\"get\"><input type=\"submit\" value=\"Go back\" name=\"Submit\" id=\"back\" /></form>";
-        buffer << "</body></html>";
+  		buffer << "</ul><script>"
+           << "function deleteFile(fileName) {"
+           << "  fetch('" << _target << "/' + encodeURIComponent(fileName), { method: 'DELETE' })"
+           << "    .then(response => { if (response.ok) location.reload(); })"
+           << "    .catch(error => console.error('Error:', error));"
+           << "}</script>"
+           << "</body></html>";
 
         closedir(dir);
     } 
