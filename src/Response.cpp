@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/07/25 22:53:46 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/07/26 00:37:05 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,9 +50,11 @@ void Response::run()
 std::string Response::get()
 {	
 	std::string path = getPath();
+    std::cout << "PATH=" << path << std::endl;
 	if (std::filesystem::is_regular_file(path) && std::filesystem::exists(path))
 		return load_file(path);
 	std::string _index = _srv.config.getValues(_target, "index", {""})[0];
+    std::cout << "INDEXPATH=" << path + _index << std::endl;
 	if (_index.length() > 1 && std::filesystem::is_regular_file(path + _index) && std::filesystem::exists(path + _index))
 		return load_file(path + _index);
 	bool autoindex = _srv.config.getValues(_target, "autoindex", {"off"})[0] == "on";
@@ -143,7 +145,7 @@ std::string Response::load_directory_listing(std::string directoryPath)
         return ("HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\n\r\nError: Could not open directory");
 
     buffer << "<html><head><title>Directory Listing</title></head><body>"
-            << "<h2>Directory Listing of " << htmlEscape(_target) << "</h2><ul>";
+            << "<h2>Directory Listing of " << htmlEscape(directoryPath) << "</h2><ul>";
     buffer << "<li><a href=\"../\">..</a>";
     for (const auto& dirName : directories) 
         buffer << "<li><a href=\"" << _target << "/" << dirName << "\">" << dirName << "</a>"
@@ -238,13 +240,11 @@ std::string Response::getPath()
 {
     std::string _root = _srv.config.getValues(_target, "root", {""})[0];
     if (_root.empty())
-    {
-        return _target;
-    }
+        return _target.substr(1);
 	std::string loc = _srv.config.selectLocation(_target);
-	loc = loc == "main" ? "" : loc;
+	loc = loc == "main" ? "/" : loc;
 	std::string target = _target.substr(loc.length());
-	return _root + target;
+	return _root + "/" + target;
 }
 
 bool Response::isHtml(const std::string fileName)
