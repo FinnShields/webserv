@@ -114,7 +114,8 @@ std::string Response::get()
 
 std::string Response::post()
 {
-	saveFile();
+	if (!_req.get("content-type").compare(0, 19, "multipart/form-data"))
+		saveFile();
 	// int status = saveFile();
 	// return status == 500 ? "HTTP/1.1 500 Internal Server Error" :
 	// 	// status == 400 ? "HTTP/1.1 400 Bad Request" :
@@ -233,21 +234,11 @@ std::string Response::load_directory_listing(std::string directoryPath)
     return ("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n" + buffer.str());
 }
 
-bool Response::checkFileType(std::string& fileName)
-{
-	if (!fileName.compare(fileName.length() - 4, 4,  ".txt"))
-		return true;
-	else
-		return false;
-
-}
-
 int Response::saveFile()
-{
-    if (_req.get("Content-Type").compare(0, 19, "multipart/form-data"))
-        return 400;
-    std::string boundary = _req.get("Content-Type").substr(31);
-    std::string body = _req.get("body");
+	{
+	std::string boundary = _req.get("Content-Type").substr(31);
+	std::string body = _req.get("body");
+    std::vector<char> bodyRaw = _req.getBodyRawBytes();
 	if (body.empty())
 		return 400;
     std::string fileName = "";
@@ -257,19 +248,46 @@ int Response::saveFile()
 		fileName.append(1, *(it++));
 	if (fileName.empty())
 		return 400;
-	if (checkFileType(fileName) == false)
-		return 400;
     std::string directory = "uploads/";
     mkdir(directory.c_str(), 0777);
     fileName = directory + fileName;
+	std::cout << "@@@ Body: " << body << std::endl;
+	std::cout << "@@@ BodyRaw: ";
+	for (size_t i = 0; i < bodyRaw.size(); i ++)
+		std::cout << bodyRaw[i];
+	std::cout << std::endl;
     size_t start = body.find("\r\n\r\n") + 4;
-    size_t len = body.find_last_of(boundary) - boundary.length() - 6 - start;
-    std::string fileContent = body.substr(start, len);
-    std::ofstream newFile(fileName);
-    newFile << fileContent;
+    size_t len = body.length() - boundary.length() - 9 - start;
+    std::fstream newFile;
+	newFile.open(fileName, std::ios::binary | std::ios::out);
+	for (size_t i = 0; i < len; i++) {
+		newFile << bodyRaw[start + i];
+	}
     newFile.close();
-    _srv.setFileName(fileName);
 	return 204;
+
+    // std::string boundary = _req.get("Content-Type").substr(31);
+    // std::string body = _req.get("body");
+	// if (body.empty())
+	// 	return 400;
+    // std::string fileName = "";
+    // std::string::iterator it = body.begin();
+    // it += body.find("filename") + 10;
+	// while (*it != '\"')
+	// 	fileName.append(1, *(it++));
+	// if (fileName.empty())
+	// 	return 400;
+    // std::string directory = "uploads/";
+    // mkdir(directory.c_str(), 0777);
+    // fileName = directory + fileName;
+    // size_t start = body.find("\r\n\r\n") + 4;
+    // size_t len = body.find_last_of(boundary) - boundary.length() - 6 - start;
+    // std::string fileContent = body.substr(start, len);
+    // std::ofstream newFile(fileName);
+    // newFile << fileContent;
+    // newFile.close();
+    // _srv.setFileName(fileName);
+	// return 204;
 }
 
 int Response::deleteFile(std::string &file)

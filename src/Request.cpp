@@ -128,23 +128,29 @@ void	Request::handleChunks(std::string& input, size_t i)
 	this->body = content;
 }
 
-void	Request::extractBody(std::string& input)
+void	Request::extractBody(char *buffer)
 {
-	size_t	i;
-	size_t	len;
+	char *ch;
 
-	this->body = "";
-	i = input.find("\r\n\r\n");
-	if (i == std::string::npos)
+	ch = strstr(buffer, "\r\n\r\n") + 4;
+	if (!ch)
 		return ;
-	i += 4;
-	if (i >= input.length())
-		return ;
-	if (!this->get("transfer-encoding").compare("chunked"))
-		return (this->handleChunks(input, i));
-	len = atoi(this->get("content-length").c_str());
-	for (size_t j = 0; j < len; j++)
-		this->body.append(1, input[i++]);
+	while (*ch)
+		bodyRawBytes.push_back(*(ch++));
+	for (size_t i = 0; i < bodyRawBytes.size(); i++)
+		body.append(1, bodyRawBytes[i]);
+	// this->body = "";
+	// i = input.find("\r\n\r\n");
+	// if (i == std::string::npos)
+	// 	return ;
+	// i += 4;
+	// if (i >= input.length())
+	// 	return ;
+	// if (!this->get("transfer-encoding").compare("chunked"))
+	// 	return (this->handleChunks(input, i));
+	// len = atoi(this->get("content-length").c_str());
+	// for (size_t j = 0; j < len; j++)
+	// 	this->body.append(1, input[i++]);
 }
 
 void	Request::parse(char *buffer)
@@ -156,7 +162,7 @@ void	Request::parse(char *buffer)
 	this->extractTarget(input);
 	this->extractVersion(input);
 	this->extractHeaders(input);
-	this->extractBody(input);
+	this->extractBody(buffer);
 }
 
 const std::string	Request::get(std::string toGet)
@@ -196,6 +202,11 @@ std::string& Request::getRef(std::string toGet)
 	if (!toGet.compare("version"))
 		return (this->version);
 	return (this->headers[toGet]);
+}
+
+std::vector<char> Request::getBodyRawBytes()
+{
+	return bodyRawBytes;
 }
 
 void	Request::display()
