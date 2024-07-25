@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/07/25 12:50:36 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/07/25 22:53:46 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,40 +36,25 @@ void Response::run()
 	std::string method = _req.get("method");
 	_target = _req.get("target"); // maybe it should became private memeber
 
-	if(!isMethodValid(method, response))
-		;
-	else if (_target.size() > 9 && _target.substr(0, 9).compare("/cgi-bin/") == 0)
-		response = runCGI();
-	else
-    	response = 	(method == "GET") ? get() : 
-					(method == "POST") ? post() :
-					(method == "DELETE") ? deleteResp() : 
-					RESPONSE_501;
+	if(isMethodValid(method, response))
+        response = 	(_target.size() > 9 && _target.substr(0, 9).compare("/cgi-bin/") == 0) ? runCGI() :
+                    (method == "GET") ? get() : 
+                    (method == "POST") ? post() :
+                    (method == "DELETE") ? deleteResp() : 
+                    RESPONSE_501;
 	std::cout << "------- Response ----------\n" << response << "\n------- END ---------------\n";
 	if (send(_fd, response.c_str(), response.size(), 0) < 0)
 		perror("Send error");
 }
 
-//1. If target is regular file, loads it. 
-//2. If index is on, load the index.
-//3. If autoindex on, list files.
 std::string Response::get()
 {	
-	_root = _srv.config.getValues(_target, "root", {""})[0];
-	std::string loc = _srv.config.selectLocation(_target);
-	loc = loc == "main" ? "" : loc;
-	std::string target = _target.substr(loc.length());
-	std::string path = _root + target;
-	
-    // std::cout << "----GET----\nloc = " << loc << "\ntarget= " << target << "\npath= "  << path << "\n---GETEND===" << std::endl;
-	if (target.length() > 1 && std::filesystem::is_regular_file(path) && std::filesystem::exists(path))
+	std::string path = getPath();
+	if (std::filesystem::is_regular_file(path) && std::filesystem::exists(path))
 		return load_file(path);
-	
-	_index = _srv.config.getValues(_target, "index", {""})[0];
-    // std::cout << "_index=" << _index << "\ntarget.length()=" << target.length() << std::endl;
-	if (target.length() <=1 && _index.length() > 1) 
-		return load_file(_root + "/" + _index);
-	
+	std::string _index = _srv.config.getValues(_target, "index", {""})[0];
+	if (_index.length() > 1 && std::filesystem::is_regular_file(path + _index) && std::filesystem::exists(path + _index))
+		return load_file(path + _index);
 	bool autoindex = _srv.config.getValues(_target, "autoindex", {"off"})[0] == "on";
 	if (autoindex && std::filesystem::is_directory(path)) 
 		return load_directory_listing(path);
@@ -89,32 +74,13 @@ std::string Response::post()
 
 std::string Response::deleteResp()
 {
-	_root = _srv.config.getValues(_target, "root", {""})[0];
-	std::string loc = _srv.config.selectLocation(_target);
-	loc = loc == "main" ? "" : loc;
-	std::string target = _target.substr(loc.length());
-	std::string path = _root + target;
+    std::string path = getPath();
 
 	replacePercent20withSpace(path);
 	// std::cout << "Deleting " << path << std::endl;
 	if (deleteFile(path) == 204)
 		return ("HTTP/1.1 204 No Content");
 	return ("HTTP/1.1 404 Not Found");
-}
-
-std::string Response::createCookie()
-{
-	size_t newSessionId;
-
-	srand((size_t) time(NULL));
-	newSessionId = (size_t) rand();
-	while (_srv.checkCookieExist(newSessionId))
-	{
-		srand((size_t) time(NULL));
-		newSessionId = (size_t) rand();
-	}
-	_srv.setNewCookie(newSessionId);
-	return ("Set-Cookie: session-id=" + std::to_string(newSessionId) + "\r\n");
 }
 
 std::string Response::runCGI()
@@ -138,43 +104,6 @@ std::string Response::runCGI()
 			status == 502 ? RESPONSE_500 : //Bad Gateway
 			status == 504 ? RESPONSE_500 : // time out
 			RESPONSE_500;
-}
-
-bool Response::isMethodValid(std::string &method, std::string &response)
-{
-	t_vector_str mtd_default = DEFAULT_METHOD;
-	t_vector_str mtd_allowed = _srv.config.getValues(_target, "limit_except", DEFAULT_METHOD);
-	if (find(mtd_default.begin(), mtd_default.end(), method) == mtd_default.end())
-	{
-		std::cout << "no supported method="  << method << "\n";
-		response = RESPONSE_501;
-		return false;
-	}
-	if (find(mtd_allowed.begin(), mtd_allowed.end(), method) == mtd_allowed.end())
-	{
-		response = RESPONSE_405;
-		return false;
-	}
-	return true;
-}
-
-static bool isHtml(std::string fileName)
-{
-	if (fileName.length() > 5 && !fileName.compare(fileName.length() - 5, 5,  ".html"))
-		return true;
-	return false;
-}
-
-// static std::string getFileType(std::string fileName)
-// {
-// 	std::string filetype = fileName.substr(fileName.find_first_of('.'));
-// 	return filetype;
-// }
-
-static std::string getFileName(std::string fileName)
-{
-	std::string filetype = fileName.substr(fileName.find_last_of('/') + 1);
-	return filetype;
 }
 
 std::string Response::load_file(std::string filepath)
@@ -202,47 +131,6 @@ std::string Response::load_file(std::string filepath)
 	}
 	response += buffer.str();
 	return response;
-}
-
-static std::string htmlEscape(const std::string& s) {
-    std::string result;
-    for (char c : s) {
-        switch (c) {
-            case '&': result += "&amp;"; break;
-            case '<': result += "&lt;"; break;
-            case '>': result += "&gt;"; break;
-            case '\"': result += "&quot;"; break;
-            case '\'': result += "&#39;"; break;
-            default: result += c; break;
-        }
-    }
-    return result;
-}
-
-static bool load_directory_entries(std::string directoryPath, t_vector_str &directories, t_vector_str &files)
-{
-    DIR* dir;
-    struct dirent* ent;
-
-    if ((dir = opendir(directoryPath.c_str())) != NULL)
-    {
-         while ((ent = readdir(dir)) != NULL) 
-        {
-            if (strcmp(ent->d_name, ".") != 0 && strcmp(ent->d_name, "..") != 0)
-            {
-                std::string fileName = htmlEscape(ent->d_name);
-                if (ent->d_type == DT_DIR) 
-                    directories.push_back(fileName);
-                else
-                    files.push_back(fileName);
-            }
-        }
-        closedir(dir);
-        std::sort(directories.begin(), directories.end());
-        std::sort(files.begin(), files.end());
-        return true;
-    }
-    return false;
 }
 
 std::string Response::load_directory_listing(std::string directoryPath)
@@ -287,7 +175,8 @@ int Response::saveFile()
 		fileName.append(1, *(it++));
 	if (fileName.empty())
 		return 400;
-    std::string directory = "uploads/";
+    
+    std::string directory = getPath() + "uploads/";
     mkdir(directory.c_str(), 0777);
     fileName = directory + fileName;
 	std::cout << std::endl;
@@ -302,7 +191,7 @@ int Response::saveFile()
 	return 204;
 }
 
-int Response::deleteFile(std::string &file)
+int Response::deleteFile(const std::string &file)
 {
     if (std::remove(file.c_str()) < 0)
 	{
@@ -310,6 +199,112 @@ int Response::deleteFile(std::string &file)
 		return 404;
 	}
 	return 204;
+}
+
+std::string Response::createCookie()
+{
+	size_t newSessionId;
+
+	srand((size_t) time(NULL));
+	newSessionId = (size_t) rand();
+	while (_srv.checkCookieExist(newSessionId))
+	{
+		srand((size_t) time(NULL));
+		newSessionId = (size_t) rand();
+	}
+	_srv.setNewCookie(newSessionId);
+	return ("Set-Cookie: session-id=" + std::to_string(newSessionId) + "\r\n");
+}
+
+bool Response::isMethodValid(std::string &method, std::string &response)
+{
+	t_vector_str mtd_default = DEFAULT_METHOD;
+	t_vector_str mtd_allowed = _srv.config.getValues(_target, "limit_except", DEFAULT_METHOD);
+	if (find(mtd_default.begin(), mtd_default.end(), method) == mtd_default.end())
+	{
+		std::cout << "no supported method="  << method << "\n";
+		response = RESPONSE_501;
+		return false;
+	}
+	if (find(mtd_allowed.begin(), mtd_allowed.end(), method) == mtd_allowed.end())
+	{
+		response = RESPONSE_405;
+		return false;
+	}
+	return true;
+}
+
+std::string Response::getPath()
+{
+    std::string _root = _srv.config.getValues(_target, "root", {""})[0];
+    if (_root.empty())
+    {
+        return _target;
+    }
+	std::string loc = _srv.config.selectLocation(_target);
+	loc = loc == "main" ? "" : loc;
+	std::string target = _target.substr(loc.length());
+	return _root + target;
+}
+
+bool Response::isHtml(const std::string fileName)
+{
+	if (fileName.length() > 5 && !fileName.compare(fileName.length() - 5, 5,  ".html"))
+		return true;
+	return false;
+}
+
+// static std::string getFileType(std::string fileName)
+// {
+// 	std::string filetype = fileName.substr(fileName.find_first_of('.'));
+// 	return filetype;
+// }
+
+std::string Response::getFileName(const std::string path)
+{
+	std::string filename = path.substr(path.find_last_of('/') + 1);
+	return filename;
+}
+
+std::string Response::htmlEscape(const std::string& s) {
+    std::string result;
+    for (char c : s) {
+        switch (c) {
+            case '&': result += "&amp;"; break;
+            case '<': result += "&lt;"; break;
+            case '>': result += "&gt;"; break;
+            case '\"': result += "&quot;"; break;
+            case '\'': result += "&#39;"; break;
+            default: result += c; break;
+        }
+    }
+    return result;
+}
+
+bool Response::load_directory_entries(const std::string directoryPath, t_vector_str &directories, t_vector_str &files)
+{
+    DIR* dir;
+    struct dirent* ent;
+
+    if ((dir = opendir(directoryPath.c_str())) != NULL)
+    {
+         while ((ent = readdir(dir)) != NULL) 
+        {
+            if (strcmp(ent->d_name, ".") != 0 && strcmp(ent->d_name, "..") != 0)
+            {
+                std::string fileName = htmlEscape(ent->d_name);
+                if (ent->d_type == DT_DIR) 
+                    directories.push_back(fileName);
+                else
+                    files.push_back(fileName);
+            }
+        }
+        closedir(dir);
+        std::sort(directories.begin(), directories.end());
+        std::sort(files.begin(), files.end());
+        return true;
+    }
+    return false;
 }
 
 void Response::replacePercent20withSpace(std::string &str)
