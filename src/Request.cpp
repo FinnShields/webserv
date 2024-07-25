@@ -49,7 +49,6 @@ void Request::extractTarget(std::string& input)
 
 	start = input.find_first_of(' ') + 1;
 	end = 0;
-	std::cout << "input: " << input << std::endl;
 	while (input.at(start + end) != ' ')
 		end++;
 	this->target = input.substr(start, end);
@@ -69,7 +68,8 @@ void Request::extractVersion(std::string& input)
 void	Request::read(int _fd)
 {
 	char buffer[MAX_BUFFER_SIZE] = {0};
-	if (recv(_fd, &buffer, MAX_BUFFER_SIZE, 0) < 0)
+	recvReturn = recv(_fd, &buffer, MAX_BUFFER_SIZE, 0);
+	if (recvReturn < 0)
 		perror("Recv error");
 	if (!*buffer)
 	{
@@ -128,23 +128,30 @@ void	Request::handleChunks(std::string& input, size_t i)
 	this->body = content;
 }
 
-void	Request::extractBody(std::string& input)
+void	Request::extractBody(char *buffer)
 {
-	size_t	i;
-	size_t	len;
+	char *ch;
 
-	this->body = "";
-	i = input.find("\r\n\r\n");
-	if (i == std::string::npos)
+	ch = strstr(buffer, "\r\n\r\n") + 4;
+	if (!ch)
 		return ;
-	i += 4;
-	if (i >= input.length())
-		return ;
-	if (!this->get("transfer-encoding").compare("chunked"))
-		return (this->handleChunks(input, i));
-	len = atoi(this->get("content-length").c_str());
-	for (size_t j = 0; j < len; j++)
-		this->body.append(1, input[i++]);
+	size_t start = ch - buffer;
+	for (size_t i = 0; start + i < (size_t) recvReturn; i ++)
+		bodyRawBytes.push_back(buffer[start + i]);
+	for (size_t i = 0; i < bodyRawBytes.size(); i++)
+		body.append(1, bodyRawBytes[i]);
+	// this->body = "";
+	// i = input.find("\r\n\r\n");
+	// if (i == std::string::npos)
+	// 	return ;
+	// i += 4;
+	// if (i >= input.length())
+	// 	return ;
+	// if (!this->get("transfer-encoding").compare("chunked"))
+	// 	return (this->handleChunks(input, i));
+	// len = atoi(this->get("content-length").c_str());
+	// for (size_t j = 0; j < len; j++)
+	// 	this->body.append(1, input[i++]);
 }
 
 void	Request::parse(char *buffer)
@@ -156,7 +163,7 @@ void	Request::parse(char *buffer)
 	this->extractTarget(input);
 	this->extractVersion(input);
 	this->extractHeaders(input);
-	this->extractBody(input);
+	this->extractBody(buffer);
 }
 
 const std::string	Request::get(std::string toGet)
@@ -198,6 +205,11 @@ std::string& Request::getRef(std::string toGet)
 	return (this->headers[toGet]);
 }
 
+std::vector<char> Request::getBodyRawBytes()
+{
+	return bodyRawBytes;
+}
+
 void	Request::display()
 {
 	std::cout << std::endl;
@@ -208,6 +220,11 @@ void	Request::display()
 	std::cout << "HTTP-version: " << this->version << std::endl;
 	for(it = this->headers.begin(); it != this->headers.end(); it++)
 		std::cout << it->first << ": " << it->second << std::endl;
+	if (!this->get("content-type").compare(0, 19, "multipart/form-data"))
+	{
+		std::cout << "Body: <file data>" << std::endl << "---------------------" << std::endl;
+		return ;
+	}
 	if (!this->body.empty())
 		std::cout << "Body: " << this->body << std::endl;
 	std::cout << "---------------------" << std::endl;

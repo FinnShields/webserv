@@ -50,7 +50,6 @@ class Response
 		int saveFile();
         int deleteFile(std::string &);
 		void replacePercent20withSpace(std::string &str);
-		bool checkFileType(std::string& fileName);
 		std::string createCookie();
 		bool isMethodValid(std::string &method,  std::string &response);
 		std::string runCGI();
