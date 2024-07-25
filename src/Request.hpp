@@ -31,13 +31,14 @@ class Request
 		std::map<std::string, std::string> headers;
 		std::string body;
 		std::vector<char> bodyRawBytes;
-		ssize_t recvReturn;
-		void parse(char *buffer);
+		std::vector<char> reqRaw;
+		ssize_t recvReturnTotal;
+		void parse(std::vector<char> reqRaw);
 		bool extractMethod(std::string& input);
 		void extractTarget(std::string& input);
 		void extractVersion(std::string& input);
 		void extractHeaders(std::string& input);
-		void extractBody(char *buffer);
+		void extractBody(std::vector<char> reqRaw);
 		void handleChunks(std::string& input, size_t i);
 	public:
 		Request();

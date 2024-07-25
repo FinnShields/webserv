@@ -13,7 +13,9 @@
 #include "Request.hpp"		
 
 Request::Request()
-{}
+{
+	recvReturnTotal = 0;
+}
 
 Request::~Request()
 {}
@@ -68,15 +70,25 @@ void Request::extractVersion(std::string& input)
 void	Request::read(int _fd)
 {
 	char buffer[MAX_BUFFER_SIZE] = {0};
-	recvReturn = recv(_fd, &buffer, MAX_BUFFER_SIZE, 0);
-	if (recvReturn < 0)
-		perror("Recv error");
-	if (!*buffer)
-	{
-		std::cout << "Connection cancelled (empty buffer)" << std::endl;
-		return ;
+	ssize_t recvReturn = MAX_BUFFER_SIZE;
+	while (recvReturn == MAX_BUFFER_SIZE) {
+		recvReturn = recv(_fd, &buffer, MAX_BUFFER_SIZE, 0);
+		if (recvReturn < 0)
+			perror("Recv error");
+		if (!*buffer)
+		{
+			std::cout << "Connection cancelled (empty buffer)" << std::endl;
+			return ;
+		}
+		for (size_t i = 0; i < (size_t) recvReturn; i++) {
+			reqRaw.push_back(buffer[i]);
+		}
+		recvReturnTotal += recvReturn;
+		bzero(buffer, MAX_BUFFER_SIZE);
 	}
-	this->parse(buffer);
+	std::cout << std::endl;
+	std::cout << std::endl;
+	this->parse(reqRaw);
 }
 
 void	Request::extractHeaders(std::string& input)
@@ -128,30 +140,32 @@ void	Request::handleChunks(std::string& input, size_t i)
 	this->body = content;
 }
 
-void	Request::extractBody(char *buffer)
+void	Request::extractBody(std::vector<char> reqRaw)
 {
 	char *ch;
+	char *reqArray = &reqRaw[0];
 
-	ch = strstr(buffer, "\r\n\r\n") + 4;
+	ch = strstr(reqArray, "\r\n\r\n") + 4;
 	if (!ch)
 		return ;
-	size_t start = ch - buffer;
-	for (size_t i = 0; start + i < (size_t) recvReturn; i ++)
-		bodyRawBytes.push_back(buffer[start + i]);
+	size_t start = ch - reqArray;
+	for (size_t i = 0; start + i < (size_t) recvReturnTotal; i ++)
+		bodyRawBytes.push_back(reqRaw[start + i]);
 	for (size_t i = 0; i < bodyRawBytes.size(); i++)
 		body.append(1, bodyRawBytes[i]);
 }
 
-void	Request::parse(char *buffer)
+void	Request::parse(std::vector<char> reqRaw)
 {
-	std::string	input(buffer);
-
+	std::string	input = "";
+	for (size_t i = 0; i < reqRaw.size(); i++)
+		input.append(1, reqRaw[i]);
 	if (!this->extractMethod(input))
 		return ;
 	this->extractTarget(input);
 	this->extractVersion(input);
 	this->extractHeaders(input);
-	this->extractBody(buffer);
+	this->extractBody(reqRaw);
 }
 
 const std::string	Request::get(std::string toGet)
