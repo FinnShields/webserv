@@ -41,9 +41,10 @@ class Config
 		//std::string 		getOne(std::string target, std::string key, std::string default_value) const;
 		//int			 		get0ne(std::string target, std::string key, int default_value) const;
 
+		std::string			selectLocation(std::string target) const;
 		t_vector_str 		getValues(std::string target, std::string key,  t_vector_str default_values) const;
 		//std::vector<int> 	getAll(std::string target, std::string key, int default_value) const;
-		std::string selectLocation(std::string target) const;
+		
 
 		bool				isValid();
 	private:

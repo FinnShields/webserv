@@ -25,7 +25,7 @@ any other error 500
 404 "PATH NOT FOUND" 
 403 "PERMISSION DENIED"
 500 unknown cgi problem 
-501 method is not implemented. it is double checked in Response class also
+501 method is not implemented.
 502 cgi execution problem 
 504 time out
 
@@ -83,7 +83,6 @@ void Cgi::start(){
     //std::cout << "Target =>" << _request.get("target") << "<=\n";
     if (!isImplemented())
     {
-        std::cerr << "ext is not implemented\n";
         _response = "";
         _status = 501;
         return ;
@@ -114,19 +113,22 @@ bool Cgi::isImplemented()
     _pos_dot = _target.find('.', _pos_cgi);
     _pos_query = _target.find('?', _pos_cgi);
     _pos_info = _target.find('/', _pos_cgi);
-    std::cerr << "_pos_dot =" << _pos_dot << "\n";
-    std::cerr << "_pos_query =" << _pos_query << "\n";
-    std::cerr << "_pos_info =" << _pos_info << "\n";
-    //std::cerr << "script naem =" << _target.substr(pos_dot, ) << "\n";
+    //std::cerr << "_pos_dot =" << _pos_dot << "\n";
+    //std::cerr << "_pos_query =" << _pos_query << "\n";
+    ///std::cerr << "_pos_info =" << _pos_info << "\n";
     if (_pos_dot == std::string::npos)
+    {
+        std::cout << "CGI no extension\n";
         return false;
+    }
     size_t ext_len = std::min(_target.size(), std::min(_pos_query,_pos_info)) - _pos_dot;
-    std::cout << "ext_len =" << ext_len << "\n";
     std::string ext = _target.substr(_pos_dot, ext_len);
-    std::cout << "ext =" << ext << "\n";
     t_vector_str ext_list = _server.config.getValues(_target, "cgi_ext", {});
     if (find(ext_list.begin(), ext_list.end(), ext) == ext_list.end())
+    {
+        std::cout << "CGI extension is not implemented\n";
         return false;
+    }
     return true;
 }
 
