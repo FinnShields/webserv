@@ -300,29 +300,6 @@ int Response::saveFile()
 	}
     newFile.close();
 	return 204;
-
-    // std::string boundary = _req.get("Content-Type").substr(31);
-    // std::string body = _req.get("body");
-	// if (body.empty())
-	// 	return 400;
-    // std::string fileName = "";
-    // std::string::iterator it = body.begin();
-    // it += body.find("filename") + 10;
-	// while (*it != '\"')
-	// 	fileName.append(1, *(it++));
-	// if (fileName.empty())
-	// 	return 400;
-    // std::string directory = "uploads/";
-    // mkdir(directory.c_str(), 0777);
-    // fileName = directory + fileName;
-    // size_t start = body.find("\r\n\r\n") + 4;
-    // size_t len = body.find_last_of(boundary) - boundary.length() - 6 - start;
-    // std::string fileContent = body.substr(start, len);
-    // std::ofstream newFile(fileName);
-    // newFile << fileContent;
-    // newFile.close();
-    // _srv.setFileName(fileName);
-	// return 204;
 }
 
 int Response::deleteFile(std::string &file)

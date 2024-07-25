@@ -140,18 +140,6 @@ void	Request::extractBody(char *buffer)
 		bodyRawBytes.push_back(buffer[start + i]);
 	for (size_t i = 0; i < bodyRawBytes.size(); i++)
 		body.append(1, bodyRawBytes[i]);
-	// this->body = "";
-	// i = input.find("\r\n\r\n");
-	// if (i == std::string::npos)
-	// 	return ;
-	// i += 4;
-	// if (i >= input.length())
-	// 	return ;
-	// if (!this->get("transfer-encoding").compare("chunked"))
-	// 	return (this->handleChunks(input, i));
-	// len = atoi(this->get("content-length").c_str());
-	// for (size_t j = 0; j < len; j++)
-	// 	this->body.append(1, input[i++]);
 }
 
 void	Request::parse(char *buffer)
