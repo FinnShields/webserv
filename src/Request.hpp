@@ -31,6 +31,7 @@ class Request
 		std::map<std::string, std::string> headers;
 		std::string body;
 		std::vector<char> bodyRawBytes;
+		ssize_t recvReturn;
 		void parse(char *buffer);
 		bool extractMethod(std::string& input);
 		void extractTarget(std::string& input);

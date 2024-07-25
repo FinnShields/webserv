@@ -251,16 +251,12 @@ int Response::saveFile()
     std::string directory = "uploads/";
     mkdir(directory.c_str(), 0777);
     fileName = directory + fileName;
-	std::cout << "@@@ Body: " << body << std::endl;
-	std::cout << "@@@ BodyRaw: ";
-	for (size_t i = 0; i < bodyRaw.size(); i ++)
-		std::cout << bodyRaw[i];
 	std::cout << std::endl;
     size_t start = body.find("\r\n\r\n") + 4;
-    size_t len = body.length() - boundary.length() - 9 - start;
+    size_t len = bodyRaw.size() - boundary.length() - 9 - start;
     std::fstream newFile;
 	newFile.open(fileName, std::ios::binary | std::ios::out);
-	for (size_t i = 0; i < len; i++) {
+	for (size_t i = 0; i < len && i < bodyRaw.size(); i++) {
 		newFile << bodyRaw[start + i];
 	}
     newFile.close();

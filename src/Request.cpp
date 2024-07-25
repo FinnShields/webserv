@@ -49,7 +49,6 @@ void Request::extractTarget(std::string& input)
 
 	start = input.find_first_of(' ') + 1;
 	end = 0;
-	std::cout << "input: " << input << std::endl;
 	while (input.at(start + end) != ' ')
 		end++;
 	this->target = input.substr(start, end);
@@ -69,7 +68,8 @@ void Request::extractVersion(std::string& input)
 void	Request::read(int _fd)
 {
 	char buffer[MAX_BUFFER_SIZE] = {0};
-	if (recv(_fd, &buffer, MAX_BUFFER_SIZE, 0) < 0)
+	recvReturn = recv(_fd, &buffer, MAX_BUFFER_SIZE, 0);
+	if (recvReturn < 0)
 		perror("Recv error");
 	if (!*buffer)
 	{
@@ -135,8 +135,9 @@ void	Request::extractBody(char *buffer)
 	ch = strstr(buffer, "\r\n\r\n") + 4;
 	if (!ch)
 		return ;
-	while (*ch)
-		bodyRawBytes.push_back(*(ch++));
+	size_t start = ch - buffer;
+	for (size_t i = 0; start + i < (size_t) recvReturn; i ++)
+		bodyRawBytes.push_back(buffer[start + i]);
 	for (size_t i = 0; i < bodyRawBytes.size(); i++)
 		body.append(1, bodyRawBytes[i]);
 	// this->body = "";
@@ -219,6 +220,11 @@ void	Request::display()
 	std::cout << "HTTP-version: " << this->version << std::endl;
 	for(it = this->headers.begin(); it != this->headers.end(); it++)
 		std::cout << it->first << ": " << it->second << std::endl;
+	if (!this->get("content-type").compare(0, 19, "multipart/form-data"))
+	{
+		std::cout << "Body: <file data>" << std::endl << "---------------------" << std::endl;
+		return ;
+	}
 	if (!this->body.empty())
 		std::cout << "Body: " << this->body << std::endl;
 	std::cout << "---------------------" << std::endl;
