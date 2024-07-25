@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/07/04 06:37:04 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/07/25 12:50:36 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,10 +61,12 @@ std::string Response::get()
 	std::string target = _target.substr(loc.length());
 	std::string path = _root + target;
 	
+    // std::cout << "----GET----\nloc = " << loc << "\ntarget= " << target << "\npath= "  << path << "\n---GETEND===" << std::endl;
 	if (target.length() > 1 && std::filesystem::is_regular_file(path) && std::filesystem::exists(path))
 		return load_file(path);
 	
 	_index = _srv.config.getValues(_target, "index", {""})[0];
+    // std::cout << "_index=" << _index << "\ntarget.length()=" << target.length() << std::endl;
 	if (target.length() <=1 && _index.length() > 1) 
 		return load_file(_root + "/" + _index);
 	
@@ -215,45 +217,58 @@ static std::string htmlEscape(const std::string& s) {
     }
     return result;
 }
-std::string Response::load_directory_listing(std::string directoryPath)
+
+static bool load_directory_entries(std::string directoryPath, t_vector_str &directories, t_vector_str &files)
 {
     DIR* dir;
     struct dirent* ent;
-    std::stringstream buffer;
 
-    if ((dir = opendir(directoryPath.c_str())) != NULL) 
-	{
-        buffer << "<html><head><title>Directory Listing</title></head><body>"
-				<< "<h2>Directory Listing of " << htmlEscape(_target) << "</h2><ul>";
-
-        // List all the files and directories within directory
-        while ((ent = readdir(dir)) != NULL) 
-		{
-			if (strcmp(ent->d_name, ".") != 0 && strcmp(ent->d_name, "..") != 0)
-			{
-				std::string fileName = htmlEscape(ent->d_name);
-				buffer << "<li><a href=\"" << _target << "/" << fileName << "\" download>"
-                       << fileName << "</a>"
-                       // Add a delete button with an onclick event calling deleteFile function
-                       << "<button onclick=\"deleteFile('" << fileName << "')\">Delete</button></li>";
-			}
+    if ((dir = opendir(directoryPath.c_str())) != NULL)
+    {
+         while ((ent = readdir(dir)) != NULL) 
+        {
+            if (strcmp(ent->d_name, ".") != 0 && strcmp(ent->d_name, "..") != 0)
+            {
+                std::string fileName = htmlEscape(ent->d_name);
+                if (ent->d_type == DT_DIR) 
+                    directories.push_back(fileName);
+                else
+                    files.push_back(fileName);
+            }
         }
-  		buffer << "</ul><script>"
-           << "function deleteFile(fileName) {"
-           << "  fetch('" << _target << "/' + encodeURIComponent(fileName), { method: 'DELETE' })"
-           << "    .then(response => { if (response.ok) location.reload(); })"
-           << "    .catch(error => console.error('Error:', error));"
-           << "}</script>"
-           << "</body></html>";
-
         closedir(dir);
-    } 
-	else 
-	{
-		std::cout << "couldnt open dir" << std::endl;
-        return ("HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\n\r\nError: Could not open directory");
+        std::sort(directories.begin(), directories.end());
+        std::sort(files.begin(), files.end());
+        return true;
     }
+    return false;
+}
 
+std::string Response::load_directory_listing(std::string directoryPath)
+{
+    std::stringstream   buffer;
+    t_vector_str        directories;
+    t_vector_str        files;
+
+    if (!load_directory_entries(directoryPath, directories, files))
+        return ("HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\n\r\nError: Could not open directory");
+
+    buffer << "<html><head><title>Directory Listing</title></head><body>"
+            << "<h2>Directory Listing of " << htmlEscape(_target) << "</h2><ul>";
+    buffer << "<li><a href=\"../\">..</a>";
+    for (const auto& dirName : directories) 
+        buffer << "<li><a href=\"" << _target << "/" << dirName << "\">" << dirName << "</a>"
+                << "<button onclick=\"deleteFile('" << dirName << "')\">Delete</button></li>";
+    for (const auto& fileName : files) 
+        buffer << "<li><a href=\"" << _target << "/" << fileName << "\" download>" << fileName << "</a>"
+                << "<button onclick=\"deleteFile('" << fileName << "')\">Delete</button></li>";
+    buffer << "</ul><script>"
+        << "function deleteFile(fileName) {"
+        << "  fetch('" << _target << "/' + encodeURIComponent(fileName), { method: 'DELETE' })"
+        << "    .then(response => { if (response.ok) location.reload(); })"
+        << "    .catch(error => console.error('Error:', error));"
+        << "}</script>"
+        << "</body></html>";
     return ("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n" + buffer.str());
 }
 
