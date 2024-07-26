@@ -240,7 +240,7 @@ std::string Response::getPath()
 {
     std::string _root = _srv.config.getValues(_target, "root", {""})[0];
     if (_root.empty())
-        return _target.substr(1);
+		return _target.substr(1);
 	std::string loc = _srv.config.selectLocation(_target);
 	loc = loc == "main" ? "/" : loc;
 	std::string target = _target.substr(loc.length());
