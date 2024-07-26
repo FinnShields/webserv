@@ -75,7 +75,7 @@ void	Request::read(int _fd)
 		recvReturn = recv(_fd, &buffer, MAX_BUFFER_SIZE, 0);
 		if (recvReturn < 0)
 			perror("Recv error");
-		if (!*buffer)
+		if (recvReturn == 0)
 		{
 			std::cout << "Connection cancelled (empty buffer)" << std::endl;
 			return ;
@@ -116,28 +116,28 @@ void	Request::extractHeaders(std::string& input)
 	}
 }
 
-void	Request::handleChunks(std::string& input, size_t i)
+void	Request::handleChunks(char *reqArray, size_t start)
 {
 	size_t contentLength = 0;
-	size_t chunkLength = atoi(input.c_str() + i);
-	std::string content;
-	std::string::iterator it;
+	size_t chunkLength = atoi(&reqArray[start]);
+	std::vector<char> contentRawBytes;
 
-	it = input.begin();
-	it += i;
+	size_t i = start;
 	while (chunkLength != 0)
 	{
 		contentLength += chunkLength;
-		while (isdigit(*it) || *it == '\r' || *it == '\n')
-			it ++;
-		while (*it != '\r' && *it != '\n')
-			content.append(1, *(it++));
-		while (!isdigit(*it))
-			it ++;
-		chunkLength = atoi(input.c_str() + std::distance(input.begin(), it));
+		while (isdigit(reqArray[i]) || reqArray[i] == '\r' || reqArray[i] == '\n')
+			i ++;
+		while (reqArray[i] != '\r' && reqArray[i] != '\n')
+			contentRawBytes.push_back(reqArray[i++]);
+		while (!isdigit(reqArray[i]))
+			i ++;
+		chunkLength = atoi(&reqArray[i]);
 	}
 	this->headers["content-length"] = std::to_string(contentLength);
-	this->body = content;
+	this->bodyRawBytes = contentRawBytes;
+	for (i = 0; i < bodyRawBytes.size(); i++)
+		body.append(1, bodyRawBytes[i]);
 }
 
 void	Request::extractBody(std::vector<char> reqRaw)
@@ -149,6 +149,8 @@ void	Request::extractBody(std::vector<char> reqRaw)
 	if (!ch)
 		return ;
 	size_t start = ch - reqArray;
+	if (!this->get("transfer-encoding").compare("chunked"))
+		return this->handleChunks(reqArray, start);
 	for (size_t i = 0; start + i < (size_t) recvReturnTotal; i ++)
 		bodyRawBytes.push_back(reqRaw[start + i]);
 	for (size_t i = 0; i < bodyRawBytes.size(); i++)
@@ -165,6 +167,8 @@ void	Request::parse(std::vector<char> reqRaw)
 	this->extractTarget(input);
 	this->extractVersion(input);
 	this->extractHeaders(input);
+	if (!this->get("transfer-encoding").empty())
+		std::cout << "#### Received a " << this->get("transfer-encoding") << " request" << std::endl;
 	this->extractBody(reqRaw);
 }
 

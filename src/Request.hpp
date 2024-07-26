@@ -39,7 +39,7 @@ class Request
 		void extractVersion(std::string& input);
 		void extractHeaders(std::string& input);
 		void extractBody(std::vector<char> reqRaw);
-		void handleChunks(std::string& input, size_t i);
+		void handleChunks(char *reqArray, size_t i);
 	public:
 		Request();
 		Request(const Request&);
