@@ -177,7 +177,21 @@ void Cgi::_runChildCgi(){
         throw std::runtime_error("dub2 error occurred!");
     if (close(_fd_to_cgi[0]) == -1 || close(_fd_from_cgi[1]) == -1)
             throw std::runtime_error("close error occurred!");
+    /*
+    std::cout << "CGI: step 1 <-\n";
+    std::string cmd = _argv[0];
+    size_t pos_dir_end = cmd.rfind('/');
+    std::string dir_str = cmd.substr(0, pos_dir_end);
+    std::string argv0 = cmd.substr(pos_dir_end);
+    const char* dir_char = dir_str.c_str();
+    std::cout << "chdir to dir ->" << dir_str << "<-\n";
+    std::cout << "chdir to dir ->" << dir_char << "<-\n";
+    chdir(dir_char);
+    */
     execve(_argv[0], _argv, _envp);
+    //std::cout << "CGI: step 2 <-\n";
+    //std::cout << "CGI: execve for ->" << argv0.c_str() << "<-\n";
+    //execve(argv0.c_str(), _argv, _envp);
     close(0);
     close(1);
     throw std::runtime_error("CGI: execve error occurred!");
@@ -280,7 +294,7 @@ void Cgi::setEnvMap(){
     _env_map["DOCUMENT_ROOT"] = _server.config.getValues(_target, "root", {""})[0];
     if (_env_map["DOCUMENT_ROOT"].empty())
         _env_map["DOCUMENT_ROOT"] = _server.config.getFirst("main","root","");
-        
+    
     _env_map["CONTENT_LENGTH"] = _request.getHeader("content-length");
 	_env_map["CONTENT_TYPE"] = _request.getHeader("content-type");
     _env_map["HTTP_COOKIE"] = _request.getHeader("cookie");
