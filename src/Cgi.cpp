@@ -152,6 +152,7 @@ std::string Cgi::readFromFd(int fd) {
 
 int Cgi::_access(){
     _argv[0] = strdup(_env_map["SCRIPT_FILENAME"].c_str());
+    std::cout << "CGI: access for ->" << _argv[0] << "<-\n";
     if (!_argv[0])
         throw std::runtime_error("strdup error occurred!");
     _argv[1] = NULL;
@@ -276,8 +277,10 @@ void Cgi::setEnvMap(){
     _env_map["REDIRECT_STATUS"] = "200";
     _env_map["SERVER_PROTOCOL"] = "HTTP/1.1";
 	_env_map["SERVER_SOFTWARE"] = "Webserv_FAB/1.0";
-    _env_map["DOCUMENT_ROOT"] = _server.config.getFirst("main","root","");
-
+    _env_map["DOCUMENT_ROOT"] = _server.config.getValues(_target, "root", {""})[0];
+    if (_env_map["DOCUMENT_ROOT"].empty())
+        _env_map["DOCUMENT_ROOT"] = _server.config.getFirst("main","root","");
+        
     _env_map["CONTENT_LENGTH"] = _request.getHeader("content-length");
 	_env_map["CONTENT_TYPE"] = _request.getHeader("content-type");
     _env_map["HTTP_COOKIE"] = _request.getHeader("cookie");

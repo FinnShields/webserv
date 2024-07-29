@@ -32,6 +32,7 @@
 #define DEFAULT_IP "0.0.0.0"
 #define DEFAULT_SRV_NAME "srv-"
 #define DEFAULT_METHOD {"GET", "POST", "DELETE"}
+#define DEFAULT_ALLOWED_METHOD {"GET"}
 
 class Client; 
 

@@ -34,8 +34,7 @@ void Response::run()
 {
 	std::string response;
 	std::string method = _req.get("method");
-	_target = _req.get("target"); // maybe it should became private memeber
-
+	_target = _req.get("target");
 	if(isMethodValid(method, response))
         response = 	(_target.size() > 9 && _target.substr(0, 9).compare("/cgi-bin/") == 0) ? runCGI() :
                     (method == "GET") ? get() : 
@@ -221,7 +220,7 @@ std::string Response::createCookie()
 bool Response::isMethodValid(std::string &method, std::string &response)
 {
 	t_vector_str mtd_default = DEFAULT_METHOD;
-	t_vector_str mtd_allowed = _srv.config.getValues(_target, "limit_except", DEFAULT_METHOD);
+	t_vector_str mtd_allowed = _srv.config.getValues(_target, "limit_except", DEFAULT_ALLOWED_METHOD);
 	if (find(mtd_default.begin(), mtd_default.end(), method) == mtd_default.end())
 	{
 		std::cout << "no supported method="  << method << "\n";
