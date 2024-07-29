@@ -36,6 +36,7 @@ std::string& Client::get_fileName()
 void Client::handle_request(Server& srv)
 {
 	Request request;
+ 
     request.read(_fd);
     request.display();
 	Response resp(_fd, request, srv);

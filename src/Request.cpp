@@ -13,7 +13,9 @@
 #include "Request.hpp"		
 
 Request::Request()
-{}
+{
+	recvReturnTotal = 0;
+}
 
 Request::~Request()
 {}
@@ -49,7 +51,6 @@ void Request::extractTarget(std::string& input)
 
 	start = input.find_first_of(' ') + 1;
 	end = 0;
-	std::cout << "input: " << input << std::endl;
 	while (input.at(start + end) != ' ')
 		end++;
 	this->target = input.substr(start, end);
@@ -69,14 +70,25 @@ void Request::extractVersion(std::string& input)
 void	Request::read(int _fd)
 {
 	char buffer[MAX_BUFFER_SIZE] = {0};
-	if (recv(_fd, &buffer, MAX_BUFFER_SIZE, 0) < 0)
-		perror("Recv error");
-	if (!*buffer)
-	{
-		std::cout << "Connection cancelled (empty buffer)" << std::endl;
-		return ;
+	ssize_t recvReturn = MAX_BUFFER_SIZE;
+	while (recvReturn == MAX_BUFFER_SIZE) {
+		recvReturn = recv(_fd, &buffer, MAX_BUFFER_SIZE, 0);
+		if (recvReturn < 0)
+			perror("Recv error");
+		if (recvReturn == 0)
+		{
+			std::cout << "Connection cancelled (empty buffer)" << std::endl;
+			return ;
+		}
+		for (size_t i = 0; i < (size_t) recvReturn; i++) {
+			reqRaw.push_back(buffer[i]);
+		}
+		recvReturnTotal += recvReturn;
+		bzero(buffer, MAX_BUFFER_SIZE);
 	}
-	this->parse(buffer);
+	std::cout << std::endl;
+	std::cout << std::endl;
+	this->parse(reqRaw);
 }
 
 void	Request::extractHeaders(std::string& input)
@@ -104,59 +116,60 @@ void	Request::extractHeaders(std::string& input)
 	}
 }
 
-void	Request::handleChunks(std::string& input, size_t i)
+void	Request::handleChunks(char *reqArray, size_t start)
 {
 	size_t contentLength = 0;
-	size_t chunkLength = atoi(input.c_str() + i);
-	std::string content;
-	std::string::iterator it;
+	size_t chunkLength = atoi(&reqArray[start]);
+	std::vector<char> contentRawBytes;
 
-	it = input.begin();
-	it += i;
+	size_t i = start;
 	while (chunkLength != 0)
 	{
 		contentLength += chunkLength;
-		while (isdigit(*it) || *it == '\r' || *it == '\n')
-			it ++;
-		while (*it != '\r' && *it != '\n')
-			content.append(1, *(it++));
-		while (!isdigit(*it))
-			it ++;
-		chunkLength = atoi(input.c_str() + std::distance(input.begin(), it));
+		while (isdigit(reqArray[i]) || reqArray[i] == '\r' || reqArray[i] == '\n')
+			i ++;
+		while (reqArray[i] != '\r' && reqArray[i] != '\n')
+			contentRawBytes.push_back(reqArray[i++]);
+		while (!isdigit(reqArray[i]))
+			i ++;
+		chunkLength = atoi(&reqArray[i]);
 	}
 	this->headers["content-length"] = std::to_string(contentLength);
-	this->body = content;
+	this->bodyRawBytes = contentRawBytes;
+	for (i = 0; i < bodyRawBytes.size(); i++)
+		body.append(1, bodyRawBytes[i]);
 }
 
-void	Request::extractBody(std::string& input)
+void	Request::extractBody(std::vector<char> reqRaw)
 {
-	size_t	i;
-	size_t	len;
+	char *ch;
+	char *reqArray = &reqRaw[0];
 
-	this->body = "";
-	i = input.find("\r\n\r\n");
-	if (i == std::string::npos)
+	ch = strstr(reqArray, "\r\n\r\n") + 4;
+	if (!ch)
 		return ;
-	i += 4;
-	if (i >= input.length())
-		return ;
+	size_t start = ch - reqArray;
 	if (!this->get("transfer-encoding").compare("chunked"))
-		return (this->handleChunks(input, i));
-	len = atoi(this->get("content-length").c_str());
-	for (size_t j = 0; j < len; j++)
-		this->body.append(1, input[i++]);
+		return this->handleChunks(reqArray, start);
+	for (size_t i = 0; start + i < (size_t) recvReturnTotal; i ++)
+		bodyRawBytes.push_back(reqRaw[start + i]);
+	for (size_t i = 0; i < bodyRawBytes.size(); i++)
+		body.append(1, bodyRawBytes[i]);
 }
 
-void	Request::parse(char *buffer)
+void	Request::parse(std::vector<char> reqRaw)
 {
-	std::string	input(buffer);
-
+	std::string	input = "";
+	for (size_t i = 0; i < reqRaw.size(); i++)
+		input.append(1, reqRaw[i]);
 	if (!this->extractMethod(input))
 		return ;
 	this->extractTarget(input);
 	this->extractVersion(input);
 	this->extractHeaders(input);
-	this->extractBody(input);
+	if (!this->get("transfer-encoding").empty())
+		std::cout << "#### Received a " << this->get("transfer-encoding") << " request" << std::endl;
+	this->extractBody(reqRaw);
 }
 
 const std::string	Request::get(std::string toGet)
@@ -198,6 +211,11 @@ std::string& Request::getRef(std::string toGet)
 	return (this->headers[toGet]);
 }
 
+std::vector<char> Request::getBodyRawBytes()
+{
+	return bodyRawBytes;
+}
+
 void	Request::display()
 {
 	std::cout << std::endl;
@@ -208,6 +226,11 @@ void	Request::display()
 	std::cout << "HTTP-version: " << this->version << std::endl;
 	for(it = this->headers.begin(); it != this->headers.end(); it++)
 		std::cout << it->first << ": " << it->second << std::endl;
+	if (!this->get("content-type").compare(0, 19, "multipart/form-data"))
+	{
+		std::cout << "Body: <file data>" << std::endl << "---------------------" << std::endl;
+		return ;
+	}
 	if (!this->body.empty())
 		std::cout << "Body: " << this->body << std::endl;
 	std::cout << "---------------------" << std::endl;

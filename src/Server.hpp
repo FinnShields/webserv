@@ -48,7 +48,6 @@ class Server
 		int _port;
         in_addr_t _ip;
         std::string _name;
-        std::string fileName;
         
         void setup_socket();
 		void start_listen();
@@ -67,9 +66,6 @@ class Server
         int get_port() const;
         int get_fd() const;
         std::string get_name();
-        std::string getFileName();
-        void setFileName(std::string& fileName);
-        void clearFileName();
         void set_port(const int &port);
         void set_fd(const int &fd);
         void set_ip(const int &ip);

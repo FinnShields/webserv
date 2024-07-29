@@ -23,7 +23,7 @@
 #include "Response.hpp"
 #include "Cgi.hpp"
 
-#define MAX_BUFFER_SIZE 2048
+#define MAX_BUFFER_SIZE 10000
 
 class Server;
 class Request;
