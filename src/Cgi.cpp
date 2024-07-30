@@ -60,7 +60,7 @@ Cgi& Cgi::operator=(const Cgi&){
 }
 
 Cgi::~Cgi(){
-    //std::cerr << "Cgi destructor call\n";
+    std::cerr << "Cgi destructor call\n";
     cleanEnv();
     int i = 0;
     if (_argv){
