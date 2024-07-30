@@ -65,10 +65,11 @@ Cgi::~Cgi(){
     int i = 0;
     if (_argv){
         while (_argv[i]){
-            free(_argv[i]);
+            delete[] _argv[i];
             i++;
         }
-        free(_argv);
+        delete[] _argv;
+        _argv = nullptr;
     }
 };
 
@@ -214,17 +215,14 @@ std::string Cgi::readFromFd(int fd) {
 }
 
 int Cgi::_access(){
-    _argv[0] = strdup(_env_map["SCRIPT_FILENAME"].c_str());
-    std::cout << "CGI: access for ->" << _argv[0] << "<-\n";
-    if (!_argv[0])
-        throw std::runtime_error("strdup error occurred!");
-    _argv[1] = NULL;
-    if (access(_argv[0], F_OK) != 0)
+    const char* file_path = _env_map["SCRIPT_FILENAME"].c_str();
+    std::cout << "CGI: access for ->" << file_path << "<-\n";
+    if (access(file_path, F_OK) != 0)
     {
         _status = 404; //"PATH NOT FOUND"
         return -1;
     }
-    if (access(_argv[0], X_OK) != 0)
+    if (access(file_path, X_OK) != 0)
     {
         _status = 403; //"PERMISSION DENIED"
         return -1;
@@ -233,6 +231,12 @@ int Cgi::_access(){
 }
 
 void Cgi::_runChildCgi(){
+    //_argv[0] = nullptr;
+    _argv[0] = new char[_target_file_name.length() + 1];
+    std::strcpy(_argv[0], _target_file_name.c_str());
+    if (!_argv[0])
+        throw std::runtime_error("strdup/strcpy error occurred!");
+    _argv[1] = nullptr;
     std::cout << "CGI: execve for ->" << _argv[0] << "<-\n";
     if (close(_fd_to_cgi[1]) == -1 || close(_fd_from_cgi[0]) == -1)
         throw std::runtime_error("close error occurred!");
@@ -240,17 +244,9 @@ void Cgi::_runChildCgi(){
         throw std::runtime_error("dub2 error occurred!");
     if (close(_fd_to_cgi[0]) == -1 || close(_fd_from_cgi[1]) == -1)
             throw std::runtime_error("close error occurred!");
-    /*
-    std::cout << "CGI: step 1 <-\n";
-    std::string cmd = _argv[0];
-    size_t pos_dir_end = cmd.rfind('/');
-    std::string dir_str = cmd.substr(0, pos_dir_end);
-    std::string argv0 = cmd.substr(pos_dir_end);
-    const char* dir_char = dir_str.c_str();
-    std::cout << "chdir to dir ->" << dir_str << "<-\n";
-    std::cout << "chdir to dir ->" << dir_char << "<-\n";
-    chdir(dir_char);
-    */
+    std::string path = _env_map["DOCUMENT_ROOT"] + "/" + _target_foldername;
+    std::cerr << "CGI: chdir to " << path << "\n";
+    chdir(path.c_str());
     execve(_argv[0], _argv, _envp);
     //std::cout << "CGI: step 2 <-\n";
     //std::cout << "CGI: execve for ->" << argv0.c_str() << "<-\n";
@@ -316,12 +312,16 @@ void Cgi::cleanEnv(){
     if (!_envp)
         return ;
     int i = 0;
-    while (_envp[i]){
-        delete[] _envp[i];
-        _envp[i] = nullptr;
+    if (_envp)
+    {
+        while (_envp[i])
+        {
+            delete[] _envp[i];
+            _envp[i] = nullptr;
+        }
+        delete[] _envp;
+        _envp = nullptr;
     }
-    delete[] _envp;
-    _envp = nullptr;
 }
 
 void Cgi::setEnv(){
@@ -332,20 +332,11 @@ void Cgi::setEnv(){
     int i = 0;
     for (auto& [key, value] : _env_map){
         line = key + "=" + value;
-        //if (_envp[i] == nullptr)
-        //    std::cout << "making envp[" << i << "] is NULL \n";
-        //std::cout << "making envp[" << i << "] :" << line << "\n";  
-        line_pnt = new char[line.size() + 1];
+        line_pnt = new char[line.size() + 1] {0};
         std::strcpy(line_pnt, line.c_str());
         _envp[i] = line_pnt;
         ++i;
     }
-    /*
-    if (_envp[i] == nullptr)
-        std::cout << "making envp[" << i << "] is NULL \n";
-    else 
-        _envp[i] = nullptr;
-    */
 }
 
 void Cgi::setEnvMap(){

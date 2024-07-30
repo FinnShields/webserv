@@ -47,7 +47,9 @@ int main(int argc, char** argv, char** envp) {
     oss << "</body></html>";
     std::string body = oss.str();
     //close(0);
-    std::cout << "Content-Length: " << body.size() << "\r\n\r\n";
+   // std::cout << "Content-Length: " << body.size() << "\r\n\r\n";
+    std::cout << "\r\n";
+
     std::cout << body;
     return 0;
 }
