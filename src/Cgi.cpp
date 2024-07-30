@@ -59,6 +59,7 @@ Cgi& Cgi::operator=(const Cgi&){
     return *this;
 }
 
+/*
 Cgi::~Cgi(){
     std::cerr << "Cgi destructor call\n";
     cleanEnv();
@@ -72,6 +73,15 @@ Cgi::~Cgi(){
         _argv = nullptr;
     }
 };
+*/
+
+Cgi::~Cgi(){
+    //std::cerr << "Cgi destructor call\n";
+    cleanEnv();
+    for (int i = 0; _argv[i] != nullptr; i++)
+        free(_argv[i]);
+    delete[](_argv);
+}
 
 int Cgi::getStatus(){
     return _status;
@@ -308,6 +318,7 @@ void Cgi::runCmd(){
         throw std::runtime_error("close error occurred!");
 }
 
+/*
 void Cgi::cleanEnv(){
     if (!_envp)
         return ;
@@ -318,11 +329,23 @@ void Cgi::cleanEnv(){
         {
             delete[] _envp[i];
             _envp[i] = nullptr;
+            i++;
         }
         delete[] _envp;
         _envp = nullptr;
     }
 }
+*/
+
+void Cgi::cleanEnv(){
+    if (!_envp)
+        return ;
+    for (int i = 0; _envp[i] != nullptr; i++)
+        delete[] _envp[i];
+    delete[] _envp;
+    // _envp = nullptr;
+}
+
 
 void Cgi::setEnv(){
     _envp = new char*[_env_map.size() + 1] {0};
