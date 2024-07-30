@@ -27,11 +27,17 @@ class Cgi
         const Server& _server;
         std::string& _body;
         std::string _target;
-        std::string _ext;
         size_t _pos_cgi;
         size_t _pos_dot;
         size_t _pos_query;
         size_t _pos_info;
+        std::string _ext;
+        std::string _target_file_path;
+        std::string _target_path_info;
+        std::string _target_query;
+        std::string _target_foldername;
+        std::string _target_file_name;
+
         
         std::map<std::string,std::string> _env_map;
         char** _argv;
@@ -43,6 +49,8 @@ class Cgi
         int _status;
 
         Cgi();
+        void setExtension();
+        void analizeTarget();
         bool isImplemented();
         void setEnvMap();
         void setEnv();
