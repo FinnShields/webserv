@@ -95,9 +95,6 @@ void Cgi::cleanEnv(){
     _envp = nullptr;
 }
 
-
-
-
 int Cgi::getStatus(){
     return _status;
 }
@@ -213,11 +210,20 @@ bool Cgi::isImplemented()
         return false;
     }
     t_vector_str ext_list = _server.config.getValues(_target, "cgi_ext", {});
-    if (find(ext_list.begin(), ext_list.end(), _ext) == ext_list.end())
+    auto it = find(ext_list.begin(), ext_list.end(), _ext);
+    if (std::find(ext_list.begin(), ext_list.end(), _ext) == ext_list.end())
     {
         std::cout << "CGI extension is not implemented\n";
         return false;
     }
+    _cgi_type = std::distance(ext_list.begin(), it);
+    auto path_list = _server.config.getValues(_target, "cgi_path", {""});
+    if (_cgi_type >= path_list.size())
+    {
+        std::cout << "CGI extension path is not implemented\n";
+        return false;
+    }
+    _cgi_path = _server.config.getValues(_target, "cgi_path", {""})[_cgi_type];
     return true;
 }
 
@@ -256,13 +262,28 @@ int Cgi::_access(){
 }
 
 void Cgi::_runChildCgi(){
-    //_argv[0] = nullptr;
-    _argv[0] = new char[_target_file_name.length() + 1];
-    std::strcpy(_argv[0], _target_file_name.c_str());
-    if (!_argv[0])
-        throw std::runtime_error("strdup/strcpy error occurred!");
-    _argv[1] = nullptr;
-    std::cout << "CGI: execve for ->" << _argv[0] << "<-\n";
+    if (_cgi_path == ".cgi")
+    {
+        _argv[0] = new char[_target_file_name.length() + 1];
+        std::strcpy(_argv[0], _target_file_name.c_str());
+        if (!_argv[0])
+            throw std::runtime_error("strdup/strcpy error occurred!");
+        _argv[1] = nullptr;
+    }
+    else
+    {
+        _argv[0] = new char[_cgi_path.length() + 1];
+        std::strcpy(_argv[0], _cgi_path.c_str());
+        if (!_argv[0])
+            throw std::runtime_error("strdup/strcpy error occurred!");
+        _argv[1] = new char[_target_file_name.length() + 1];
+        std::strcpy(_argv[1], _target_file_name.c_str());
+        if (!_argv[1])
+            throw std::runtime_error("strdup/strcpy error occurred!");
+    }
+    _argv[2] = nullptr;
+    std::cout << "CGI: cgi_path=" << _cgi_path << "<-\n";
+    std::cout << "CGI: execve for ->" << _argv[0] << "<- ->" << _argv[1] << "<- \n";
     if (close(_fd_to_cgi[1]) == -1 || close(_fd_from_cgi[0]) == -1)
         throw std::runtime_error("close error occurred!");
     if (dup2(_fd_to_cgi[0], 0) == -1 || dup2(_fd_from_cgi[1], 1) == -1)
@@ -375,11 +396,13 @@ void Cgi::setEnvMap(){
     else
         _env_map["SERVER_PORT"] = "80";
     
+    /*
     for (auto it = _env_map.begin(); it != _env_map.end();) {
         if (it->second.empty()) {
             it = _env_map.erase(it);
         } else
             ++it;
     }
+    */
 }  
 

@@ -37,6 +37,8 @@ class Cgi
         std::string _target_query;
         std::string _target_foldername;
         std::string _target_file_name;
+        size_t _cgi_type;
+        std::string _cgi_path;
 
         
         std::map<std::string,std::string> _env_map;
