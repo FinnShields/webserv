@@ -19,22 +19,33 @@
         })
       </script>
     </div>
+    <h1>_______________________________</h1>
+    <p>CGI GET with query</p>
     <form action = "/cgi-bin/hello.cgi" method = "get">
       First Name: <input type = "text" name = "first_name">  <br />
-    
       Last Name: <input type = "text" name = "last_name" />
       <input type = "submit" value = "Submit" />
    </form>
+   <p>CGI GET with query</p>
    <form action = "/cgi-bin/hello.cgi/info" method = "get">
       Name: <input type = "text" name = "last_name" />
     <input type = "submit" value = "Submit with /info" />
     </form>
+    <p>CGI POST .cgi</p>
     <form action = "/cgi-bin/hello.cgi" method = "post" target = "_blank">
       <textarea name = "textcontent" cols = "40" rows = "1">
          Type your text here...
       </textarea>
       <input type = "submit" value = "Submit" />
     </form>
+    <p>CGI POST .py</p>
+    <form action = "/cgi-bin/hello.py" method = "post" target = "_blank">
+      <textarea name = "textcontent" cols = "40" rows = "1">
+         Type your text here...
+      </textarea>
+      <input type = "submit" value = "Submit" />
+    </form>
+    <p>CGI POST with info</p>
     <form action = "/cgi-bin/hello.cgi/info" method = "post" target = "_blank">
       <textarea name = "textcontent" cols = "40" rows = "1">
          Type your text here...
@@ -52,31 +63,8 @@
       <p>    </p>
       <a href="/cgi-bin/script.py">Run .py </a>
       <p>    </p>
-      <a href="/cgi-bin/script.php">Run .php </a>
+      <a href="/cgi-bin/script.sh">Run .sh </a>
       <p>    </p>
-      <a href="#" onclick="sendPostRequest()">Run .cgi POST with body</a>
-      <script>
-        function sendPostRequest() {
-          const url = '/cgi-bin/hello.cgi';
-          const body = '"body msg here"';
-          fetch(url, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: body,
-          })
-          .then(response => {
-            // Handle response here
-            console.log('Response:', response);
-          })
-          .catch(error => {
-            // Handle error here
-            console.error('Error:', error);
-          });
-        }
-      </script>
-
       </body>
    </html>
 
