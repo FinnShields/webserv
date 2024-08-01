@@ -49,6 +49,7 @@ class Server
 		int _port;
         in_addr_t _ip;
         std::string _name;
+        std::map<std::string, size_t> _virtual_servers;
         
         void setup_socket();
 		void start_listen();
@@ -65,6 +66,8 @@ class Server
         void remove_client(int fd);
         Client *get_client(int fd);
         int get_port() const;
+        std::string get_ip_string() const;
+        in_addr_t   get_ip() const;
         int get_fd() const;
         std::string get_name();
         void set_port(const int &port);

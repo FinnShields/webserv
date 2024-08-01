@@ -35,6 +35,16 @@ void Response::run()
 	std::string response;
 	std::string method = _req.get("method");
 	_target = _req.get("target");
+	std::cout << "------VIRTUAL HOSTING tests-------\n";
+	std::cout << "target=" << _target << "\n";
+	std::cout << "host=" << _req.get("host") << "\n";
+	std::cout << "port=" << _srv.get_port() << "\n";
+	std::cout << "ip=" << _srv.get_ip_string() << "\n";
+	std::cout << "ip=" << _srv.get_ip() << "\n";
+	std::cout << "index=" << _srv.index << "\n";
+	(_srv.config).setVirtualHosts();
+	std::cout << "----------------------------------\n";
+
 	if(isMethodValid(method, response))
         response = 	(_target.size() > 9 && _target.substr(0, 9).compare("/cgi-bin/") == 0) ? runCGI() :
                     (method == "GET") ? get() : 

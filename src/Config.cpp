@@ -175,6 +175,18 @@ t_vector_str Config::getValues(std::string target, std::string key, t_vector_str
 	return default_values;
 }
 
+void Config::setVirtualHosts() const
+{
+	for (size_t i = 0; i < _data.size(); i++)
+	{
+		std::cout << i << " ip=" << getAll(i, "main", "listen", 0) << "\n";
+		std::cout << i << " port=" << getAll(i, "main", "host", 0) << "\n";
+		std::cout << i << " name=" << getAll(i, "main", "server_name", 0) << "\n";
+	}
+	return ;
+}
+
+
 bool Config::isValid(){
 	return false;
 }

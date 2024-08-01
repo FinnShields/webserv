@@ -15,7 +15,7 @@
 
 //#define STDOUT_FILENO  1
 //#define STDIN_FILENO  0
-#define CGI_TIMEOUT	 5
+#define CGI_TIMEOUT	 10
 
 class Server;
 class Request;

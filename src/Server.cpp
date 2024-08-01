@@ -19,8 +19,8 @@
 Server::~Server() {}
 
 Server::Server(const Server &copy):
-	_port(copy._port), _ip(copy._ip), _name(copy._name), 
-	index(copy.index), 
+	_port(copy._port), _ip(copy._ip), _name(copy._name),
+	index(copy.index),
 	config(copy.config){}
 
 Server::Server(std::vector<t_server>& data, size_t ind): 
@@ -97,6 +97,19 @@ Client *Server::get_client(int fd)
 int Server::get_port() const
 {
 	return _port;
+}
+
+std::string Server::get_ip_string() const
+{
+	struct in_addr ip;
+    ip.s_addr = _ip;
+	const char * str = inet_ntoa(ip); //no need to clean? stored in static buffer of funciton
+	return std::string(str);
+}
+
+in_addr_t	Server::get_ip() const
+{
+	return _ip;
 }
 
 int Server::get_fd() const
