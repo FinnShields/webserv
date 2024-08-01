@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/07/26 00:37:05 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/01 14:30:31 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -237,13 +237,22 @@ bool Response::isMethodValid(std::string &method, std::string &response)
 
 std::string Response::getPath()
 {
-    std::string _root = _srv.config.getValues(_target, "root", {""})[0];
-    if (_root.empty())
-		return _target.substr(1);
-	std::string loc = _srv.config.selectLocation(_target);
-	loc = loc == "main" ? "/" : loc;
-	std::string target = _target.substr(loc.length());
-	return _root + "/" + target;
+    std::string alias = _srv.config.getValues(_target, "alias", {""})[0];
+    std::string root = _srv.config.getValues(_target, "root", {""})[0];
+    
+    if (alias.empty() && root.empty())
+    {
+        alias = _srv.config.get("main", "alias", 0);
+        root = _srv.config.get("main", "root", 0);
+    }
+    if (alias.empty() && root.empty())
+        return _target.substr(1);
+    if (alias.empty())
+        return root + _target;
+    std::string loc = _srv.config.selectLocation(_target);
+    loc = loc == "main" ? "/" : loc;
+    std::string target = _target.substr(loc.length());
+    return alias + target;
 }
 
 bool Response::isHtml(const std::string fileName)
