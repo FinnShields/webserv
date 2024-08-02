@@ -60,6 +60,7 @@ class Response
         std::string getFileName(const std::string filepath);
         std::string htmlEscape(const std::string& s);
 		void replacePercent20withSpace(std::string &str);
+		std::string getErrorPage(int code);
         
 
 		Response();

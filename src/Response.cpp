@@ -40,7 +40,7 @@ void Response::run()
                     (method == "GET") ? get() : 
                     (method == "POST") ? post() :
                     (method == "DELETE") ? deleteResp() : 
-                    RESPONSE_501;
+                    getErrorPage(501);
 	std::cout << "------- Response ----------\n" << response << "\n------- END ---------------\n";
 	if (send(_fd, response.c_str(), response.size(), 0) < 0)
 		perror("Send error");
@@ -59,7 +59,7 @@ std::string Response::get()
 	bool autoindex = _srv.config.getValues(_target, "autoindex", {"off"})[0] == "on";
 	if (autoindex && std::filesystem::is_directory(path)) 
 		return load_directory_listing(path);
-	return (RESPONSE_404);
+	return (getErrorPage(404));
 }
 
 std::string Response::post()
@@ -73,6 +73,25 @@ std::string Response::post()
 	return ("HTTP/1.1 204 No Content"); //No reloading
 }
 
+std::string Response::getErrorPage(int code)
+{
+	t_vector_str pages = _srv.config.getValues(_target, "error_page", {"empty"});
+	std::string responseString = "HTTP/1.1 " + std::to_string(code) + " Not Found\r\nContent-Type: text/html\r\n\r\n";
+	std::string errorPath = "www/error_pages/" + std::to_string(code) + ".html";
+	for (size_t i = 0; i < pages.size() - 1; i++)
+	{
+		if (!pages[i].compare(std::to_string(code)) && !pages[i+1].empty() && 
+		!access(pages[i+1].c_str(), R_OK) && isHtml(pages[i+1]))
+			errorPath = pages[i+1];
+	}
+	std::ifstream errorPage(errorPath);
+	std::stringstream buffer;
+	buffer << errorPage.rdbuf();
+	errorPage.close();
+	responseString += buffer.str();
+	return (responseString);
+}
+
 std::string Response::deleteResp()
 {
     std::string path = getPath();
@@ -81,7 +100,7 @@ std::string Response::deleteResp()
 	// std::cout << "Deleting " << path << std::endl;
 	if (deleteFile(path) == 204)
 		return ("HTTP/1.1 204 No Content");
-	return ("HTTP/1.1 404 Not Found");
+	return (getErrorPage(404));
 }
 
 std::string Response::runCGI()
@@ -90,7 +109,7 @@ std::string Response::runCGI()
 	if (_srv.config.selectLocation(_target) != "/cgi-bin")
 	{
 		std::cout << "CGI is not configured.\n";
-		return RESPONSE_500;
+		return (getErrorPage(500));
 	}
 	Cgi cgi(_req, _srv);
 	cgi.start();
@@ -98,20 +117,20 @@ std::string Response::runCGI()
 	std::cout << "CGI status =" << status << "\n";
 	std::cout << "------- END ----------" << std::endl;
 	return status == 0 ? STATUS_LINE_200 + cgi.getResponse() :
-			status == 403 ? RESPONSE_500 :
-			status == 404 ? RESPONSE_500 :
-			status == 500 ? RESPONSE_500 :
-			status == 501 ? RESPONSE_501 : // cgi's ext is not implemented. 
-			status == 502 ? RESPONSE_500 : //Bad Gateway
-			status == 504 ? RESPONSE_500 : // time out
-			RESPONSE_500;
+			status == 403 ?  getErrorPage(500) :
+			status == 404 ?  getErrorPage(500) :
+			status == 500 ?  getErrorPage(500) :
+			status == 501 ?  getErrorPage(501) : // cgi's ext is not implemented. 
+			status == 502 ?  getErrorPage(500) : //Bad Gateway
+			status == 504 ?  getErrorPage(500) : // time out
+			getErrorPage(500);
 }
 
 std::string Response::load_file(std::string filepath)
 {
 	std::ifstream file(filepath);
 	if (!file.is_open())
-		return ("HTTP/1.1 404 Page Not Found\r\nContent-Type: text/plain\r\n\r\nError: " + filepath + " not found");
+		return (getErrorPage(404));
 	
 	std::stringstream buffer;
 	if (_req.get("cookie").empty())
@@ -224,12 +243,12 @@ bool Response::isMethodValid(std::string &method, std::string &response)
 	if (find(mtd_default.begin(), mtd_default.end(), method) == mtd_default.end())
 	{
 		std::cout << "no supported method="  << method << "\n";
-		response = RESPONSE_501;
+		response = getErrorPage(501);
 		return false;
 	}
 	if (find(mtd_allowed.begin(), mtd_allowed.end(), method) == mtd_allowed.end())
 	{
-		response = RESPONSE_405;
+		response = getErrorPage(405);
 		return false;
 	}
 	return true;
