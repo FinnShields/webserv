@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/01 14:30:31 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/02 14:01:00 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,7 +64,9 @@ std::string Response::get()
 
 std::string Response::post()
 {
-	if (!_req.get("content-type").compare(0, 19, "multipart/form-data"))
+    if(!check_body_size())
+        return "HTTP/1.1 413 Request Entity Too Large";
+    if (!_req.get("content-type").compare(0, 19, "multipart/form-data"))
 		saveFile();
 	// int status = saveFile();
 	// return status == 500 ? "HTTP/1.1 500 Internal Server Error" :
@@ -179,6 +181,19 @@ std::string Response::load_directory_listing(std::string directoryPath)
         << "}</script>"
         << "</body></html>";
     return ("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n" + buffer.str());
+}
+
+bool Response::check_body_size()
+{
+    std::string max_body_size_str = _srv.config.getValues(_target, "client_max_body_size", _srv.config.getValues("main", "client_max_body_size", {""}))[0];
+    if (max_body_size_str.empty())
+        return true;
+    std::string body_size_str = _req.get("content-length");
+    if (body_size_str.empty())
+        return true;
+    long max_body_size = std::stoi(max_body_size_str);
+    long body_size = std::stoi(body_size_str);
+    return body_size > max_body_size ? false : true;
 }
 
 int Response::saveFile()
