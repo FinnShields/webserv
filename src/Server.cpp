@@ -169,3 +169,16 @@ void Server::saveCookieInfo(std::string& cookie)
 	size_t value = (size_t) atoi(cookie.c_str() + 11);
 	setNewCookie(value);
 }
+
+
+void Server::setVirthostList(std::vector<size_t> list)
+{
+	if (list.empty())
+		return ;
+	_virthost_list = list;
+}
+
+void Server::setVirthostMap()
+{
+	return ;
+}

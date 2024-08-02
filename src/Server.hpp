@@ -49,7 +49,10 @@ class Server
 		int _port;
         in_addr_t _ip;
         std::string _name;
-        std::map<std::string, size_t> _virtual_servers;
+
+        std::vector<size_t> _virthost_list;
+        std::map<std::string, size_t> _virthost_map;
+        
         
         void setup_socket();
 		void start_listen();
@@ -78,6 +81,8 @@ class Server
         bool checkCookieExist(size_t value);
         void setNewCookie(size_t value);
         void saveCookieInfo(std::string& cookie);
+        void setVirthostList( std::vector<size_t>);
+        void setVirthostMap();
 
         const size_t index;
         const Config config;

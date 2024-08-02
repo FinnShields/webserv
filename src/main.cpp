@@ -28,9 +28,7 @@ int main(int argc, char *argv[]) {
 		<< "----- EXTRACTED DATA ------------\n"
 		<< data.get()
 		<< "----- END of DATA ---------------\n";
-        data.isValid();
-        //Config config(argv[1]);
-        //WebServer webserv(config);
+        //data.isValid();  // is not emplemented
         WebServer webserv(data.get());
         webserv.setup();
         webserv.run();

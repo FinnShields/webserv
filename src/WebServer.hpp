@@ -33,12 +33,14 @@ class WebServer
 	private:
 		std::vector<pollfd> _fds;
 		std::vector<Server> _servers;
+		std::map<size_t, std::vector<size_t>> _real_to_virt;
 
 		void setServers();
 		//void parse_file(std::string filename);
 		bool fd_is_server(int fd);
 		void fd_is_client(int fd);
 		//std::vector<size_t>  virtualHostIndices;
+		void setRealToVirt();
 		std::vector<size_t>  extractVirtualHostsIndices();
 		
 		WebServer();

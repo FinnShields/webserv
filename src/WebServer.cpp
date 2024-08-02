@@ -18,11 +18,15 @@ WebServer::~WebServer() {}
 
 WebServer::WebServer(std::vector<t_server>& data):config(Config(data, 0)) {}
 
+void WebServer::setRealToVirt()
+{
+	_real_to_virt = config.realToVirtualHosts();
+}
+
 std::vector<size_t> WebServer::extractVirtualHostsIndices()
 {
-	std::map<size_t, std::vector<size_t>> mapping = config.realToVirtualHosts();
 	std::vector<size_t> indices;
-	for (const auto& [key, value] : mapping)
+	for (const auto& [key, value] : _real_to_virt)
 	{
 		indices.insert(indices.end(), value.begin(), value.end());
 	}
@@ -31,26 +35,32 @@ std::vector<size_t> WebServer::extractVirtualHostsIndices()
 
 void WebServer::setup()
 {
-	std::vector<size_t> indexes = extractVirtualHostsIndices();
-	try
+	setRealToVirt();
+	std::vector<size_t> indices = extractVirtualHostsIndices();
+	try  // try to be removed as it exist in main 
 	{
-		std::cout << "Number of servers: " << config.size() << "\n";
-		for (size_t i = 0; i < config.size(); ++i) {
-			auto it = std::find(indexes.begin(), indexes.end(), i);
-			if (it != indexes.end())
-				continue;
-			_servers.emplace_back(config.getAll(), i);
-			std::cout << "Server " << i << " is initialized with port " << _servers[i].get_port() << "\n";
-		}
-		for (Server &srv : _servers){
-			std::cout << "Starting server " << srv.index << " with port " << srv.get_port() << "\n";
-			srv.start(_fds);
-		}
+	std::cout << "[INFO] Total number of servers: " << config.size()
+		<< " . Total number of virtual hosts " << indices.size()
+		<< ".\n";
+	for (size_t i = 0; i < config.size(); ++i)
+	{
+		auto it = std::find(indices.begin(), indices.end(), i);
+		if (it != indices.end())
+			continue;
+		_servers.emplace_back(config.getAll(), i);
+		_servers.back().setVirthostList(_real_to_virt[i]);
+		std::cout << "[INFO] Server with index " << i << " is created.\n";
+	}
+	for (Server &srv : _servers)
+	{
+		std::cout << "[INFO] Starting server with index " << srv.index << " with port " << srv.get_port() << "\n";
+		srv.start(_fds);
+	}
 	}
 	catch(char const *e)
 	{
 		perror(e);
-		exit(EXIT_FAILURE);
+		//std::exit(EXIT_FAILURE);
 	}
 }
 
