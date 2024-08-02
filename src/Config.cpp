@@ -175,15 +175,41 @@ t_vector_str Config::getValues(std::string target, std::string key, t_vector_str
 	return default_values;
 }
 
-void Config::setVirtualHosts() const
+//void Config::setVirtualHosts() const
+std::map<size_t, std::vector<size_t>> Config::realToVirtualHosts() const
 {
+	std::vector<size_t> indices;
+	std::map<size_t, std::vector<size_t>> real_to_virt;
 	for (size_t i = 0; i < _data.size(); i++)
 	{
+		auto it = std::find(indices.begin(), indices.end(), i);
+		if (it != indices.end())
+			continue;
 		std::cout << i << " ip=" << getAll(i, "main", "listen", 0) << "\n";
 		std::cout << i << " port=" << getAll(i, "main", "host", 0) << "\n";
 		std::cout << i << " name=" << getAll(i, "main", "server_name", 0) << "\n";
+		std::vector<size_t> indices_host;
+		std::string port = getAll(i, "main", "listen", 0);
+		std::string host = getAll(i, "main", "host", 0);
+		std::string name = getAll(i, "main", "server_name", 0);
+		for (size_t j = i + 1; j < _data.size(); j++)
+		{
+			if (getAll(i, "main", "listen", 0) != getAll(j, "main", "listen", 0))
+				continue;
+			if (getAll(i, "main", "host", 0) != getAll(j, "main", "host", 0))
+				continue;
+			if (getAll(i, "main", "server_name", 0) == getAll(j, "main", "server_name", 0))
+				std::cout << "Warrning: this server at postion "
+					<< j 
+					<< " named '"
+					<< getAll(j, "main", "server_name", 0)
+					<< "' will be ignored as it has indentical ip:post and server_name\n";
+			indices.push_back(j);
+			indices_host.push_back(j);
+		}
+		real_to_virt[i] = indices_host;
 	}
-	return ;
+	return real_to_virt;
 }
 
 

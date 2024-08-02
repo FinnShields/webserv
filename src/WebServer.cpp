@@ -6,7 +6,7 @@
 /*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/06/23 15:10:23 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/08/02 06:41:32 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,12 +18,27 @@ WebServer::~WebServer() {}
 
 WebServer::WebServer(std::vector<t_server>& data):config(Config(data, 0)) {}
 
+std::vector<size_t> WebServer::extractVirtualHostsIndices()
+{
+	std::map<size_t, std::vector<size_t>> mapping = config.realToVirtualHosts();
+	std::vector<size_t> indices;
+	for (const auto& [key, value] : mapping)
+	{
+		indices.insert(indices.end(), value.begin(), value.end());
+	}
+	return indices;
+}
+
 void WebServer::setup()
 {
+	std::vector<size_t> indexes = extractVirtualHostsIndices();
 	try
 	{
 		std::cout << "Number of servers: " << config.size() << "\n";
 		for (size_t i = 0; i < config.size(); ++i) {
+			auto it = std::find(indexes.begin(), indexes.end(), i);
+			if (it != indexes.end())
+				continue;
 			_servers.emplace_back(config.getAll(), i);
 			std::cout << "Server " << i << " is initialized with port " << _servers[i].get_port() << "\n";
 		}

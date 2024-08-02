@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/01 14:30:31 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/02 06:00:26 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,7 +42,7 @@ void Response::run()
 	std::cout << "ip=" << _srv.get_ip_string() << "\n";
 	std::cout << "ip=" << _srv.get_ip() << "\n";
 	std::cout << "index=" << _srv.index << "\n";
-	(_srv.config).setVirtualHosts();
+	(_srv.config).realToVirtualHosts();
 	std::cout << "----------------------------------\n";
 
 	if(isMethodValid(method, response))

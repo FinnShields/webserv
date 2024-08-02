@@ -6,7 +6,7 @@
 /*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:19 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/06/23 15:32:45 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/08/02 06:24:38 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,6 +38,8 @@ class WebServer
 		//void parse_file(std::string filename);
 		bool fd_is_server(int fd);
 		void fd_is_client(int fd);
+		//std::vector<size_t>  virtualHostIndices;
+		std::vector<size_t>  extractVirtualHostsIndices();
 		
 		WebServer();
 		WebServer(const WebServer &copy);
