@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:06:10 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/07/25 22:56:05 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/02 14:00:55 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,12 +54,14 @@ class Response
 		std::string runCGI();
         
         //Helper functions
+        bool check_body_size();
         std::string getPath();
         bool isHtml(const std::string fileName);
         bool load_directory_entries(const std::string directoryPath, t_vector_str &directories, t_vector_str &files);
         std::string getFileName(const std::string filepath);
         std::string htmlEscape(const std::string& s);
 		void replacePercent20withSpace(std::string &str);
+		std::string getErrorPage(int code);
         
 
 		Response();

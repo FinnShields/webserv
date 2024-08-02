@@ -75,7 +75,7 @@ void	Request::read(int _fd)
 		recvReturn = recv(_fd, &buffer, MAX_BUFFER_SIZE, 0);
 		if (recvReturn < 0)
 			perror("Recv error");
-		if (recvReturn == 0)
+		if (recvReturn == 0 && recvReturnTotal == 0)
 		{
 			std::cout << "Connection cancelled (empty buffer)" << std::endl;
 			return ;
