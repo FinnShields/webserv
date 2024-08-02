@@ -36,13 +36,15 @@ void Response::run()
 	std::string method = _req.get("method");
 	_target = _req.get("target");
 	std::cout << "------VIRTUAL HOSTING tests-------\n";
-	std::cout << "target=" << _target << "\n";
+	//std::cout << "target=" << _target << "\n";
 	std::cout << "host=" << _req.get("host") << "\n";
-	std::cout << "port=" << _srv.get_port() << "\n";
-	std::cout << "ip=" << _srv.get_ip_string() << "\n";
-	std::cout << "ip=" << _srv.get_ip() << "\n";
+	//std::cout << "port=" << _srv.get_port() << "\n";
+	//std::cout << "ip=" << _srv.get_ip_string() << "\n";
+	//std::cout << "ip=" << _srv.get_ip() << "\n";
 	std::cout << "index=" << _srv.index << "\n";
-	(_srv.config).realToVirtualHosts();
+	//std::string host = _req.get("host");
+	//size_t pos_colons =  host.find(':');
+	//std::string srv_name = host.substr()
 	std::cout << "----------------------------------\n";
 
 	if(isMethodValid(method, response))
@@ -57,7 +59,7 @@ void Response::run()
 }
 
 std::string Response::get()
-{	
+{
 	std::string path = getPath();
     std::cout << "PATH=" << path << std::endl;
 	if (std::filesystem::is_regular_file(path) && std::filesystem::exists(path))
