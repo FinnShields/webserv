@@ -180,5 +180,25 @@ void Server::setVirthostList(std::vector<size_t> list)
 
 void Server::setVirthostMap()
 {
-	return ;
+	if (_virthost_list.empty())
+		return ;
+	for (size_t & i :_virthost_list)
+	{
+		std::string name = config.getAll(i, "main", "server_name", 0);
+		if (name.empty())
+		{
+			std::cout << "[WARRNING] Server " << index
+				<< ": virtual server " << i << " has empty name and will be ignored.\n";
+			continue;
+		}
+		if (name == _name || _virthost_map.find(name) != _virthost_map.end())
+			std::cout << "[WARRNING] Server " << index
+				<< ": virtual server " << i << " is dublicated and will be ignored.\n";
+		else
+		{
+			_virthost_map[name] = i;
+			std::cout << "[INFO] Server " << index
+				<< ": virtual server " << i << " is initiated.\n";
+		}
+	}
 }

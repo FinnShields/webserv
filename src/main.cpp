@@ -17,6 +17,7 @@
 
 
 int main(int argc, char *argv[]) {
+    std::cout << argv[0] << "\n";
     if (argc < 2) {
         std::cerr << "Usage: ./webserv [configuration file]" << std::endl;
         return 1;

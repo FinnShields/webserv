@@ -39,28 +39,29 @@ void WebServer::setup()
 	std::vector<size_t> indices = extractVirtualHostsIndices();
 	try  // try to be removed as it exist in main 
 	{
-	std::cout << "[INFO] Total number of servers: " << config.size()
-		<< " . Total number of virtual hosts " << indices.size()
-		<< ".\n";
-	for (size_t i = 0; i < config.size(); ++i)
-	{
-		auto it = std::find(indices.begin(), indices.end(), i);
-		if (it != indices.end())
-			continue;
-		_servers.emplace_back(config.getAll(), i);
-		_servers.back().setVirthostList(_real_to_virt[i]);
-		std::cout << "[INFO] Server with index " << i << " is created.\n";
-	}
-	for (Server &srv : _servers)
-	{
-		std::cout << "[INFO] Starting server with index " << srv.index << " with port " << srv.get_port() << "\n";
-		srv.start(_fds);
-	}
+		std::cout << "[INFO] Total number of servers: " << config.size()
+			<< " . Total number of virtual hosts " << indices.size()
+			<< ".\n";
+		for (size_t i = 0; i < config.size(); ++i)
+		{
+			auto it = std::find(indices.begin(), indices.end(), i);
+			if (it != indices.end())
+				continue;
+			_servers.emplace_back(config.getAll(), i);
+			std::cout << "[INFO] Server " << i << " is created.\n";
+			_servers.back().setVirthostList(_real_to_virt[i]);
+			_servers.back().setVirthostMap();
+		}
+		for (Server &srv : _servers)
+		{
+			srv.start(_fds);
+			std::cout << "[INFO] Server " << srv.index << " is started with port " << srv.get_port() << "\n";
+		}
 	}
 	catch(char const *e)
 	{
 		perror(e);
-		//std::exit(EXIT_FAILURE);
+		std::exit(EXIT_FAILURE);
 	}
 }
 
