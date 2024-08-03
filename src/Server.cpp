@@ -6,7 +6,7 @@
 /*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:06 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/03 11:28:39 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/08/03 12:23:30 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -202,7 +202,6 @@ void Server::setVirthostMap()
 			std::cout << "[INFO] Server " << index
 				<< ": virtual server " << i 
 				<< " is initiated with name " << name << "\n";
-			std::cout << "map size=" << _virthost_map.size() << "\n";
 		}
 	}
 }

@@ -165,6 +165,7 @@ std::string Config::selectLocation(std::string target) const {
 	return best_location;
 }
 
+/*
 t_vector_str Config::getValues(std::string target, std::string key, t_vector_str default_values) const
 {
 	std::string group = selectLocation(target);
@@ -174,6 +175,7 @@ t_vector_str Config::getValues(std::string target, std::string key, t_vector_str
 		return vec;
 	return default_values;
 }
+*/
 
 t_vector_str Config::getValues(size_t virt_index, std::string target, std::string key, t_vector_str default_values) const
 {

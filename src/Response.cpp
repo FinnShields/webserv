@@ -6,7 +6,7 @@
 /*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/03 12:05:25 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/08/03 12:26:17 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,14 +36,7 @@ void Response::run()
 	std::string method = _req.get("method");
 	_target = _req.get("target");
 	_index_virt = _srv.getVirtHostIndex(_req.get("host"));
-	std::cout << "------VIRTUAL HOSTING tests-------\n";
-	//std::cout << "target=" << _target << "\n";
-	//std::cout << "port=" << _srv.get_port() << "\n";
-	//std::cout << "ip=" << _srv.get_ip_string() << "\n";
-	//std::cout << "ip=" << _srv.get_ip() << "\n";
-	//std::cout << "index=" << _srv.index << "\n";
-	std::cout << "virt index=" << _index_virt << "\n";
-	std::cout << "----------------------------------\n";
+	std::cout << "[INFO] Request is addressed to server " << _index_virt << "\n";
 	if(isMethodValid(method, response))
         response = 	(_target.size() > 9 && _target.substr(0, 9).compare("/cgi-bin/") == 0) ? runCGI() :
                     (method == "GET") ? get() : 
