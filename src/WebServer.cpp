@@ -6,7 +6,7 @@
 /*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/02 06:41:32 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/08/03 06:11:26 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,6 +51,9 @@ void WebServer::setup()
 			std::cout << "[INFO] Server " << i << " is created.\n";
 			_servers.back().setVirthostList(_real_to_virt[i]);
 			_servers.back().setVirthostMap();
+			std::cout << "index=" << _servers.back().index << "\n";
+			//std::string nnn ="virt";
+			//std::cout << _servers.back().getVirtHostIndex(nnn);
 		}
 		for (Server &srv : _servers)
 		{

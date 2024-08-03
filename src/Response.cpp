@@ -6,7 +6,7 @@
 /*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/02 14:01:00 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/03 06:39:41 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,14 +37,16 @@ void Response::run()
 	_target = _req.get("target");
 	std::cout << "------VIRTUAL HOSTING tests-------\n";
 	//std::cout << "target=" << _target << "\n";
-	std::cout << "host=" << _req.get("host") << "\n";
 	//std::cout << "port=" << _srv.get_port() << "\n";
 	//std::cout << "ip=" << _srv.get_ip_string() << "\n";
 	//std::cout << "ip=" << _srv.get_ip() << "\n";
 	std::cout << "index=" << _srv.index << "\n";
-	//std::string host = _req.get("host");
-	//size_t pos_colons =  host.find(':');
-	//std::string srv_name = host.substr()
+	std::cout << "host=" << _req.get("host") << "\n";
+	std::string host = _req.get("host");
+	std::string srv_name = host.substr(0, host.find(':'));
+	std::cout << "srv_name=" << srv_name << "\n";
+	std::cout << "virt index=" << _srv.getVirtHostIndex(srv_name) << "\n";
+	
 	std::cout << "----------------------------------\n";
 
 	if(isMethodValid(method, response))

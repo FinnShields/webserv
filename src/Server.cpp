@@ -6,7 +6,7 @@
 /*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:06 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/06/22 12:51:31 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/08/03 06:37:05 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,8 @@ Server::~Server() {}
 
 Server::Server(const Server &copy):
 	_port(copy._port), _ip(copy._ip), _name(copy._name),
+	_virthost_list(copy._virthost_list),
+	_virthost_map(copy._virthost_map),
 	index(copy.index),
 	config(copy.config){}
 
@@ -198,7 +200,18 @@ void Server::setVirthostMap()
 		{
 			_virthost_map[name] = i;
 			std::cout << "[INFO] Server " << index
-				<< ": virtual server " << i << " is initiated.\n";
+				<< ": virtual server " << i 
+				<< " is initiated with name " << name << "\n";
+			std::cout << "map size=" << _virthost_map.size() << "\n";
 		}
 	}
+}
+
+size_t Server::getVirtHostIndex(std::string & srv_name)
+{
+	if (srv_name == _name)
+		return index;
+	if (_virthost_map.find(srv_name) == _virthost_map.end())
+		return index;
+	return _virthost_map[srv_name];
 }
