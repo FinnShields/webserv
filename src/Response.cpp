@@ -6,7 +6,7 @@
 /*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/03 12:26:17 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/08/03 12:39:24 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -278,8 +278,8 @@ std::string Response::getPath()
     
     if (alias.empty() && root.empty())
     {
-        alias = _srv.config.get("main", "alias", 0);
-        root = _srv.config.get("main", "root", 0);
+        alias = _srv.config.getAll(_index_virt, "main", "alias", 0);
+        root = _srv.config.getAll(_index_virt, "main", "root", 0);
     }
     if (alias.empty() && root.empty())
         return _target.substr(1);
