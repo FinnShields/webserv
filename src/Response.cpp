@@ -6,7 +6,7 @@
 /*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/03 06:39:41 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/08/03 12:05:25 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,20 +35,15 @@ void Response::run()
 	std::string response;
 	std::string method = _req.get("method");
 	_target = _req.get("target");
+	_index_virt = _srv.getVirtHostIndex(_req.get("host"));
 	std::cout << "------VIRTUAL HOSTING tests-------\n";
 	//std::cout << "target=" << _target << "\n";
 	//std::cout << "port=" << _srv.get_port() << "\n";
 	//std::cout << "ip=" << _srv.get_ip_string() << "\n";
 	//std::cout << "ip=" << _srv.get_ip() << "\n";
-	std::cout << "index=" << _srv.index << "\n";
-	std::cout << "host=" << _req.get("host") << "\n";
-	std::string host = _req.get("host");
-	std::string srv_name = host.substr(0, host.find(':'));
-	std::cout << "srv_name=" << srv_name << "\n";
-	std::cout << "virt index=" << _srv.getVirtHostIndex(srv_name) << "\n";
-	
+	//std::cout << "index=" << _srv.index << "\n";
+	std::cout << "virt index=" << _index_virt << "\n";
 	std::cout << "----------------------------------\n";
-
 	if(isMethodValid(method, response))
         response = 	(_target.size() > 9 && _target.substr(0, 9).compare("/cgi-bin/") == 0) ? runCGI() :
                     (method == "GET") ? get() : 
@@ -66,11 +61,11 @@ std::string Response::get()
     std::cout << "PATH=" << path << std::endl;
 	if (std::filesystem::is_regular_file(path) && std::filesystem::exists(path))
 		return load_file(path);
-	std::string _index = _srv.config.getValues(_target, "index", {""})[0];
+	std::string _index = _srv.config.getValues(_index_virt, _target, "index", {""})[0];
     std::cout << "INDEXPATH=" << path + _index << std::endl;
 	if (_index.length() > 1 && std::filesystem::is_regular_file(path + _index) && std::filesystem::exists(path + _index))
 		return load_file(path + _index);
-	bool autoindex = _srv.config.getValues(_target, "autoindex", {"off"})[0] == "on";
+	bool autoindex = _srv.config.getValues(_index_virt, _target, "autoindex", {"off"})[0] == "on";
 	if (autoindex && std::filesystem::is_directory(path)) 
 		return load_directory_listing(path);
 	return (getErrorPage(404));
@@ -91,7 +86,7 @@ std::string Response::post()
 
 std::string Response::getErrorPage(int code)
 {
-	t_vector_str pages = _srv.config.getValues(_target, "error_page", {"empty"});
+	t_vector_str pages = _srv.config.getValues(_index_virt, _target, "error_page", {"empty"});
 	std::string responseString = "HTTP/1.1 " + std::to_string(code) + " Not Found\r\nContent-Type: text/html\r\n\r\n";
 	std::string errorPath = "www/error_pages/" + std::to_string(code) + ".html";
 	for (size_t i = 0; i < pages.size() - 1; i++)
@@ -127,7 +122,7 @@ std::string Response::runCGI()
 		std::cout << "CGI is not configured.\n";
 		return (getErrorPage(500));
 	}
-	Cgi cgi(_req, _srv);
+	Cgi cgi(_req, _srv, _index_virt);
 	cgi.start();
 	int status = cgi.getStatus();
 	std::cout << "CGI status =" << status << "\n";
@@ -199,7 +194,7 @@ std::string Response::load_directory_listing(std::string directoryPath)
 
 bool Response::check_body_size()
 {
-    std::string max_body_size_str = _srv.config.getValues(_target, "client_max_body_size", _srv.config.getValues("main", "client_max_body_size", {""}))[0];
+    std::string max_body_size_str = _srv.config.getValues(_index_virt, _target, "client_max_body_size", _srv.config.getValues(_index_virt, "main", "client_max_body_size", {""}))[0];
     if (max_body_size_str.empty())
         return true;
     std::string body_size_str = _req.get("content-length");
@@ -268,7 +263,7 @@ std::string Response::createCookie()
 bool Response::isMethodValid(std::string &method, std::string &response)
 {
 	t_vector_str mtd_default = DEFAULT_METHOD;
-	t_vector_str mtd_allowed = _srv.config.getValues(_target, "limit_except", DEFAULT_ALLOWED_METHOD);
+	t_vector_str mtd_allowed = _srv.config.getValues(_index_virt, _target, "limit_except", DEFAULT_ALLOWED_METHOD);
 	if (find(mtd_default.begin(), mtd_default.end(), method) == mtd_default.end())
 	{
 		std::cout << "no supported method="  << method << "\n";
@@ -285,8 +280,8 @@ bool Response::isMethodValid(std::string &method, std::string &response)
 
 std::string Response::getPath()
 {
-    std::string alias = _srv.config.getValues(_target, "alias", {""})[0];
-    std::string root = _srv.config.getValues(_target, "root", {""})[0];
+    std::string alias = _srv.config.getValues(_index_virt, _target, "alias", {""})[0];
+    std::string root = _srv.config.getValues(_index_virt, _target, "root", {""})[0];
     
     if (alias.empty() && root.empty())
     {

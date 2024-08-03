@@ -6,7 +6,7 @@
 /*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:10 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/03 05:33:15 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/08/03 11:28:16 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -83,7 +83,7 @@ class Server
         void saveCookieInfo(std::string& cookie);
         void setVirthostList( std::vector<size_t>);
         void setVirthostMap();
-        size_t getVirtHostIndex(std::string &);
+        size_t getVirtHostIndex(std::string);
 
         const size_t index;
         const Config config;

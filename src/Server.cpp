@@ -6,7 +6,7 @@
 /*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:06 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/03 06:37:05 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/08/03 11:28:39 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -207,8 +207,9 @@ void Server::setVirthostMap()
 	}
 }
 
-size_t Server::getVirtHostIndex(std::string & srv_name)
+size_t Server::getVirtHostIndex(std::string host)
 {
+	std::string srv_name = host.substr(0, host.find(':'));
 	if (srv_name == _name)
 		return index;
 	if (_virthost_map.find(srv_name) == _virthost_map.end())
