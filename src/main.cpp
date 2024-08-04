@@ -15,7 +15,6 @@
 #include "Parser.hpp"
 #include "Config.hpp"
 
-
 int main(int argc, char *argv[]) {
     std::cout << argv[0] << "\n";
     if (argc < 2) {
@@ -29,7 +28,7 @@ int main(int argc, char *argv[]) {
 		<< "----- EXTRACTED DATA ------------\n"
 		<< data.get()
 		<< "----- END of DATA ---------------\n";
-        //data.isValid();  // is not emplemented
+        data.isValid();
         WebServer webserv(data.get());
         webserv.setup();
         webserv.run();

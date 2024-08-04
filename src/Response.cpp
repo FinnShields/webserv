@@ -36,7 +36,9 @@ void Response::run()
 	std::string method = _req.get("method");
 	_target = _req.get("target");
 	_index_virt = _srv.getVirtHostIndex(_req.get("host"));
-	std::cout << "[INFO] Request is addressed to server " << _index_virt << "\n";
+	std::cout << "[INFO] Request is addressed to server " << _srv.index << "\n";
+	if (_srv.index != _index_virt)
+		std::cout << "[INFO] Request is readdressed to virtual server " << _index_virt << "\n";
 	if(isMethodValid(method, response))
         response = 	(_target.size() > 9 && _target.substr(0, 9).compare("/cgi-bin/") == 0) ? runCGI() :
                     (method == "GET") ? get() : 

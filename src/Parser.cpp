@@ -328,12 +328,15 @@ bool Parser::isValidPort(const t_vector_str& vec) {
 	return true;
 }
 
-bool Parser::isValidNumber(const t_vector_str& vec, int limit_min, int limit_max) {
+bool Parser::isValidNumber(const t_vector_str& vec, int limit_max) {
 	if (vec.empty() || vec.size() > 1 || vec[0].empty())
 		return false;
-	try {
+	try 
+	{
 		int num = std::stoi(vec[0]);
-		if ( num < limit_min || num > limit_max)
+		(void)limit_max;
+		//if (num < limit_min || num > limit_max)
+		if (num < 0)
 				return false;
 	}
 	catch (const std::invalid_argument&){
@@ -360,34 +363,34 @@ bool Parser::isValidMethod(t_group& group_data){
 void Parser::isValid(){
 	int srv_num = -1;
 	if (_data.empty())
-		throw std::runtime_error(", no server in config file.\n");
+		throw std::runtime_error("[ERROR] There are no servers in config file.\n");
 	for (auto& server : _data){
-		std::cout << "Server " << ++srv_num << "  ";
+		//std::cout << "[INFO] Server " << ++srv_num << "  ";
+		++srv_num;
 		if (server.empty())
-			throw std::runtime_error(", empty server.\n");
+			throw std::runtime_error("[ERROR] Server " + std::to_string(srv_num) + " is empty.\n");
 		if (server["main"].empty())
-			throw std::runtime_error(", no main or it is empty\n");
+			throw std::runtime_error("[ERROR] Server " + std::to_string(srv_num) + " has no main or it is empty\n");
 		if (!isValidPort(server["main"]["listen"]))
-			throw std::runtime_error(", none or invalid port\n");
+			throw std::runtime_error("[ERROR] Server " + std::to_string(srv_num) + " has none or invalid port\n");
 		if (!isValidIP(server["main"]["host"]))
-			throw std::runtime_error(", none or invalid IP\n");
-		
+			throw std::runtime_error("[ERROR] Server " + std::to_string(srv_num) + " has none or invalid IP\n");
+
 		for (auto& [group_name, group_data]: server){
 			if (group_data.empty())
-				throw std::runtime_error(", empty group\n");
+				throw std::runtime_error("[ERROR] Server " + std::to_string(srv_num) + " has empty group" + group_name + "\n");
 			if (group_name.empty())
-				throw std::runtime_error(", empty group name");
+				throw std::runtime_error("[ERROR] Server " + std::to_string(srv_num) + " has empty group name");
 			if (!(group_name == "main" || group_name[0] == '/'))
-				throw std::runtime_error(", invalid group: " + group_name + "\n");
+				throw std::runtime_error("[ERROR] Server " + std::to_string(srv_num) +  " has invalid group: " + group_name + "\n");
 			t_vector_str values = group_data["client_max_body_size"];
-			if (!values.empty() && !isValidNumber(values, 10000, 30000000))
-				throw std::runtime_error(", invalid client_max_body_size in group: " + group_name + "\n");
-			//values = group_data["limit_except"];
-//			std::cout << values;
-			//if (!values.empty() && !isValidMethod(values))
+			if (!values.empty() && !isValidNumber(values, CLIENT_MAX_BODY_SIZE))
+				throw std::runtime_error("[ERROR] Server " + std::to_string(srv_num)
+					+ " invalid client_max_body_size in group: " + group_name
+					+ " is larger " + std::to_string(CLIENT_MAX_BODY_SIZE) + "\n");
 			if (!isValidMethod(group_data))
-				throw std::runtime_error(", invalid limit_except in group: " + group_name + "\n");
+				throw std::runtime_error("[ERROR] Server " + std::to_string(srv_num) + " has invalid limit_except in group: " + group_name + "\n");
 		}
-		std::cout <<  " is OK.\n";
+		std::cout <<  "[INFO] Server " << srv_num  << " is OK.\n";
 	}
 }
