@@ -215,10 +215,11 @@ std::map<size_t, std::vector<size_t>> Config::realToVirtualHosts() const
 	return real_to_virt;
 }
 
-
+/*
 bool Config::isValid(){
 	//validate server_name
 	//validate ip
 	//validate port
 	return false;
 }
+*/

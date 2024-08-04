@@ -47,7 +47,7 @@ class Config
 		//std::vector<int> 	getAll(std::string target, std::string key, int default_value) const;
 		
 		std::map<size_t, std::vector<size_t>> realToVirtualHosts() const;
-		bool				isValid();
+		//bool				isValid();
 	private:
 		Config();
 		std::vector<t_server>& _data;
