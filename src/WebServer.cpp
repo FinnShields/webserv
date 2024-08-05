@@ -51,7 +51,6 @@ void WebServer::setup()
 			std::cout << "[INFO] Server " << i << " is created.\n";
 			_servers.back().setVirthostList(_real_to_virt[i]);
 			_servers.back().setVirthostMap();
-			//std::cout << "index=" << _servers.back().index << "\n";
 		}
 		for (Server &srv : _servers)
 		{

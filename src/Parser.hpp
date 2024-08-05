@@ -7,7 +7,8 @@
 #include <sstream>
 #include <vector>
 #include <map>
-#include <algorithm> 
+#include <algorithm>
+#include <regex>
 
 #define CLIENT_MAX_BODY_SIZE 30000000
 
@@ -62,6 +63,9 @@ class Parser
 		bool isValidPort(const t_vector_str& vec);
 		bool isValidNumber(const t_vector_str& vec, int limit_max);
 		bool isValidMethod(t_group& group_data);
+		bool isValidSrvNameLabel(const std::string&);
+		bool isValidSrvNameDNS(std::string&);
+		bool isValidSrvName(t_group& group_data);
 		void isValid();
 
 	private:

@@ -258,13 +258,13 @@ std::string Response::createCookie()
 bool Response::isMethodValid(std::string &method, std::string &response)
 {
 	t_vector_str mtd_default = DEFAULT_METHOD;
-	t_vector_str mtd_allowed = _srv.config.getValues(_index_virt, _target, "limit_except", DEFAULT_ALLOWED_METHOD);
 	if (find(mtd_default.begin(), mtd_default.end(), method) == mtd_default.end())
 	{
 		std::cout << "no supported method="  << method << "\n";
 		response = getErrorPage(501);
 		return false;
 	}
+	t_vector_str mtd_allowed = _srv.config.getValues(_index_virt, _target, "limit_except", DEFAULT_ALLOWED_METHOD);
 	if (find(mtd_allowed.begin(), mtd_allowed.end(), method) == mtd_allowed.end())
 	{
 		response = getErrorPage(405);

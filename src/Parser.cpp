@@ -348,7 +348,8 @@ bool Parser::isValidNumber(const t_vector_str& vec, int limit_max) {
 	return true;
 }
 
-bool Parser::isValidMethod(t_group& group_data){
+bool Parser::isValidMethod(t_group& group_data)
+{
 	t_vector_str vec = group_data["limit_except"];
 	if (vec.empty())
 		return true;
@@ -358,6 +359,44 @@ bool Parser::isValidMethod(t_group& group_data){
 			return false;
 	}
 	return true;
+}
+
+bool Parser::isValidSrvName(t_group& group_data)
+{
+	t_vector_str vec = group_data["server_name"];
+	if (vec.empty())
+		return true;
+	if (vec.size() > 1)
+	 	return false;
+	if (isValidSrvNameDNS(vec[0]))
+		return true;
+	return false;
+}
+
+bool Parser::isValidSrvNameDNS(std::string& name){
+	
+	size_t pos_beg = 0;
+	size_t pos_end = 0;
+	while (pos_end != std::string::npos)
+	{
+		pos_end = name.find('.', pos_beg);
+		if (pos_end == pos_beg)
+			return false;
+		//std::cout << name.substr(pos_beg, pos_end - pos_beg) << "\n";
+		if (!isValidSrvNameLabel(name.substr(pos_beg, pos_end - pos_beg)))
+			return false;
+		if (pos_end != std::string::npos)
+			pos_beg = pos_end + 1;
+	}
+	return true;
+}
+
+bool Parser::isValidSrvNameLabel(const std::string& label) {
+    if (label.empty() || label.length() > 63) {
+        return false;
+    }
+    std::regex labelRegex("^[a-zA-Z0-9](-?[a-zA-Z0-9])*$");
+    return std::regex_match(label, labelRegex);
 }
 
 void Parser::isValid(){
@@ -386,8 +425,9 @@ void Parser::isValid(){
 			t_vector_str values = group_data["client_max_body_size"];
 			if (!values.empty() && !isValidNumber(values, CLIENT_MAX_BODY_SIZE))
 				throw std::runtime_error("[ERROR] Server " + std::to_string(srv_num)
-					+ " invalid client_max_body_size in group: " + group_name
-					+ " is larger " + std::to_string(CLIENT_MAX_BODY_SIZE) + "\n");
+					+ " invalid client_max_body_size in group: " + group_name + "\n");
+			if (!isValidSrvName(group_data))
+				throw std::runtime_error("[ERROR] Server " + std::to_string(srv_num) + " has invalid server name\n");
 			if (!isValidMethod(group_data))
 				throw std::runtime_error("[ERROR] Server " + std::to_string(srv_num) + " has invalid limit_except in group: " + group_name + "\n");
 		}
