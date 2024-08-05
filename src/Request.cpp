@@ -6,7 +6,7 @@
 /*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/08/06 00:56:38 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/08/06 01:31:17 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -229,8 +229,8 @@ void	Request::display()
 		std::cout << it->first << ": " << it->second << std::endl;
 	if (!this->get("content-type").compare(0, 19, "multipart/form-data"))
 	{
-		std::cout << "Body: <file data>" << std::endl << "---------------------" << std::endl;
-		//std::cout << "body(0,100)=" << body.substr(0,100) << "\n";
+	//	std::cout << "Body: <file data>" << std::endl << "---------------------" << std::endl;
+		std::cout << "\nbody=\n" << body.substr(0) << "<<<---\n\n";
 		return ;
 	}
 	if (!this->body.empty())
