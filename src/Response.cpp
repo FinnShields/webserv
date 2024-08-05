@@ -192,6 +192,7 @@ std::string Response::load_directory_listing(std::string directoryPath)
 bool Response::check_body_size()
 {
     std::string max_body_size_str = _srv.config.getValues(_index_virt, _target, "client_max_body_size", _srv.config.getValues(_index_virt, "main", "client_max_body_size", {""}))[0];
+	std::cout << "max_body_size_str=" << max_body_size_str << "\n"; 
     if (max_body_size_str.empty())
         return true;
     std::string body_size_str = _req.get("content-length");

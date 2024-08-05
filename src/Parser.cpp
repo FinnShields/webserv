@@ -116,18 +116,28 @@ t_group Parser::parseGroupSetting()
 	t_vector_str value_list;
 	while (isAnyWord(peek()))
 	{
+		size_t	pos = _position;
 		keyword = parseWord();
 		value_list = parseWordList();
-		if (keyword == "error_page" &&
-			value_list.size() == 2 &&
-			value_list[0].size() == 3 &&
-			std::isdigit(value_list[0][0]) &&
-			std::isdigit(value_list[0][1]) &&
-			std::isdigit(value_list[0][2]))
+		if (keyword == "error_page")
 		{
-			group[value_list[0]] = {value_list[1]};
+			if (value_list.size() == 2 &&
+				value_list[0].size() == 3 &&
+				std::isdigit(value_list[0][0]) &&
+				std::isdigit(value_list[0][1]) &&
+				std::isdigit(value_list[0][2]))
+			{
+				group[value_list[0]] = {value_list[1]};
+			}
+			else
+			{
+				std::cout << "[WARRNING] Parcer: error_page has wrong format and will be ignored.\n";
+				std::cout << "[WARRNING] Ignored line:" << _filecontent.substr(pos, _position - pos) << "\n";
+			}
+			group[keyword] = {""};
 		}
-		group[keyword] = value_list;
+		else
+			group[keyword] = value_list;
 	}
 	if (getToken() != tok::close)
 		throw std::runtime_error(
@@ -370,19 +380,17 @@ bool Parser::isValidMethod(t_group& group_data)
 	return true;
 }
 
-/*
-bool Parser::isValidErrorPage(t_group& group_data)
+bool Parser::isValidAutoIndex(t_group& group_data)
 {
-	t_vector_str vec = group_data["server_name"];
+	t_vector_str vec = group_data["autoindex"];
 	if (vec.empty())
 		return true;
 	if (vec.size() > 1)
 	 	return false;
-	if (isValidSrvNameDNS(vec[0]))
+	if (vec[0] == "on" || vec[0] == "off")
 		return true;
 	return false;
 }
-*/
 
 bool Parser::isValidSrvName(t_group& group_data)
 {
@@ -453,6 +461,8 @@ void Parser::isValid(){
 				throw std::runtime_error("[ERROR] Server " + std::to_string(srv_num) + " has invalid server name\n");
 			if (!isValidMethod(group_data))
 				throw std::runtime_error("[ERROR] Server " + std::to_string(srv_num) + " has invalid limit_except in group: " + group_name + "\n");
+			if (!isValidAutoIndex(group_data))
+				throw std::runtime_error("[ERROR] Server " + std::to_string(srv_num) + " has invalid autoindex in group: " + group_name + "\n");
 		}
 		std::cout <<  "[INFO] Server " << srv_num  << " is OK.\n";
 	}
