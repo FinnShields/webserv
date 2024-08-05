@@ -118,6 +118,15 @@ t_group Parser::parseGroupSetting()
 	{
 		keyword = parseWord();
 		value_list = parseWordList();
+		if (keyword == "error_page" &&
+			value_list.size() == 2 &&
+			value_list[0].size() == 3 &&
+			std::isdigit(value_list[0][0]) &&
+			std::isdigit(value_list[0][1]) &&
+			std::isdigit(value_list[0][2]))
+		{
+			group[value_list[0]] = {value_list[1]};
+		}
 		group[keyword] = value_list;
 	}
 	if (getToken() != tok::close)
@@ -360,6 +369,20 @@ bool Parser::isValidMethod(t_group& group_data)
 	}
 	return true;
 }
+
+/*
+bool Parser::isValidErrorPage(t_group& group_data)
+{
+	t_vector_str vec = group_data["server_name"];
+	if (vec.empty())
+		return true;
+	if (vec.size() > 1)
+	 	return false;
+	if (isValidSrvNameDNS(vec[0]))
+		return true;
+	return false;
+}
+*/
 
 bool Parser::isValidSrvName(t_group& group_data)
 {

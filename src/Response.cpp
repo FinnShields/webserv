@@ -81,6 +81,8 @@ std::string Response::post()
 
 std::string Response::getErrorPage(int code)
 {
+	std::string error_page_path = _srv.config.getValues(_index_virt, _target, std::to_string(code), {"empty"})[0];
+	std::cout << "[TEST MSG, comment me] Error page for code " << code << " is ->" << error_page_path << "<-\n"; 
 	t_vector_str pages = _srv.config.getValues(_index_virt, _target, "error_page", {"empty"});
 	std::string responseString = "HTTP/1.1 " + std::to_string(code) + " Not Found\r\nContent-Type: text/html\r\n\r\n";
 	std::string errorPath = "www/error_pages/" + std::to_string(code) + ".html";

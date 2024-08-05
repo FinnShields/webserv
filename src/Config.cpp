@@ -180,7 +180,7 @@ t_vector_str Config::getValues(std::string target, std::string key, t_vector_str
 t_vector_str Config::getValues(size_t virt_index, std::string target, std::string key, t_vector_str default_values) const
 {
 	std::string group = selectLocation(target);
-//	std::cout << "group=" << group << "\n";
+	//std::cout << "group=" << group << "\n";
 	t_vector_str vec = getAll(virt_index)[group][key];
 	if (0 < vec.size())
 		return vec;
