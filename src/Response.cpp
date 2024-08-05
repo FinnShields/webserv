@@ -192,12 +192,12 @@ std::string Response::load_directory_listing(std::string directoryPath)
 bool Response::check_body_size()
 {
     std::string max_body_size_str = _srv.config.getValues(_index_virt, _target, "client_max_body_size", _srv.config.getValues(_index_virt, "main", "client_max_body_size", {""}))[0];
-    if (max_body_size_str.empty())
+	if (max_body_size_str == "0")
         return true;
     std::string body_size_str = _req.get("content-length");
     if (body_size_str.empty())
         return true;
-    long max_body_size = std::stoi(max_body_size_str);
+    long max_body_size = max_body_size_str.empty() ? 1000 : std::stoi(max_body_size_str);
     long body_size = std::stoi(body_size_str);
     return body_size > max_body_size ? false : true;
 }
