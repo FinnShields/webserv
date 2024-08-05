@@ -6,7 +6,7 @@
 /*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/07/11 06:24:20 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/08/06 00:56:38 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -170,6 +170,7 @@ void	Request::parse(std::vector<char> reqRaw)
 	if (!this->get("transfer-encoding").empty())
 		std::cout << "#### Received a " << this->get("transfer-encoding") << " request" << std::endl;
 	this->extractBody(reqRaw);
+	std::cout << "[DEBAG] Request: body=" << body << "\n";
 }
 
 const std::string	Request::get(std::string toGet)
@@ -229,6 +230,7 @@ void	Request::display()
 	if (!this->get("content-type").compare(0, 19, "multipart/form-data"))
 	{
 		std::cout << "Body: <file data>" << std::endl << "---------------------" << std::endl;
+		//std::cout << "body(0,100)=" << body.substr(0,100) << "\n";
 		return ;
 	}
 	if (!this->body.empty())

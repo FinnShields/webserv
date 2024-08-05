@@ -6,7 +6,7 @@
 /*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/03 12:39:24 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/08/06 00:17:11 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -203,10 +203,21 @@ bool Response::check_body_size()
 }
 
 int Response::saveFile()
-	{
-	std::string boundary = _req.get("Content-Type").substr(31);
+{
+	//std::string boundary = _req.get("Content-Type").substr(31);
+	std::cout << "\ncontent type=" << _req.get("Content-Type") << "\n";
+	std::string boundary = _req.get("content-type").substr(31);
+	std::cout << "bondary=" << boundary << "\n";
 	std::string body = _req.get("body");
+	std::cout << "body(0,20)=" << body.substr(0,20) << "\n";
     std::vector<char> bodyRaw = _req.getBodyRawBytes();
+	int i = 0;
+	for (char c : bodyRaw)
+	{
+		std::cout << "bodyRow(0,20)=" << c << "\n";
+		if (++i > 20)
+			break;
+	}
 	if (body.empty())
 		return 400;
     std::string fileName = "";
