@@ -350,7 +350,12 @@ bool Parser::isValidPort(const t_vector_str& vec) {
 bool Parser::isValidNumber(const t_vector_str& vec, int limit_max) {
 	if (vec.empty() || vec.size() > 1 || vec[0].empty())
 		return false;
-	try 
+	for (auto& c : vec[0])
+	{
+		if (!isdigit(c))
+			return false;
+	}
+	try
 	{
 		int num = std::stoi(vec[0]);
 		(void)limit_max;
@@ -370,7 +375,7 @@ bool Parser::isValidNumber(const t_vector_str& vec, int limit_max) {
 bool Parser::isValidMethod(t_group& group_data)
 {
 	t_vector_str vec = group_data["limit_except"];
-	if (vec.empty())
+	if (vec.empty() || vec.size() > 3)
 		return true;
 	t_vector_str mtd =  {"GET", "POST", "DELETE"};
 	for (auto& m: vec){
@@ -390,6 +395,39 @@ bool Parser::isValidAutoIndex(t_group& group_data)
 	if (vec[0] == "on" || vec[0] == "off")
 		return true;
 	return false;
+}
+
+bool Parser::isValidOneArg(t_vector_str& vec)
+{
+	if (vec.empty())
+		return true;
+	if (vec.size() > 1)
+		return false;
+	return true;
+}
+
+bool Parser::isValidRoot(t_group& group_data)
+{
+	t_vector_str vec = group_data["root"];
+	return isValidOneArg(vec);
+}
+
+bool Parser::isValidIndex(t_group& group_data)
+{
+	t_vector_str vec = group_data["index"];
+	return isValidOneArg(vec);
+}
+
+bool Parser::isValidAlias(t_group& group_data)
+{
+	t_vector_str vec = group_data["alias"];
+	return isValidOneArg(vec);
+}
+
+bool Parser::isValidReturn(t_group& group_data)
+{
+	t_vector_str vec = group_data["return"];
+	return isValidOneArg(vec);
 }
 
 bool Parser::isValidSrvName(t_group& group_data)
@@ -463,6 +501,14 @@ void Parser::isValid(){
 				throw std::runtime_error("[ERROR] Server " + std::to_string(srv_num) + " has invalid limit_except in group: " + group_name + "\n");
 			if (!isValidAutoIndex(group_data))
 				throw std::runtime_error("[ERROR] Server " + std::to_string(srv_num) + " has invalid autoindex in group: " + group_name + "\n");
+			if (!isValidRoot(group_data))
+				throw std::runtime_error("[ERROR] Server " + std::to_string(srv_num) + " has invalid root in group: " + group_name + "\n");
+			if (!isValidIndex(group_data))
+				throw std::runtime_error("[ERROR] Server " + std::to_string(srv_num) + " has invalid index in group: " + group_name + "\n");
+			if (!isValidAlias(group_data))
+				throw std::runtime_error("[ERROR] Server " + std::to_string(srv_num) + " has invalid alias in group: " + group_name + "\n");
+			if (!isValidReturn(group_data))
+				throw std::runtime_error("[ERROR] Server " + std::to_string(srv_num) + " has invalid return in group: " + group_name + "\n");
 		}
 		std::cout <<  "[INFO] Server " << srv_num  << " is OK.\n";
 	}

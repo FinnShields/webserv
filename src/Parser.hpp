@@ -67,6 +67,11 @@ class Parser
 		bool isValidSrvNameDNS(std::string&);
 		bool isValidSrvName(t_group& group_data);
 		bool isValidAutoIndex(t_group& group_data);
+		bool isValidOneArg(t_vector_str& vec);
+		bool isValidRoot(t_group& group_data);
+		bool isValidIndex(t_group& group_data);
+		bool isValidAlias(t_group& group_data);
+		bool isValidReturn(t_group& group_data);
 		void isValid();
 
 	private:
