@@ -6,7 +6,7 @@
 /*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/08/06 01:31:17 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/08/06 07:35:36 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,6 +73,9 @@ void	Request::read(int _fd)
 	ssize_t recvReturn = MAX_BUFFER_SIZE;
 	while (recvReturn == MAX_BUFFER_SIZE) {
 		recvReturn = recv(_fd, &buffer, MAX_BUFFER_SIZE, 0);
+		std::cout << "buffer=------------>\n"
+			<< buffer 
+			<< "\n<-------------------\n";
 		if (recvReturn < 0)
 			perror("Recv error");
 		if (recvReturn == 0 && recvReturnTotal == 0)
@@ -88,6 +91,16 @@ void	Request::read(int _fd)
 	}
 	std::cout << std::endl;
 	std::cout << std::endl;
+	std::cout << "[DEBUG] Request::read reqRaw:-->\n";
+	for (size_t i = 0; i < reqRaw.size(); i++)
+		std::cout << reqRaw[i];
+	std::cout << "<<<---\n";
+
+	/*recvReturn = recv(_fd, &buffer, MAX_BUFFER_SIZE, 0);
+	std::cout << "buffer=------------>\n"
+		<< buffer 
+		<< "\n<-------------------\n";
+	*/
 	this->parse(reqRaw);
 }
 
@@ -144,6 +157,8 @@ void	Request::extractBody(std::vector<char> reqRaw)
 {
 	char *ch;
 	char *reqArray = &reqRaw[0];
+
+	std::cout << "[DEBUG] Request: reqArray=--->>>" << reqArray << "<<<---\n";
 
 	ch = strstr(reqArray, "\r\n\r\n") + 4;
 	if (!ch)
