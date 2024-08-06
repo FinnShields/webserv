@@ -187,6 +187,11 @@ t_vector_str Config::getValues(size_t virt_index, std::string target, std::strin
 	return default_values;
 }
 
+t_vector_str Config::getBestValues(size_t virt_index, std::string target, std::string key, t_vector_str default_values) const
+{
+	return getValues(virt_index, target, key, getValues(virt_index, "main", key, default_values));
+}
+
 //void Config::setVirtualHosts() const
 std::map<size_t, std::vector<size_t>> Config::realToVirtualHosts() const
 {

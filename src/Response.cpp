@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/03 12:39:24 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/08/06 15:07:17 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,11 +56,11 @@ std::string Response::get()
     std::cout << "PATH=" << path << std::endl;
 	if (std::filesystem::is_regular_file(path) && std::filesystem::exists(path))
 		return load_file(path);
-	std::string _index = _srv.config.getValues(_index_virt, _target, "index", {""})[0];
+	std::string _index = _srv.config.getBestValues(_index_virt, _target, "index", DEFAULT_INDEX)[0];
     std::cout << "INDEXPATH=" << path + _index << std::endl;
 	if (_index.length() > 1 && std::filesystem::is_regular_file(path + _index) && std::filesystem::exists(path + _index))
 		return load_file(path + _index);
-	bool autoindex = _srv.config.getValues(_index_virt, _target, "autoindex", {"off"})[0] == "on";
+	bool autoindex = _srv.config.getBestValues(_index_virt, _target, "autoindex", {"off"})[0] == "on";
 	if (autoindex && std::filesystem::is_directory(path)) 
 		return load_directory_listing(path);
 	return (getErrorPage(404));
@@ -105,7 +105,7 @@ std::string Response::deleteResp()
     std::string path = getPath();
 
 	replacePercent20withSpace(path);
-	// std::cout << "Deleting " << path << std::endl;
+	std::cout << "Deleting " << path << std::endl;
 	if (deleteFile(path) == 204)
 		return ("HTTP/1.1 204 No Content");
 	return (getErrorPage(404));
@@ -191,13 +191,13 @@ std::string Response::load_directory_listing(std::string directoryPath)
 
 bool Response::check_body_size()
 {
-    std::string max_body_size_str = _srv.config.getValues(_index_virt, _target, "client_max_body_size", _srv.config.getValues(_index_virt, "main", "client_max_body_size", {""}))[0];
+    std::string max_body_size_str = _srv.config.getBestValues(_index_virt, _target, "client_max_body_size", {DEFAULT_MAX_BODY_SIZE})[0];
 	if (max_body_size_str == "0")
         return true;
     std::string body_size_str = _req.get("content-length");
     if (body_size_str.empty())
         return true;
-    long max_body_size = max_body_size_str.empty() ? 1000 : std::stoi(max_body_size_str);
+    long max_body_size = std::stoi(max_body_size_str);
     long body_size = std::stoi(body_size_str);
     return body_size > max_body_size ? false : true;
 }
@@ -266,7 +266,7 @@ bool Response::isMethodValid(std::string &method, std::string &response)
 		response = getErrorPage(501);
 		return false;
 	}
-	t_vector_str mtd_allowed = _srv.config.getValues(_index_virt, _target, "limit_except", DEFAULT_ALLOWED_METHOD);
+	t_vector_str mtd_allowed = _srv.config.getBestValues(_index_virt, _target, "limit_except", DEFAULT_ALLOWED_METHOD);
 	if (find(mtd_allowed.begin(), mtd_allowed.end(), method) == mtd_allowed.end())
 	{
 		response = getErrorPage(405);
