@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:41 by fshields          #+#    #+#             */
-/*   Updated: 2024/07/11 06:04:41 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/08/07 18:33:39 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,7 +32,7 @@ class Request
 		std::string body;
 		std::vector<char> bodyRawBytes;
 		std::vector<char> reqRaw;
-		ssize_t recvReturnTotal;
+		ssize_t _recvReturnTotal;
 		void parse(std::vector<char> reqRaw);
 		bool extractMethod(std::string& input);
 		void extractTarget(std::string& input);
@@ -45,7 +45,7 @@ class Request
 		Request(const Request&);
 		Request& operator=(const Request&);
 		~Request();
-		void read(int _fd);
+		int read(int _fd);
 		const std::string get(std::string toGet);
 		const std::string getHeader(std::string toGet);
 		std::string& getRef(std::string toGet);

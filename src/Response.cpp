@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/06 15:07:17 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/07 15:58:45 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,24 +30,22 @@ not implemented
 418 "TEAPOT" 
 */
 
-void Response::run()
+const std::string Response::run()
 {
-	std::string response;
 	std::string method = _req.get("method");
 	_target = _req.get("target");
 	_index_virt = _srv.getVirtHostIndex(_req.get("host"));
 	std::cout << "[INFO] Request is addressed to server " << _srv.index << "\n";
 	if (_srv.index != _index_virt)
 		std::cout << "[INFO] Request is readdressed to virtual server " << _index_virt << "\n";
-	if(isMethodValid(method, response))
-        response = 	(_target.size() > 9 && _target.substr(0, 9).compare("/cgi-bin/") == 0) ? runCGI() :
+	if(isMethodValid(method))
+        _response = (_target.size() > 9 && _target.substr(0, 9).compare("/cgi-bin/") == 0) ? runCGI() :
                     (method == "GET") ? get() : 
                     (method == "POST") ? post() :
                     (method == "DELETE") ? deleteResp() : 
                     getErrorPage(501);
-	std::cout << "------- Response ----------\n" << response << "\n------- END ---------------\n";
-	if (send(_fd, response.c_str(), response.size(), 0) < 0)
-		perror("Send error");
+	std::cout << "------- Response ----------\n" << _response << "\n------- END ---------------\n";
+    return _response;
 }
 
 std::string Response::get()
@@ -257,19 +255,19 @@ std::string Response::createCookie()
 	return ("Set-Cookie: session-id=" + std::to_string(newSessionId) + "\r\n");
 }
 
-bool Response::isMethodValid(std::string &method, std::string &response)
+bool Response::isMethodValid(std::string &method)
 {
 	t_vector_str mtd_default = DEFAULT_METHOD;
 	if (find(mtd_default.begin(), mtd_default.end(), method) == mtd_default.end())
 	{
 		std::cout << "no supported method="  << method << "\n";
-		response = getErrorPage(501);
+		_response = getErrorPage(501);
 		return false;
 	}
 	t_vector_str mtd_allowed = _srv.config.getBestValues(_index_virt, _target, "limit_except", DEFAULT_ALLOWED_METHOD);
 	if (find(mtd_allowed.begin(), mtd_allowed.end(), method) == mtd_allowed.end())
 	{
-		response = getErrorPage(405);
+		_response = getErrorPage(405);
 		return false;
 	}
 	return true;

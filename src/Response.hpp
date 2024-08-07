@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:06:10 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/06 15:09:41 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/07 18:19:24 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,6 +44,7 @@ class Response
 		Server &_srv;
 		std::string _target;
 		size_t _index_virt;
+        std::string _response;
 
 		std::string get();
 		std::string post();
@@ -53,7 +54,7 @@ class Response
 		int saveFile();
         int deleteFile(const std::string &);
 		std::string createCookie();
-		bool isMethodValid(std::string &method,  std::string &response);
+		bool isMethodValid(std::string &method);
 		std::string runCGI();
         
         //Helper functions
@@ -74,6 +75,6 @@ class Response
 		Response(int fd, Request &req, Server &srv);
 		~Response();
 		
-		void run();
+		const std::string run();
 };
 #endif

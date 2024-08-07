@@ -3,22 +3,26 @@
 /*                                                        :::      ::::::::   */
 /*   Client.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/06/30 05:34:06 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/08/07 18:38:30 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Client.hpp"
 
 
-Client::Client(int fd) : _fd(fd) {}
-Client::Client(const Client &copy) : _fd(copy._fd), fileName(copy.fileName) {}
-Client::~Client() {};
+Client::Client(int fd) : _fd(fd), _request(NULL) {}
+Client::Client(const Client &copy) : _fd(copy._fd), _request(copy._request), fileName(copy.fileName) {}
+Client::~Client() 
+{
+    delete _request;
+};
 Client &Client::operator=(const Client &assign)
 {
 	this->_fd = assign._fd;
+    this->_request = assign._request;
     this->fileName = assign.fileName;
 	return (*this);
 }
@@ -26,21 +30,31 @@ Client &Client::operator=(const Client &assign)
 int Client::get_socket_fd()
 {
     return (_fd);
-}
+} 
 
 std::string& Client::get_fileName()
 {
     return (this->fileName);
 }
 
-void Client::handle_request(Server& srv)
+int Client::handle_request(Server& srv)
 {
-	Request request;
- 
-    request.read(_fd);
-    request.display();
-	Response resp(_fd, request, srv);
-	resp.run();
+    if (!_request)
+    {
+        std::cout << "new request" << std::endl;
+        _request = new Request();
+    }
+    int ret = _request->read(_fd);
+    if (ret == 0)
+        _response = Response(_fd, *_request, srv).run();
+    return ret;
+}
+
+int Client::send_response()
+{
+    if (send(_fd, _response.c_str(), _response.size(), 0) < 0)
+        perror("Send error");
+    return 1;
 }
 
 void Client::close_connection(Server &srv)

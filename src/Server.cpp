@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:06 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/03 12:23:30 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/08/07 15:34:31 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,7 +73,7 @@ void Server::accept_new_connection(std::vector<pollfd> &_fds)
 	std::cout << "Received a new connection" << std::endl;
 	if ((client.fd = accept(_server_fd, (struct sockaddr *)&_address, (socklen_t*)&_addrlen)) < 0)
 		return (perror("accept"));
-	client.events = POLLIN;
+	client.events = POLLIN|POLLOUT;
 	_fds.push_back(client);
 	_clients.push_back(client.fd);
 }

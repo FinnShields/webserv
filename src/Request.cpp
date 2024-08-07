@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/07/11 06:24:20 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/08/07 15:38:00 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,7 @@
 
 Request::Request()
 {
-	recvReturnTotal = 0;
+	_recvReturnTotal = 0;
 }
 
 Request::~Request()
@@ -27,6 +27,7 @@ Request& Request::operator=(const Request& r)
 	this->body = r.body;
 	this->version = r.version;
 	this->target = r.target;
+    this->_recvReturnTotal = r._recvReturnTotal;
 	return (*this);
 }
 
@@ -67,28 +68,22 @@ void Request::extractVersion(std::string& input)
 	this->version = input.substr(start, end);
 }
 
-void	Request::read(int _fd)
+int	Request::read(int _fd)
 {
 	char buffer[MAX_BUFFER_SIZE] = {0};
-	ssize_t recvReturn = MAX_BUFFER_SIZE;
-	while (recvReturn == MAX_BUFFER_SIZE) {
-		recvReturn = recv(_fd, &buffer, MAX_BUFFER_SIZE, 0);
-		if (recvReturn < 0)
-			perror("Recv error");
-		if (recvReturn == 0 && recvReturnTotal == 0)
-		{
-			std::cout << "Connection cancelled (empty buffer)" << std::endl;
-			return ;
-		}
-		for (size_t i = 0; i < (size_t) recvReturn; i++) {
-			reqRaw.push_back(buffer[i]);
-		}
-		recvReturnTotal += recvReturn;
-		bzero(buffer, MAX_BUFFER_SIZE);
-	}
-	std::cout << std::endl;
-	std::cout << std::endl;
-	this->parse(reqRaw);
+    ssize_t recvReturn = recv(_fd, &buffer, MAX_BUFFER_SIZE, 0);
+    if (recvReturn < 0)
+        perror("Recv error");
+    for (size_t i = 0; i < (size_t) recvReturn; i++)
+        reqRaw.push_back(buffer[i]);
+    _recvReturnTotal += recvReturn;
+    if (_recvReturnTotal == 0)
+        return -1;
+    if (recvReturn == 0)
+    {
+        this->parse(reqRaw);
+    }
+	return recvReturn;
 }
 
 void	Request::extractHeaders(std::string& input)
@@ -151,7 +146,7 @@ void	Request::extractBody(std::vector<char> reqRaw)
 	size_t start = ch - reqArray;
 	if (!this->get("transfer-encoding").compare("chunked"))
 		return this->handleChunks(reqArray, start);
-	for (size_t i = 0; start + i < (size_t) recvReturnTotal; i ++)
+	for (size_t i = 0; start + i < (size_t) _recvReturnTotal; i ++)
 		bodyRawBytes.push_back(reqRaw[start + i]);
 	for (size_t i = 0; i < bodyRawBytes.size(); i++)
 		body.append(1, bodyRawBytes[i]);

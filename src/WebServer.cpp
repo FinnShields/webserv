@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   WebServer.cpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/03 12:40:09 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/08/07 18:50:04 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,23 +70,40 @@ bool WebServer::fd_is_server(int fd)
 	for (Server &srv : _servers)
 		if (fd == srv.get_fd())
 		{
+            std::cout << "fd is server" << std::endl;
 			srv.accept_new_connection(_fds);
 			return (true);
 		}
 	return (false);
 }
 
-void WebServer::fd_is_client(int fd)
+bool WebServer::fd_is_client(int fd, short revents)
 {
 	Client *client;
 
 	for (Server &srv : _servers)
 		if ((client = srv.get_client(fd)))
 		{
-			client->handle_request(srv);
-			client->close_connection(srv);
-			return ;
+            std::cout << "fd is client";
+            if (revents & POLLIN)
+            {
+                std::cout << " pollin" << std::endl;
+			    if (client->handle_request(srv) == -1)
+                {
+    			    client->close_connection(srv);
+                    return true;
+                }
+                return false;
+            }
+            if (revents & POLLOUT)
+            {
+                std::cout << " pollout" << std::endl;
+                client->send_response();
+                client->close_connection(srv);
+                return true;
+            }
 		}
+	return false;
 }
 
 void WebServer::run()
@@ -97,17 +114,16 @@ void WebServer::run()
 		int poll_result = poll(_fds.data(), _fds.size(), -1);
 		if (poll_result == -1)
 			return (perror("poll"));
-		for (std::vector<pollfd>::iterator pfdit = _fds.begin(); pfdit != _fds.end();)
+		for (std::vector<pollfd>::iterator it = _fds.begin(); it != _fds.end(); it++)
 		{
-			if (pfdit->revents & POLLIN)
+			if (it->revents & (POLLIN|POLLOUT))
 			{
-				if (fd_is_server(pfdit->fd))
+				if (fd_is_server(it->fd))
 					break;
-				fd_is_client(pfdit->fd);
-				_fds.erase(pfdit);
-				break;
+                if (fd_is_client(it->fd, it->revents))
+                    _fds.erase(it);
+                break;
 			}
-			pfdit++;
 		}
     }
 }
