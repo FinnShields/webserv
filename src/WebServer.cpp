@@ -94,11 +94,13 @@ void WebServer::run()
 	while (1)
 	{
 		std::cout << "\nWaiting for action... - size of pollfd vector: " << _fds.size() << std::endl;
-		int poll_result = poll(_fds.data(), _fds.size(), -1);
+		//int poll_result = poll(_fds.data(), _fds.size(), -1);
+		int poll_result = poll(_fds.data(), _fds.size(), 60000);
 		if (poll_result == -1)
 			return (perror("poll"));
 		for (std::vector<pollfd>::iterator pfdit = _fds.begin(); pfdit != _fds.end();)
 		{
+			//if (pfdit->revents & (POLLIN | POLLOUT))
 			if (pfdit->revents & POLLIN)
 			{
 				if (fd_is_server(pfdit->fd))

@@ -89,8 +89,8 @@ void	Request::read(int _fd)
 		recvReturnTotal += recvReturn;
 		bzero(buffer, MAX_BUFFER_SIZE);
 	}
-	std::cout << std::endl;
-	std::cout << std::endl;
+	//std::cout << std::endl;
+	//std::cout << std::endl;
 	std::cout << "[DEBUG] Request::read reqRaw:-->\n";
 	for (size_t i = 0; i < reqRaw.size(); i++)
 		std::cout << reqRaw[i];
