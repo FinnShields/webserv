@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:36 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/07 18:35:00 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/08 09:46:10 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,6 +49,7 @@ class Client
         void close_connection(Server &srv);
         int get_socket_fd();
         std::string& get_fileName();
+        bool responseReady();
 };
 
 #endif

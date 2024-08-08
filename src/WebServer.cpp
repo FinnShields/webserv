@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/07 18:50:04 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/08 10:34:04 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,32 +70,33 @@ bool WebServer::fd_is_server(int fd)
 	for (Server &srv : _servers)
 		if (fd == srv.get_fd())
 		{
-            std::cout << "fd is server" << std::endl;
 			srv.accept_new_connection(_fds);
 			return (true);
 		}
 	return (false);
 }
 
-bool WebServer::fd_is_client(int fd, short revents)
+bool WebServer::fd_is_client(pollfd &pfd)
 {
 	Client *client;
 
 	for (Server &srv : _servers)
-		if ((client = srv.get_client(fd)))
+		if ((client = srv.get_client(pfd.fd)))
 		{
-            std::cout << "fd is client";
-            if (revents & POLLIN)
+            if (pfd.revents & POLLIN)
             {
                 std::cout << " pollin" << std::endl;
-			    if (client->handle_request(srv) == -1)
+			    int ret = client->handle_request(srv);
+                if (ret == 0)
+                    pfd.events = POLLOUT;
+                if (ret == -1)
                 {
     			    client->close_connection(srv);
                     return true;
                 }
                 return false;
             }
-            if (revents & POLLOUT)
+            if (pfd.revents & POLLOUT && client->responseReady())
             {
                 std::cout << " pollout" << std::endl;
                 client->send_response();
@@ -114,16 +115,20 @@ void WebServer::run()
 		int poll_result = poll(_fds.data(), _fds.size(), -1);
 		if (poll_result == -1)
 			return (perror("poll"));
-		for (std::vector<pollfd>::iterator it = _fds.begin(); it != _fds.end(); it++)
+		for (std::vector<pollfd>::iterator it = _fds.begin(); it != _fds.end();)
 		{
 			if (it->revents & (POLLIN|POLLOUT))
 			{
 				if (fd_is_server(it->fd))
 					break;
-                if (fd_is_client(it->fd, it->revents))
-                    _fds.erase(it);
-                break;
+                if (fd_is_client(*it))
+                {
+                    std::cout << "erasing it" << std::endl;
+                    it = _fds.erase(it);
+                    continue;
+                }
 			}
+            it++;
 		}
     }
 }

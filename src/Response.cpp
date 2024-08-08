@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/07 15:58:45 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/08 10:29:18 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,7 +44,8 @@ const std::string Response::run()
                     (method == "POST") ? post() :
                     (method == "DELETE") ? deleteResp() : 
                     getErrorPage(501);
-	std::cout << "------- Response ----------\n" << _response << "\n------- END ---------------\n";
+	std::cout << "------- Response ----------\n" << _response.substr(0, 50) << "\n------- END ---------------\n";
+    // std::cout << "------- Response ----------\n";
     return _response;
 }
 

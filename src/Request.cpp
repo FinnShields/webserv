@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/08/07 15:38:00 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/08 10:32:05 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -77,13 +77,11 @@ int	Request::read(int _fd)
     for (size_t i = 0; i < (size_t) recvReturn; i++)
         reqRaw.push_back(buffer[i]);
     _recvReturnTotal += recvReturn;
+    std::cout << "recvReturn = " << recvReturn << "\nrecvTotal = " << _recvReturnTotal << std::endl;
     if (_recvReturnTotal == 0)
         return -1;
-    if (recvReturn == 0)
-    {
-        this->parse(reqRaw);
-    }
-	return recvReturn;
+    this->parse(reqRaw);
+	return headers["content-length"].empty() ? 0 : recvReturn;
 }
 
 void	Request::extractHeaders(std::string& input)

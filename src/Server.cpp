@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:06 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/07 15:34:31 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/08 10:18:09 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,7 +73,7 @@ void Server::accept_new_connection(std::vector<pollfd> &_fds)
 	std::cout << "Received a new connection" << std::endl;
 	if ((client.fd = accept(_server_fd, (struct sockaddr *)&_address, (socklen_t*)&_addrlen)) < 0)
 		return (perror("accept"));
-	client.events = POLLIN|POLLOUT;
+	client.events = POLLIN;
 	_fds.push_back(client);
 	_clients.push_back(client.fd);
 }
