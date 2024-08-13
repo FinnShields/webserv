@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/08/13 13:16:00 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/13 14:02:14 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -74,6 +74,7 @@ int	Request::read(int _fd)
     ssize_t recvReturn = recv(_fd, &buffer, MAX_BUFFER_SIZE, 0);
     if (recvReturn < 0)
         perror("Recv error");
+    reqRaw.clear();
     for (size_t i = 0; i < (size_t) recvReturn; i++)
     {
         reqRaw.push_back(buffer[i]);
@@ -83,13 +84,13 @@ int	Request::read(int _fd)
     if (_recvReturnTotal == 0)
         return -1;
     if (!headers["content-length"].empty())
-        extractBody(reqRaw);
+        appendBody();
     else
         this->parse(reqRaw);
-    std::cout << "recvReturn = " << recvReturn << "\nrecvTotal = " << _recvReturnTotal << "\nContent-length = " << headers["content-length"] << "\nbodysize= " << body.size() << std::endl;
+    std::cout << "recvReturn = " << recvReturn << "\nrecvTotal = " << _recvReturnTotal << "\nContent-length = " << headers["content-length"] << "\nbodysize= " << bodyRawBytes.size() << std::endl;
     if (headers["content-length"].empty())
         return 0;
-    return std::stoul(headers["content-length"]) > body.size() ? 1 : 0;
+    return std::stoul(headers["content-length"]) > bodyRawBytes.size() ? 1 : 0;
     // std::cout << "Extracted body\nstd::stoi(contenth length)= " << std::stoi(headers["content-length"]) << std::endl;
 }
 
@@ -142,7 +143,7 @@ void	Request::handleChunks(char *reqArray, size_t start)
 		body.append(1, bodyRawBytes[i]);
 }
 
-void	Request::extractBody(std::vector<char> reqRaw)
+void	Request::extractBody()
 {
 	char *ch;
 	char *reqArray = &reqRaw[0];
@@ -153,8 +154,16 @@ void	Request::extractBody(std::vector<char> reqRaw)
 	size_t start = ch - reqArray;
 	if (!this->get("transfer-encoding").compare("chunked"))
 		return this->handleChunks(reqArray, start);
-	for (size_t i = 0; start + i < (size_t) _recvReturnTotal; i ++)
+	for (size_t i = 0; start + i < (size_t) reqRaw.size(); i++)
 		bodyRawBytes.push_back(reqRaw[start + i]);
+	for (size_t i = 0; i < bodyRawBytes.size(); i++)
+		body.append(1, bodyRawBytes[i]);
+}
+
+void    Request::appendBody()
+{
+    for (size_t i = 0; i < (size_t) reqRaw.size(); i++)
+		bodyRawBytes.push_back(reqRaw[i]);
 	for (size_t i = 0; i < bodyRawBytes.size(); i++)
 		body.append(1, bodyRawBytes[i]);
 }
@@ -171,7 +180,7 @@ void	Request::parse(std::vector<char> reqRaw)
 	this->extractHeaders(input);
 	if (!this->get("transfer-encoding").empty())
 		std::cout << "#### Received a " << this->get("transfer-encoding") << " request" << std::endl;
-	this->extractBody(reqRaw);
+	this->extractBody();
 }
 
 const std::string	Request::get(std::string toGet)

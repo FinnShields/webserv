@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:41 by fshields          #+#    #+#             */
-/*   Updated: 2024/08/07 18:33:39 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/13 14:01:57 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,8 +38,9 @@ class Request
 		void extractTarget(std::string& input);
 		void extractVersion(std::string& input);
 		void extractHeaders(std::string& input);
-		void extractBody(std::vector<char> reqRaw);
+		void extractBody();
 		void handleChunks(char *reqArray, size_t i);
+        void appendBody();
 	public:
 		Request();
 		Request(const Request&);
