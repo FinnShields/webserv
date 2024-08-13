@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/08/13 14:02:14 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/13 14:52:16 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,12 +22,12 @@ Request::~Request()
 
 Request& Request::operator=(const Request& r)
 {
-	this->headers = r.headers;
-	this->method = r.method;
-	this->body = r.body;
-	this->version = r.version;
-	this->target = r.target;
-    this->_recvReturnTotal = r._recvReturnTotal;
+	_headers = r._headers;
+	_method = r._method;
+	_body = r._body;
+	_version = r._version;
+	_target = r._target;
+    _recvReturnTotal = r._recvReturnTotal;
 	return (*this);
 }
 
@@ -38,9 +38,9 @@ Request::Request(const Request& r)
 
 bool Request::extractMethod(std::string& input)
 {
-	this->method = input.substr(0, input.find_first_of(' '));
+	_method = input.substr(0, input.find_first_of(' '));
 	t_vector_str mtd_default = DEFAULT_METHOD;
-	if (find(mtd_default.begin(), mtd_default.end(), method) == mtd_default.end())
+	if (find(mtd_default.begin(), mtd_default.end(), _method) == mtd_default.end())
 		return (false);
 	return (true);
 }
@@ -54,7 +54,7 @@ void Request::extractTarget(std::string& input)
 	end = 0;
 	while (input.at(start + end) != ' ')
 		end++;
-	this->target = input.substr(start, end);
+	_target = input.substr(start, end);
 }
 
 void Request::extractVersion(std::string& input)
@@ -65,7 +65,7 @@ void Request::extractVersion(std::string& input)
 	size_t end = 0;
 	while (input.at(start + end) != '\r')
 		end++;
-	this->version = input.substr(start, end);
+	_version = input.substr(start, end);
 }
 
 int	Request::read(int _fd)
@@ -74,24 +74,16 @@ int	Request::read(int _fd)
     ssize_t recvReturn = recv(_fd, &buffer, MAX_BUFFER_SIZE, 0);
     if (recvReturn < 0)
         perror("Recv error");
-    reqRaw.clear();
+    _reqRaw.clear();
     for (size_t i = 0; i < (size_t) recvReturn; i++)
-    {
-        reqRaw.push_back(buffer[i]);
-        std::cout << reqRaw[i];
-    }
+        _reqRaw.push_back(buffer[i]);
     _recvReturnTotal += recvReturn;
     if (_recvReturnTotal == 0)
         return -1;
-    if (!headers["content-length"].empty())
-        appendBody();
-    else
-        this->parse(reqRaw);
-    std::cout << "recvReturn = " << recvReturn << "\nrecvTotal = " << _recvReturnTotal << "\nContent-length = " << headers["content-length"] << "\nbodysize= " << bodyRawBytes.size() << std::endl;
-    if (headers["content-length"].empty())
-        return 0;
-    return std::stoul(headers["content-length"]) > bodyRawBytes.size() ? 1 : 0;
-    // std::cout << "Extracted body\nstd::stoi(contenth length)= " << std::stoi(headers["content-length"]) << std::endl;
+    _headers["content-length"].empty() ? parse() : appendBody();
+    std::cout << "recvReturn = " << recvReturn << "\nrecvTotal = " << _recvReturnTotal << "\nContent-length = " << _headers["content-length"] << "\nbodysize= " << _bodyRawBytes.size() << std::endl;
+    return _headers["content-length"].empty() ? 0 : 
+        std::stoul(_headers["content-length"]) > _bodyRawBytes.size() ? 1 : 0;
 }
 
 void	Request::extractHeaders(std::string& input)
@@ -114,7 +106,7 @@ void	Request::extractHeaders(std::string& input)
 		while (input.at(i + len) != '\r' && i + len < input.size())
 			len ++;
 		second = input.substr(i, len);
-		this->headers[first] = second;
+		_headers[first] = second;
 		i += len + 1;
 	}
 }
@@ -137,50 +129,51 @@ void	Request::handleChunks(char *reqArray, size_t start)
 			i ++;
 		chunkLength = atoi(&reqArray[i]);
 	}
-	this->headers["content-length"] = std::to_string(contentLength);
-	this->bodyRawBytes = contentRawBytes;
-	for (i = 0; i < bodyRawBytes.size(); i++)
-		body.append(1, bodyRawBytes[i]);
+	_headers["content-length"] = std::to_string(contentLength);
+	_bodyRawBytes = contentRawBytes;
+	for (i = 0; i < _bodyRawBytes.size(); i++)
+		_body.append(1, _bodyRawBytes[i]);
 }
 
 void	Request::extractBody()
 {
 	char *ch;
-	char *reqArray = &reqRaw[0];
+	char *reqArray = &_reqRaw[0];
 
 	ch = strstr(reqArray, "\r\n\r\n") + 4;
 	if (!ch)
 		return ;
 	size_t start = ch - reqArray;
-	if (!this->get("transfer-encoding").compare("chunked"))
-		return this->handleChunks(reqArray, start);
-	for (size_t i = 0; start + i < (size_t) reqRaw.size(); i++)
-		bodyRawBytes.push_back(reqRaw[start + i]);
-	for (size_t i = 0; i < bodyRawBytes.size(); i++)
-		body.append(1, bodyRawBytes[i]);
+	if (!get("transfer-encoding").compare("chunked"))
+		return handleChunks(reqArray, start);
+	for (size_t i = 0; start + i < (size_t) _reqRaw.size(); i++)
+		_bodyRawBytes.push_back(_reqRaw[start + i]);
+	for (size_t i = 0; i < _bodyRawBytes.size(); i++)
+		_body.append(1, _bodyRawBytes[i]);
 }
 
 void    Request::appendBody()
 {
-    for (size_t i = 0; i < (size_t) reqRaw.size(); i++)
-		bodyRawBytes.push_back(reqRaw[i]);
-	for (size_t i = 0; i < bodyRawBytes.size(); i++)
-		body.append(1, bodyRawBytes[i]);
+    for (size_t i = 0; i < (size_t) _reqRaw.size(); i++)
+		_bodyRawBytes.push_back(_reqRaw[i]);
+	for (size_t i = 0; i < _bodyRawBytes.size(); i++)
+		_body.append(1, _bodyRawBytes[i]);
 }
 
-void	Request::parse(std::vector<char> reqRaw)
+void	Request::parse()
 {
 	std::string	input = "";
-	for (size_t i = 0; i < reqRaw.size(); i++)
-		input.append(1, reqRaw[i]);
-	if (!this->extractMethod(input))
+	for (size_t i = 0; i < _reqRaw.size(); i++)
+		input.append(1, _reqRaw[i]);
+	if (!extractMethod(input))
 		return ;
-	this->extractTarget(input);
-	this->extractVersion(input);
-	this->extractHeaders(input);
-	if (!this->get("transfer-encoding").empty())
-		std::cout << "#### Received a " << this->get("transfer-encoding") << " request" << std::endl;
-	this->extractBody();
+	extractTarget(input);
+	extractVersion(input);
+	extractHeaders(input);
+	if (!get("transfer-encoding").empty())
+		std::cout << "#### Received a " << get("transfer-encoding") << " request" << std::endl;
+	extractBody();
+    display();
 }
 
 const std::string	Request::get(std::string toGet)
@@ -188,43 +181,43 @@ const std::string	Request::get(std::string toGet)
 	for (size_t i = 0; i < toGet.size(); i++)
 		toGet[i] = std::tolower(toGet[i]);
 	if (!toGet.compare("method"))
-		return (this->method);
+		return (_method);
 	if (!toGet.compare("target"))
-		return (this->target);
+		return (_target);
 	if (!toGet.compare("version"))
-		return (this->version);
+		return (_version);
 	if (!toGet.compare("body"))
-		return (this->body);
-	if (!this->headers.count(toGet))
+		return (_body);
+	if (!_headers.count(toGet))
 		return ("");
-	return (this->headers[toGet]);
+	return (_headers[toGet]);
 }
 
 const std::string	Request::getHeader(std::string toGet)
 {
 	for (size_t i = 0; i < toGet.size(); i++)
 		toGet[i] = std::tolower(toGet[i]);
-	if (!this->headers.count(toGet))
+	if (!_headers.count(toGet))
 		return ("");
-	return (this->headers[toGet]);
+	return (_headers[toGet]);
 }
 
 std::string& Request::getRef(std::string toGet)
 {
 	if (!toGet.compare("body"))
-		return (this->body);
+		return (_body);
 	if (!toGet.compare("method"))
-		return (this->method);
+		return (_method);
 	if (!toGet.compare("target"))
-		return (this->target);
+		return (_target);
 	if (!toGet.compare("version"))
-		return (this->version);
-	return (this->headers[toGet]);
+		return (_version);
+	return (_headers[toGet]);
 }
 
 std::vector<char> Request::getBodyRawBytes()
 {
-	return bodyRawBytes;
+	return _bodyRawBytes;
 }
 
 void	Request::display()
@@ -232,18 +225,18 @@ void	Request::display()
 	std::cout << std::endl;
 	std::cout << "---------------------" << std::endl;
 	std::map<std::string, std::string>::iterator it;
-	std::cout << "Method: " << this->method << std::endl;
-	std::cout << "Request-target: " << this->target << std::endl;
-	std::cout << "HTTP-version: " << this->version << std::endl;
-	for(it = this->headers.begin(); it != this->headers.end(); it++)
+	std::cout << "Method: " << _method << std::endl;
+	std::cout << "Request-target: " << _target << std::endl;
+	std::cout << "HTTP-version: " << _version << std::endl;
+	for(it = _headers.begin(); it != _headers.end(); it++)
 		std::cout << it->first << ": " << it->second << std::endl;
-	if (!this->get("content-type").compare(0, 19, "multipart/form-data"))
+	if (!get("content-type").compare(0, 19, "multipart/form-data"))
 	{
-		std::cout << "Body: <file data>" << std::endl << "---------------------" << std::endl;
+		std::cout << "_Body: <file data>" << std::endl << "---------------------" << std::endl;
 		return ;
 	}
-	if (!this->body.empty())
-		std::cout << "Body: " << this->body << std::endl;
+	if (!_body.empty())
+		std::cout << "_Body: " << _body << std::endl;
 	std::cout << "---------------------" << std::endl;
 	std::cout << std::endl;
 }

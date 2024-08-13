@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:41 by fshields          #+#    #+#             */
-/*   Updated: 2024/08/13 14:01:57 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/13 14:08:23 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,15 +25,15 @@ class Cgi;
 class Request
 {
 	private:
-		std::string method;
-		std::string target;
-		std::string version;
-		std::map<std::string, std::string> headers;
-		std::string body;
-		std::vector<char> bodyRawBytes;
-		std::vector<char> reqRaw;
+		std::string _method;
+		std::string _target;
+		std::string _version;
+		std::map<std::string, std::string> _headers;
+		std::string _body;
+		std::vector<char> _bodyRawBytes;
+		std::vector<char> _reqRaw;
 		ssize_t _recvReturnTotal;
-		void parse(std::vector<char> reqRaw);
+		void parse();
 		bool extractMethod(std::string& input);
 		void extractTarget(std::string& input);
 		void extractVersion(std::string& input);

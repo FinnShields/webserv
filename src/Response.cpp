@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/13 12:46:01 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/13 14:37:18 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -207,14 +207,20 @@ int Response::saveFile()
 	std::string body = _req.get("body");
     std::vector<char> bodyRaw = _req.getBodyRawBytes();
 	if (body.empty())
-		return 400;
+    {
+		std::cout << "No Body" << std::endl;
+        return 400;
+    }
     std::string fileName = "";
     std::string::iterator it = body.begin();
     it += body.find("filename") + 10;
 	while (*it != '\"')
 		fileName.append(1, *(it++));
 	if (fileName.empty())
-		return 400;
+    {
+		std::cout << "No file name" << std::endl;
+        return 400;
+    }
     
     std::string directory = getPath() + "uploads/";
     mkdir(directory.c_str(), 0777);

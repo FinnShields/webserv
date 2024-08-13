@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/13 10:49:01 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/13 15:11:50 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,8 +17,8 @@ Client::Client(int fd) : _fd(fd), _request(NULL) {}
 Client::Client(const Client &copy) : _fd(copy._fd), _request(copy._request), fileName(copy.fileName) {}
 Client::~Client() 
 {
-    delete _request;
-};
+}
+
 Client &Client::operator=(const Client &assign)
 {
 	this->_fd = assign._fd;
@@ -48,7 +48,11 @@ int Client::handle_request(Server& srv)
     // std::cout << "ret = " << ret << std::endl;
     // _request->display();
     if (ret == 0)
+    {
         _response = Response(_fd, *_request, srv).run();
+        delete _request;
+        std::cout << "response is generated" << std::endl;
+    }
     return ret;
 }
 bool Client::responseReady()
