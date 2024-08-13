@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/08 10:32:09 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/13 10:49:01 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,6 +45,7 @@ int Client::handle_request(Server& srv)
         _request = new Request();
     }
     int ret = _request->read(_fd);
+    // std::cout << "ret = " << ret << std::endl;
     // _request->display();
     if (ret == 0)
         _response = Response(_fd, *_request, srv).run();

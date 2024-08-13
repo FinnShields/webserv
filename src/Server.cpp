@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:06 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/08 10:18:09 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/13 11:51:22 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,24 +35,25 @@ Server::Server(std::vector<t_server>& data, size_t ind):
 void Server::setup_socket()
 {
 	//Creates the socket
-	if ((_server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
+	if ((_server_fd = socket(AF_INET, SOCK_STREAM, 0)) <= 0)
 		throw ("socket failed");
 	//Attaches the socket (optional?)
-	if (setsockopt(_server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &_opt, sizeof(_opt))) 
+	if (setsockopt(_server_fd, SOL_SOCKET, SO_REUSEADDR, &_opt, sizeof(_opt))) 
 		throw ("setsockopt");
 	//Binds the socket
 	_address.sin_family = AF_INET;
     _address.sin_addr.s_addr = _ip;
     _address.sin_port = htons(_port);
     if (bind(_server_fd, (struct sockaddr *)&_address, sizeof(_address)) < 0)
-        throw ("bind failed");
+        throw (_name + " bind failed");
+
+    std::cout << "[INFO] Socket setup complete. Listening on IP: " << inet_ntoa(_address.sin_addr) << " Port: " << ntohs(_address.sin_port) << "\n";
 }
 
 void Server::start_listen()
 {
 	if (listen(_server_fd, 3) < 0)
 		throw ("listen");
-	std::cout << "Start listenting to port: " << _port << std::endl;
 }
 
 void Server::start(std::vector<pollfd> &_fds)

@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/08/08 10:32:05 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/13 13:16:00 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,13 +75,22 @@ int	Request::read(int _fd)
     if (recvReturn < 0)
         perror("Recv error");
     for (size_t i = 0; i < (size_t) recvReturn; i++)
+    {
         reqRaw.push_back(buffer[i]);
+        std::cout << reqRaw[i];
+    }
     _recvReturnTotal += recvReturn;
-    std::cout << "recvReturn = " << recvReturn << "\nrecvTotal = " << _recvReturnTotal << std::endl;
     if (_recvReturnTotal == 0)
         return -1;
-    this->parse(reqRaw);
-	return headers["content-length"].empty() ? 0 : recvReturn;
+    if (!headers["content-length"].empty())
+        extractBody(reqRaw);
+    else
+        this->parse(reqRaw);
+    std::cout << "recvReturn = " << recvReturn << "\nrecvTotal = " << _recvReturnTotal << "\nContent-length = " << headers["content-length"] << "\nbodysize= " << body.size() << std::endl;
+    if (headers["content-length"].empty())
+        return 0;
+    return std::stoul(headers["content-length"]) > body.size() ? 1 : 0;
+    // std::cout << "Extracted body\nstd::stoi(contenth length)= " << std::stoi(headers["content-length"]) << std::endl;
 }
 
 void	Request::extractHeaders(std::string& input)

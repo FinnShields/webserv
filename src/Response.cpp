@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/08 10:29:18 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/13 12:46:01 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -219,9 +219,10 @@ int Response::saveFile()
     std::string directory = getPath() + "uploads/";
     mkdir(directory.c_str(), 0777);
     fileName = directory + fileName;
-	std::cout << std::endl;
+	std::cout << "filename=" << fileName << std::endl;
     size_t start = body.find("\r\n\r\n") + 4;
     size_t len = bodyRaw.size() - boundary.length() - 9 - start;
+    std::cout << "len=" << len << std::endl;
     std::fstream newFile;
 	newFile.open(fileName, std::ios::binary | std::ios::out);
 	for (size_t i = 0; i < len && i < bodyRaw.size(); i++) {
