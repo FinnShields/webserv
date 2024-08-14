@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/14 14:24:56 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/14 15:05:17 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,21 +39,22 @@ const std::string Response::appendfile()
 {
 	if (_file == 1)
     {
-        _filestream.open(_fileName, std::ios::binary | std::ios::app | std::ios::app);
+        _filestream.open(_fileName, std::ios::binary | std::ios::app);
         _file = 2;
     }
 	std::string body = _req.get("body");
     std::vector<char> bodyRaw = _req.getBodyRawBytes();
-    size_t boundaryloc = body.find(_boundary);
-    if (boundaryloc == std::string::npos)
+    size_t end = body.find(_boundary);
+    if (end == std::string::npos)
     {
-        boundaryloc = bodyRaw.size();
+        end = bodyRaw.size();
     }
-	for (size_t i = 0; i < boundaryloc; i++) {
-		_filestream << bodyRaw[i];
-	}
-    std::cout << "bodysize= " << body.size() << " boundaryloc= " << boundaryloc << std::endl;
-    std::cout << "[INFO] File appended" << std::endl;
+	if (_filestream.is_open())
+    {
+        _filestream.write(bodyRaw.data(), end);
+        std::cout << "bodysize= " << body.size() << " end= " << end << std::endl;
+        std::cout << "[INFO] File appended" << std::endl;
+    }
 	return ("HTTP/1.1 204 No Content");    
 }
 
@@ -253,14 +254,20 @@ int Response::saveFile()
     std::string directory = getPath() + "uploads/";
     mkdir(directory.c_str(), 0777);
     _fileName = directory + _fileName;
-    size_t start = body.find("\r\n\r\n") + 4;
-    size_t len = bodyRaw.size() - _boundary.length() - 9 - start;
-    std::fstream newFile;
-	newFile.open(_fileName, std::ios::binary | std::ios::out);
+    std::ofstream newFile;
+	newFile.open(_fileName, std::ios::binary | std::ios::trunc);
     std::cout << "[INFO] File created" << std::endl;
-	for (size_t i = 0; i < len && i < bodyRaw.size(); i++) {
-		newFile << bodyRaw[start + i];
+    
+    size_t start = body.find("\r\n\r\n") + 4;
+    size_t end = body.find(_boundary+"--");
+    if (end == std::string::npos)
+    {
+        end = bodyRaw.size();
+    }
+	for (size_t i = start; i < end; i++) {
+		newFile << bodyRaw[i];
 	}
+    // newFile.write(bodyRaw.data() + start, len);
     newFile.close();
     _file = 1;
 	return 204;
