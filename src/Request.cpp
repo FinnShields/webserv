@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/08/13 14:52:16 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/14 13:07:36 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 Request::Request()
 {
 	_recvReturnTotal = 0;
+    _bodyTotalSize = 0;
 }
 
 Request::~Request()
@@ -67,7 +68,10 @@ void Request::extractVersion(std::string& input)
 		end++;
 	_version = input.substr(start, end);
 }
-
+//Return -1: Empty request
+//Return 0: No content-length
+//Return 1: Content-length not reached
+//Return 2: Content-length reached
 int	Request::read(int _fd)
 {
 	char buffer[MAX_BUFFER_SIZE] = {0};
@@ -81,9 +85,10 @@ int	Request::read(int _fd)
     if (_recvReturnTotal == 0)
         return -1;
     _headers["content-length"].empty() ? parse() : appendBody();
-    std::cout << "recvReturn = " << recvReturn << "\nrecvTotal = " << _recvReturnTotal << "\nContent-length = " << _headers["content-length"] << "\nbodysize= " << _bodyRawBytes.size() << std::endl;
+    _bodyTotalSize += _bodyRawBytes.size();
+    std::cout << "\nContent-length = " << _headers["content-length"] << "\nbodysize= " << _bodyRawBytes.size() << "\nbodyTotalSize=" << _bodyTotalSize << std::endl;
     return _headers["content-length"].empty() ? 0 : 
-        std::stoul(_headers["content-length"]) > _bodyRawBytes.size() ? 1 : 0;
+        std::stol(_headers["content-length"]) > _bodyTotalSize ? 1 : 2;
 }
 
 void	Request::extractHeaders(std::string& input)
@@ -154,6 +159,8 @@ void	Request::extractBody()
 
 void    Request::appendBody()
 {
+    _bodyRawBytes.clear();
+    _body.clear();
     for (size_t i = 0; i < (size_t) _reqRaw.size(); i++)
 		_bodyRawBytes.push_back(_reqRaw[i]);
 	for (size_t i = 0; i < _bodyRawBytes.size(); i++)
@@ -218,6 +225,11 @@ std::string& Request::getRef(std::string toGet)
 std::vector<char> Request::getBodyRawBytes()
 {
 	return _bodyRawBytes;
+}
+
+ssize_t Request::getBodyTotalSize()
+{
+    return _bodyTotalSize;
 }
 
 void	Request::display()

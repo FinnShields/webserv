@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:06 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/13 11:51:22 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/14 11:53:24 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,7 +38,7 @@ void Server::setup_socket()
 	if ((_server_fd = socket(AF_INET, SOCK_STREAM, 0)) <= 0)
 		throw ("socket failed");
 	//Attaches the socket (optional?)
-	if (setsockopt(_server_fd, SOL_SOCKET, SO_REUSEADDR, &_opt, sizeof(_opt))) 
+	if (setsockopt(_server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &_opt, sizeof(_opt))) 
 		throw ("setsockopt");
 	//Binds the socket
 	_address.sin_family = AF_INET;

@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:41 by fshields          #+#    #+#             */
-/*   Updated: 2024/08/13 14:08:23 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/14 12:54:22 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,6 +33,7 @@ class Request
 		std::vector<char> _bodyRawBytes;
 		std::vector<char> _reqRaw;
 		ssize_t _recvReturnTotal;
+        ssize_t _bodyTotalSize;
 		void parse();
 		bool extractMethod(std::string& input);
 		void extractTarget(std::string& input);
@@ -51,6 +52,7 @@ class Request
 		const std::string getHeader(std::string toGet);
 		std::string& getRef(std::string toGet);
 		std::vector<char> getBodyRawBytes();
+        ssize_t getBodyTotalSize();
 		void display();
 };
 

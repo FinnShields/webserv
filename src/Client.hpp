@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:36 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/08 09:46:10 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/14 13:04:30 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,7 @@
 
 class Server;
 class Request;
+class Response;
 //class Cgi;
 
 class Client
@@ -35,7 +36,7 @@ class Client
         int _fd;
         Request *_request;
         std::string _response;
-        std::string fileName;
+        Response *_res;
 
         Client();
     public:

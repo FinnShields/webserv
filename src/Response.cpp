@@ -6,13 +6,13 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/13 14:37:18 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/14 13:07:14 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Response.hpp"
 
-Response::Response(int fd, Request &req, Server &srv) : _fd(fd), _req(req), _srv(srv) {}
+Response::Response(int fd, Request &req, Server &srv) : _fd(fd), _req(req), _srv(srv), _file(0){}
 Response::~Response() {}
 
 /* Supported status codes
@@ -30,9 +30,34 @@ not implemented
 418 "TEAPOT" 
 */
 
+void Response::closefile()
+{
+    _filestream.close();
+}
+
+const std::string Response::appendfile()
+{
+	if (_file == 1)
+    {
+        _filestream.open(_fileName, std::ios::binary | std::ios::app | std::ios::app);
+        _file = 2;
+    }
+    std::string boundary = _req.get("Content-Type").substr(31);
+	// std::string body = _req.get("body");
+    std::vector<char> bodyRaw = _req.getBodyRawBytes();
+
+	for (size_t i = 0; i < bodyRaw.size(); i++) {
+		_filestream << bodyRaw[i];
+	}
+    std::cout << "[INFO] File appended" << std::endl;
+	return ("HTTP/1.1 204 No Content");    
+}
+
 const std::string Response::run()
 {
-	std::string method = _req.get("method");
+	if (_file)
+        return appendfile();
+    std::string method = _req.get("method");
 	_target = _req.get("target");
 	_index_virt = _srv.getVirtHostIndex(_req.get("host"));
 	std::cout << "[INFO] Request is addressed to server " << _srv.index << "\n";
@@ -211,12 +236,12 @@ int Response::saveFile()
 		std::cout << "No Body" << std::endl;
         return 400;
     }
-    std::string fileName = "";
+    _fileName = "";
     std::string::iterator it = body.begin();
     it += body.find("filename") + 10;
 	while (*it != '\"')
-		fileName.append(1, *(it++));
-	if (fileName.empty())
+		_fileName.append(1, *(it++));
+	if (_fileName.empty())
     {
 		std::cout << "No file name" << std::endl;
         return 400;
@@ -224,17 +249,17 @@ int Response::saveFile()
     
     std::string directory = getPath() + "uploads/";
     mkdir(directory.c_str(), 0777);
-    fileName = directory + fileName;
-	std::cout << "filename=" << fileName << std::endl;
+    _fileName = directory + _fileName;
     size_t start = body.find("\r\n\r\n") + 4;
     size_t len = bodyRaw.size() - boundary.length() - 9 - start;
-    std::cout << "len=" << len << std::endl;
     std::fstream newFile;
-	newFile.open(fileName, std::ios::binary | std::ios::out);
+	newFile.open(_fileName, std::ios::binary | std::ios::out);
+    std::cout << "[INFO] File created" << std::endl;
 	for (size_t i = 0; i < len && i < bodyRaw.size(); i++) {
 		newFile << bodyRaw[start + i];
 	}
     newFile.close();
+    _file = 1;
 	return 204;
 }
 
