@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/08/14 13:07:36 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/14 14:00:11 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -87,6 +87,7 @@ int	Request::read(int _fd)
     _headers["content-length"].empty() ? parse() : appendBody();
     _bodyTotalSize += _bodyRawBytes.size();
     std::cout << "\nContent-length = " << _headers["content-length"] << "\nbodysize= " << _bodyRawBytes.size() << "\nbodyTotalSize=" << _bodyTotalSize << std::endl;
+    std::cout << "body:\n" << _body.substr(0, _bodyRawBytes.size()) << "\nbody end" << std::endl;
     return _headers["content-length"].empty() ? 0 : 
         std::stol(_headers["content-length"]) > _bodyTotalSize ? 1 : 2;
 }

@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:06:10 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/14 12:43:01 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/14 14:02:50 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,6 +45,7 @@ class Response
         int _file;
         std::ofstream _filestream;
         std::string _fileName;
+        std::string _boundary;
 		std::string _target;
 		size_t _index_virt;
         std::string _response;

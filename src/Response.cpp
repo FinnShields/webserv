@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/14 13:07:14 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/14 14:24:56 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,13 +42,17 @@ const std::string Response::appendfile()
         _filestream.open(_fileName, std::ios::binary | std::ios::app | std::ios::app);
         _file = 2;
     }
-    std::string boundary = _req.get("Content-Type").substr(31);
-	// std::string body = _req.get("body");
+	std::string body = _req.get("body");
     std::vector<char> bodyRaw = _req.getBodyRawBytes();
-
-	for (size_t i = 0; i < bodyRaw.size(); i++) {
+    size_t boundaryloc = body.find(_boundary);
+    if (boundaryloc == std::string::npos)
+    {
+        boundaryloc = bodyRaw.size();
+    }
+	for (size_t i = 0; i < boundaryloc; i++) {
 		_filestream << bodyRaw[i];
 	}
+    std::cout << "bodysize= " << body.size() << " boundaryloc= " << boundaryloc << std::endl;
     std::cout << "[INFO] File appended" << std::endl;
 	return ("HTTP/1.1 204 No Content");    
 }
@@ -69,7 +73,6 @@ const std::string Response::run()
                     (method == "POST") ? post() :
                     (method == "DELETE") ? deleteResp() : 
                     getErrorPage(501);
-	std::cout << "------- Response ----------\n" << _response.substr(0, 50) << "\n------- END ---------------\n";
     // std::cout << "------- Response ----------\n";
     return _response;
 }
@@ -93,7 +96,7 @@ std::string Response::get()
 std::string Response::post()
 {
     if(!check_body_size())
-        return getErrorPage(413);
+        throw getErrorPage(413);
     if (!_req.get("content-type").compare(0, 19, "multipart/form-data"))
 		std::cout << "saveFile returns: " << saveFile() << std::endl;
 	// int status = saveFile();
@@ -228,7 +231,7 @@ bool Response::check_body_size()
 
 int Response::saveFile()
 	{
-	std::string boundary = _req.get("Content-Type").substr(31);
+	_boundary = _req.get("Content-Type").substr(31);
 	std::string body = _req.get("body");
     std::vector<char> bodyRaw = _req.getBodyRawBytes();
 	if (body.empty())
@@ -251,7 +254,7 @@ int Response::saveFile()
     mkdir(directory.c_str(), 0777);
     _fileName = directory + _fileName;
     size_t start = body.find("\r\n\r\n") + 4;
-    size_t len = bodyRaw.size() - boundary.length() - 9 - start;
+    size_t len = bodyRaw.size() - _boundary.length() - 9 - start;
     std::fstream newFile;
 	newFile.open(_fileName, std::ios::binary | std::ios::out);
     std::cout << "[INFO] File created" << std::endl;
