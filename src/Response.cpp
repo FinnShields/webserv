@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/14 15:05:17 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/14 15:09:04 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,7 +52,6 @@ const std::string Response::appendfile()
 	if (_filestream.is_open())
     {
         _filestream.write(bodyRaw.data(), end);
-        std::cout << "bodysize= " << body.size() << " end= " << end << std::endl;
         std::cout << "[INFO] File appended" << std::endl;
     }
 	return ("HTTP/1.1 204 No Content");    
@@ -264,10 +263,7 @@ int Response::saveFile()
     {
         end = bodyRaw.size();
     }
-	for (size_t i = start; i < end; i++) {
-		newFile << bodyRaw[i];
-	}
-    // newFile.write(bodyRaw.data() + start, len);
+    newFile.write(bodyRaw.data() + start, end-start);
     newFile.close();
     _file = 1;
 	return 204;
