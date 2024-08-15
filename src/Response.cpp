@@ -6,14 +6,21 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/14 15:09:04 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/15 14:46:41 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Response.hpp"
 
 Response::Response(int fd, Request &req, Server &srv) : _fd(fd), _req(req), _srv(srv), _file(0){}
-Response::~Response() {}
+Response::~Response() 
+{
+    if (_filestream.is_open())
+    {
+        _filestream.close();
+        std::cout << "[INFO] File closed" << std::endl;
+    }
+}
 
 /* Supported status codes
 200 OK
@@ -29,11 +36,6 @@ Response::~Response() {}
 not implemented
 418 "TEAPOT" 
 */
-
-void Response::closefile()
-{
-    _filestream.close();
-}
 
 const std::string Response::appendfile()
 {
@@ -61,6 +63,8 @@ const std::string Response::run()
 {
 	if (_file)
         return appendfile();
+    if(!check_body_size())
+        return getErrorPage(413);
     std::string method = _req.get("method");
 	_target = _req.get("target");
 	_index_virt = _srv.getVirtHostIndex(_req.get("host"));
@@ -95,8 +99,6 @@ std::string Response::get()
 
 std::string Response::post()
 {
-    if(!check_body_size())
-        throw getErrorPage(413);
     if (!_req.get("content-type").compare(0, 19, "multipart/form-data"))
 		std::cout << "saveFile returns: " << saveFile() << std::endl;
 	// int status = saveFile();
@@ -111,7 +113,8 @@ std::string Response::getErrorPage(int code)
 	std::string error_page_path = _srv.config.getValues(_index_virt, _target, std::to_string(code), {"empty"})[0];
 	std::cout << "[TEST MSG, comment me] Error page for code " << code << " is ->" << error_page_path << "<-\n"; 
 	t_vector_str pages = _srv.config.getValues(_index_virt, _target, "error_page", {"empty"});
-	std::string responseString = "HTTP/1.1 " + std::to_string(code) + " Not Found\r\nContent-Type: text/html\r\n\r\n";
+	std::string responseString = code == 413 ? "HTTP/1.1 413 Payload Too Large\r\nContent-Length: 0\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n" :
+            "HTTP/1.1 " + std::to_string(code) + " Not Found\r\nContent-Type: text/html\r\n\r\n";
 	std::string errorPath = "www/error_pages/" + std::to_string(code) + ".html";
 	for (size_t i = 0; i < pages.size() - 1; i++)
 	{
@@ -254,6 +257,11 @@ int Response::saveFile()
     mkdir(directory.c_str(), 0777);
     _fileName = directory + _fileName;
     std::ofstream newFile;
+    while (std::filesystem::exists(_fileName))
+    {
+        std::string filetype = _fileName.substr(_fileName.find_last_of('.'));
+        _fileName = _fileName.substr(0, _fileName.find_last_of('.')) + "_copy" + filetype;
+    }
 	newFile.open(_fileName, std::ios::binary | std::ios::trunc);
     std::cout << "[INFO] File created" << std::endl;
     

@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/14 13:37:15 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/14 23:25:07 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -79,7 +79,7 @@ bool WebServer::fd_is_server(int fd)
 bool WebServer::fd_is_client(pollfd &pfd)
 {
 	Client *client;
-
+    
 	for (Server &srv : _servers)
 		if ((client = srv.get_client(pfd.fd)))
 		{
@@ -111,7 +111,7 @@ void WebServer::run()
 {
 	while (1)
 	{
-		std::cout << "Waiting for action... - size of pollfd vector: " << _fds.size() << " - ";
+		std::cout << "Waiting for action... - size of pollfd vector: " << _fds.size() << std::endl;
 		int poll_result = poll(_fds.data(), _fds.size(), -1);
 		if (poll_result == -1)
 			return (perror("poll"));

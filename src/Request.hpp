@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:41 by fshields          #+#    #+#             */
-/*   Updated: 2024/08/14 12:54:22 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/15 15:11:08 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,7 +41,7 @@ class Request
 		void extractHeaders(std::string& input);
 		void extractBody();
 		void handleChunks(char *reqArray, size_t i);
-        void appendBody();
+        void resetBody();
 	public:
 		Request();
 		Request(const Request&);

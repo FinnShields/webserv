@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/08/14 15:09:26 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/15 15:10:53 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -69,9 +69,8 @@ void Request::extractVersion(std::string& input)
 	_version = input.substr(start, end);
 }
 //Return -1: Empty request
-//Return 0: No content-length
-//Return 1: Content-length not reached
-//Return 2: Content-length reached
+//Return 0: No content-length or fully read
+//Return 1: Body is not fully read
 int	Request::read(int _fd)
 {
 	char buffer[MAX_BUFFER_SIZE] = {0};
@@ -84,11 +83,11 @@ int	Request::read(int _fd)
     _recvReturnTotal += recvReturn;
     if (_recvReturnTotal == 0)
         return -1;
-    _headers["content-length"].empty() ? parse() : appendBody();
+    _headers["content-length"].empty() ? parse() : resetBody();
     _bodyTotalSize += _bodyRawBytes.size();
     std::cout << "\nContent-length = " << _headers["content-length"] << "\nbodysize= " << _bodyRawBytes.size() << "\nbodyTotalSize=" << _bodyTotalSize << std::endl;
     return _headers["content-length"].empty() ? 0 : 
-        std::stol(_headers["content-length"]) > _bodyTotalSize ? 1 : 2;
+        std::stol(_headers["content-length"]) > _bodyTotalSize ? 1 : 0;
 }
 
 void	Request::extractHeaders(std::string& input)
@@ -157,7 +156,7 @@ void	Request::extractBody()
 		_body.append(1, _bodyRawBytes[i]);
 }
 
-void    Request::appendBody()
+void    Request::resetBody()
 {
     _bodyRawBytes.clear();
     _body.clear();
