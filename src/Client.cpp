@@ -6,17 +6,19 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/15 14:48:10 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/19 13:33:43 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Client.hpp"
 
 
-Client::Client(int fd) : _fd(fd), _request(NULL), _res(NULL) {}
-Client::Client(const Client &copy) : _fd(copy._fd), _request(copy._request), _res(copy._res){}
+Client::Client(int fd) : _fd(fd), _request(NULL), _res(NULL), _responseSent(false) {}
+Client::Client(const Client &copy) : _fd(copy._fd), _request(copy._request), _res(copy._res), _responseSent(copy._responseSent){}
 Client::~Client() 
 {
+    delete _request;
+    delete _res;
 }
 
 Client &Client::operator=(const Client &assign)
@@ -24,6 +26,7 @@ Client &Client::operator=(const Client &assign)
 	this->_fd = assign._fd;
     this->_request = assign._request;
     _res = assign._res;
+    _responseSent = assign._responseSent;
 	return (*this);
 }
 
@@ -38,21 +41,13 @@ int Client::get_socket_fd()
 int Client::handle_request(Server& srv)
 {
     if (!_request)
-    {
-        std::cout << "new request" << std::endl;
         _request = new Request();
-    }
     int ret = _request->read(_fd);
     if (!_res)
         _res = new Response(_fd, *_request, srv);
     _response = _res->run();
-    if (_response.compare("HTTP/1.1 413"))
-        ret = 0;
-    if (ret <= 0)
-    {
-        delete _request;
-        delete _res;
-    }
+    if (_response.substr(0, 12).compare("HTTP/1.1 413") == 0)
+        ret = 0 ;
     return ret;
 }
 bool Client::responseReady()
@@ -65,6 +60,10 @@ int Client::send_response()
     std::cout << "------- Response ----------\n" << _response << "\n------- END ---------------\n";
     if (send(_fd, _response.c_str(), _response.size(), 0) < 0)
         perror("Send error");
+    char buffer[1024];
+    int i = 0;
+    while(recv(_fd, buffer, 1024, 0) > 0)
+        std::cout << "buffer: " << i++ << std::endl;
     return 1;
 }
 

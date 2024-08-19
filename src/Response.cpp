@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/15 14:46:41 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/15 16:43:22 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,7 +62,7 @@ const std::string Response::appendfile()
 const std::string Response::run()
 {
 	if (_file)
-        return appendfile();
+    	return appendfile();
     if(!check_body_size())
         return getErrorPage(413);
     std::string method = _req.get("method");
@@ -113,7 +113,7 @@ std::string Response::getErrorPage(int code)
 	std::string error_page_path = _srv.config.getValues(_index_virt, _target, std::to_string(code), {"empty"})[0];
 	std::cout << "[TEST MSG, comment me] Error page for code " << code << " is ->" << error_page_path << "<-\n"; 
 	t_vector_str pages = _srv.config.getValues(_index_virt, _target, "error_page", {"empty"});
-	std::string responseString = code == 413 ? "HTTP/1.1 413 Payload Too Large\r\nContent-Length: 0\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n" :
+	std::string responseString = code == 413 ? "HTTP/1.1 413 Payload Too Large\r\nContent-Type: text/html\r\n\r\n" :
             "HTTP/1.1 " + std::to_string(code) + " Not Found\r\nContent-Type: text/html\r\n\r\n";
 	std::string errorPath = "www/error_pages/" + std::to_string(code) + ".html";
 	for (size_t i = 0; i < pages.size() - 1; i++)

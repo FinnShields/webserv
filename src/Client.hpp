@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:36 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/14 13:04:30 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/16 01:58:23 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,6 +37,7 @@ class Client
         Request *_request;
         std::string _response;
         Response *_res;
+        bool _responseSent;
 
         Client();
     public:

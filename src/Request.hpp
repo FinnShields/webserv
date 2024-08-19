@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:41 by fshields          #+#    #+#             */
-/*   Updated: 2024/08/15 15:11:08 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/19 13:01:36 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,6 +34,7 @@ class Request
 		std::vector<char> _reqRaw;
 		ssize_t _recvReturnTotal;
         ssize_t _bodyTotalSize;
+        int _status;
 		void parse();
 		bool extractMethod(std::string& input);
 		void extractTarget(std::string& input);
@@ -42,6 +43,7 @@ class Request
 		void extractBody();
 		void handleChunks(char *reqArray, size_t i);
         void resetBody();
+        int readContentLength(int);
 	public:
 		Request();
 		Request(const Request&);

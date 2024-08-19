@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/08/15 15:10:53 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/19 13:57:44 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@ Request::Request()
 {
 	_recvReturnTotal = 0;
     _bodyTotalSize = 0;
+    _status = 0;
 }
 
 Request::~Request()
@@ -71,6 +72,9 @@ void Request::extractVersion(std::string& input)
 //Return -1: Empty request
 //Return 0: No content-length or fully read
 //Return 1: Body is not fully read
+//Status 0: No content-length or transfer-encoding
+//Status 1: Content-length (Webkitforms)
+//Status 2: Transfer-encoding (chunked)
 int	Request::read(int _fd)
 {
 	char buffer[MAX_BUFFER_SIZE] = {0};
@@ -83,8 +87,9 @@ int	Request::read(int _fd)
     _recvReturnTotal += recvReturn;
     if (_recvReturnTotal == 0)
         return -1;
-    _headers["content-length"].empty() ? parse() : resetBody();
-    _bodyTotalSize += _bodyRawBytes.size();
+    _status == 1 ? resetBody() : _status == 2 ? extractBody() : parse();
+    _status = !_headers["transfer-encoding"].empty() ? 2 :
+        !_headers["content-length"].empty() ? 1 : 0; 
     std::cout << "\nContent-length = " << _headers["content-length"] << "\nbodysize= " << _bodyRawBytes.size() << "\nbodyTotalSize=" << _bodyTotalSize << std::endl;
     return _headers["content-length"].empty() ? 0 : 
         std::stol(_headers["content-length"]) > _bodyTotalSize ? 1 : 0;
@@ -117,14 +122,13 @@ void	Request::extractHeaders(std::string& input)
 
 void	Request::handleChunks(char *reqArray, size_t start)
 {
-	size_t contentLength = 0;
 	size_t chunkLength = atoi(&reqArray[start]);
 	std::vector<char> contentRawBytes;
 
 	size_t i = start;
 	while (chunkLength != 0)
 	{
-		contentLength += chunkLength;
+		_bodyTotalSize += chunkLength;
 		while (isdigit(reqArray[i]) || reqArray[i] == '\r' || reqArray[i] == '\n')
 			i ++;
 		while (reqArray[i] != '\r' && reqArray[i] != '\n')
@@ -133,7 +137,7 @@ void	Request::handleChunks(char *reqArray, size_t start)
 			i ++;
 		chunkLength = atoi(&reqArray[i]);
 	}
-	_headers["content-length"] = std::to_string(contentLength);
+	_headers["content-length"] = std::to_string(_bodyTotalSize);
 	_bodyRawBytes = contentRawBytes;
 	for (i = 0; i < _bodyRawBytes.size(); i++)
 		_body.append(1, _bodyRawBytes[i]);
@@ -154,6 +158,7 @@ void	Request::extractBody()
 		_bodyRawBytes.push_back(_reqRaw[start + i]);
 	for (size_t i = 0; i < _bodyRawBytes.size(); i++)
 		_body.append(1, _bodyRawBytes[i]);
+    _bodyTotalSize += _bodyRawBytes.size();
 }
 
 void    Request::resetBody()
@@ -164,6 +169,7 @@ void    Request::resetBody()
 		_bodyRawBytes.push_back(_reqRaw[i]);
 	for (size_t i = 0; i < _bodyRawBytes.size(); i++)
 		_body.append(1, _bodyRawBytes[i]);
+    _bodyTotalSize += _bodyRawBytes.size();
 }
 
 void	Request::parse()
