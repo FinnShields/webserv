@@ -271,7 +271,7 @@ int Response::saveFile()
     {
         end = bodyRaw.size();
     }
-    newFile.write(bodyRaw.data() + start, end-start);
+    newFile.write(bodyRaw.data() + start, end - start - 5);
     newFile.close();
     _file = 1;
 	return 204;
