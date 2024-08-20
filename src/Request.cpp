@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/08/19 13:57:44 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/20 14:08:20 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -72,6 +72,7 @@ void Request::extractVersion(std::string& input)
 //Return -1: Empty request
 //Return 0: No content-length or fully read
 //Return 1: Body is not fully read
+//Return 3: Headers not fully recveived
 //Status 0: No content-length or transfer-encoding
 //Status 1: Content-length (Webkitforms)
 //Status 2: Transfer-encoding (chunked)
@@ -81,13 +82,15 @@ int	Request::read(int _fd)
     ssize_t recvReturn = recv(_fd, &buffer, MAX_BUFFER_SIZE, 0);
     if (recvReturn < 0)
         perror("Recv error");
-    _reqRaw.clear();
     for (size_t i = 0; i < (size_t) recvReturn; i++)
         _reqRaw.push_back(buffer[i]);
     _recvReturnTotal += recvReturn;
-    if (_recvReturnTotal == 0)
+    if (_recvReturnTotal <= 0)
         return -1;
+    if (_status == 0 && !isWholeHeader())
+        return 3;
     _status == 1 ? resetBody() : _status == 2 ? extractBody() : parse();
+    _reqRaw.clear();
     _status = !_headers["transfer-encoding"].empty() ? 2 :
         !_headers["content-length"].empty() ? 1 : 0; 
     std::cout << "\nContent-length = " << _headers["content-length"] << "\nbodysize= " << _bodyRawBytes.size() << "\nbodyTotalSize=" << _bodyTotalSize << std::endl;
@@ -95,6 +98,13 @@ int	Request::read(int _fd)
         std::stol(_headers["content-length"]) > _bodyTotalSize ? 1 : 0;
 }
 
+bool Request::isWholeHeader()
+{
+    char *ch = strstr(_reqRaw.data(), "\r\n\r\n");
+    if (!ch)
+        return false;
+    return true;
+}
 void	Request::extractHeaders(std::string& input)
 {
 	std::string	first;

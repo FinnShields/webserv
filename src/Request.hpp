@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:41 by fshields          #+#    #+#             */
-/*   Updated: 2024/08/19 13:01:36 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/20 14:04:07 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,6 +44,7 @@ class Request
 		void handleChunks(char *reqArray, size_t i);
         void resetBody();
         int readContentLength(int);
+        bool    isWholeHeader();
 	public:
 		Request();
 		Request(const Request&);
