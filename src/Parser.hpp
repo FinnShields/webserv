@@ -7,7 +7,14 @@
 #include <sstream>
 #include <vector>
 #include <map>
-#include <algorithm> 
+#include <algorithm>
+#include <regex>
+
+#define CLIENT_MAX_BODY_SIZE 30000000
+
+using t_vector_str = std::vector<std::string>;
+using t_group = std::map<std::string, t_vector_str>;
+using t_server = std::map<std::string, t_group>;
 
 /* here we follow the EBNF given next:
 	S -> server S'
@@ -21,11 +28,6 @@
 	identifier -> [non whitespace character]*  exclude ; server group
 	eps = empty set
 */
-
-using t_vector_str = std::vector<std::string>;
-using t_group = std::map<std::string, t_vector_str>;
-using t_server = std::map<std::string, t_group>;
-
 
 class Parser
 {
@@ -59,15 +61,19 @@ class Parser
 
 		bool isValidIP(const t_vector_str& vec);
 		bool isValidPort(const t_vector_str& vec);
-		bool isValidNumber(const t_vector_str& vec, int limit_min, int limit_max);
-		//bool isValidMethod(const t_vector_str& vec);
+		bool isValidNumber(const t_vector_str& vec, int limit_max);
 		bool isValidMethod(t_group& group_data);
+		bool isValidSrvNameLabel(const std::string&);
+		bool isValidSrvNameDNS(std::string&);
+		bool isValidSrvName(t_group& group_data);
+		bool isValidAutoIndex(t_group& group_data);
+		bool isValidOneArg(t_vector_str& vec);
+		bool isValidRoot(t_group& group_data);
+		bool isValidIndex(t_group& group_data);
+		bool isValidAlias(t_group& group_data);
+		bool isValidReturn(t_group& group_data);
 		void isValid();
-		
-		/*class SyntaxError: public std::exception {
-			public:
-				const char* what() const noexcept override;
-		};*/
+
 	private:
 		std::string _filecontent;
 		tok		_token;
@@ -76,7 +82,6 @@ class Parser
 		size_t	_position;
 		size_t	_tok_begin;	
 		size_t	_tok_end;
-		//int		_open_par;
 		std::vector<t_server> _data;
 };
 

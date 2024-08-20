@@ -6,7 +6,7 @@
 /*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:10 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/06/22 12:33:16 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/08/03 11:28:16 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,7 +32,7 @@
 #define DEFAULT_IP "0.0.0.0"
 #define DEFAULT_SRV_NAME "srv-"
 #define DEFAULT_METHOD {"GET", "POST", "DELETE"}
-#define DEFAULT_ALLOWED_METHOD {"GET"}
+#define DEFAULT_ALLOWED_METHOD {}
 
 class Client; 
 
@@ -49,6 +49,10 @@ class Server
 		int _port;
         in_addr_t _ip;
         std::string _name;
+
+        std::vector<size_t> _virthost_list;
+        std::map<std::string, size_t> _virthost_map;
+        
         
         void setup_socket();
 		void start_listen();
@@ -65,6 +69,8 @@ class Server
         void remove_client(int fd);
         Client *get_client(int fd);
         int get_port() const;
+        std::string get_ip_string() const;
+        in_addr_t   get_ip() const;
         int get_fd() const;
         std::string get_name();
         void set_port(const int &port);
@@ -75,6 +81,9 @@ class Server
         bool checkCookieExist(size_t value);
         void setNewCookie(size_t value);
         void saveCookieInfo(std::string& cookie);
+        void setVirthostList( std::vector<size_t>);
+        void setVirthostMap();
+        size_t getVirtHostIndex(std::string);
 
         const size_t index;
         const Config config;

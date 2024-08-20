@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:06:10 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/02 14:00:55 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/14 14:02:50 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,8 @@
 #define RESPONSE_405 "HTTP/1.1 405 Method Not Allowed\r\nContent-Type: text/plain\r\n"
 #define RESPONSE_500 "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\n"
 #define RESPONSE_501 "HTTP/1.1 501 Not Implemented\r\nContent-Type: text/plain\r\n\r\nError: Method not recognized or not implemented"
+#define DEFAULT_INDEX {"index.html"}
+#define DEFAULT_MAX_BODY_SIZE {"1000"}
 
 
 
@@ -40,17 +42,25 @@ class Response
 		int	_fd;
 		Request &_req;
 		Server &_srv;
+        int _file;
+        std::ofstream _filestream;
+        std::string _fileName;
+        std::string _boundary;
 		std::string _target;
+		size_t _index_virt;
+        std::string _response;
 
 		std::string get();
 		std::string post();
 		std::string deleteResp();
 		std::string load_file(std::string filename);
 		std::string load_directory_listing(std::string directoryPath);
-		int saveFile();
+		const std::string appendfile();
+        int saveFile();
+        
         int deleteFile(const std::string &);
 		std::string createCookie();
-		bool isMethodValid(std::string &method,  std::string &response);
+		bool isMethodValid(std::string &method);
 		std::string runCGI();
         
         //Helper functions
@@ -71,6 +81,7 @@ class Response
 		Response(int fd, Request &req, Server &srv);
 		~Response();
 		
-		void run();
+		const std::string run();
+        void closefile();
 };
 #endif

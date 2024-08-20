@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:36 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/06/28 04:30:50 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/08/16 01:58:23 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,21 +19,25 @@
 #include <sstream> 
 #include <unistd.h>
 #include "Server.hpp"
-#include "Request.hpp"
 #include "Response.hpp"
+#include "Request.hpp"
 #include "Cgi.hpp"
 
 #define MAX_BUFFER_SIZE 10000
 
 class Server;
 class Request;
+class Response;
 //class Cgi;
 
 class Client
 {
     private:
         int _fd;
-        std::string fileName;
+        Request *_request;
+        std::string _response;
+        Response *_res;
+        bool _responseSent;
 
         Client();
     public:
@@ -42,10 +46,12 @@ class Client
         Client &operator=(const Client &assign);
         ~Client();
         
-        void handle_request(Server& srv);
+        int handle_request(Server& srv);
+        int send_response();
         void close_connection(Server &srv);
         int get_socket_fd();
         std::string& get_fileName();
+        bool responseReady();
 };
 
 #endif

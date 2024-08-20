@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   WebServer.cpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/06/23 15:10:23 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/08/16 02:15:42 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,24 +18,50 @@ WebServer::~WebServer() {}
 
 WebServer::WebServer(std::vector<t_server>& data):config(Config(data, 0)) {}
 
+void WebServer::setRealToVirt()
+{
+	_real_to_virt = config.realToVirtualHosts();
+}
+
+std::vector<size_t> WebServer::extractVirtualHostsIndices()
+{
+	std::vector<size_t> indices;
+	for (const auto& [key, value] : _real_to_virt)
+	{
+		indices.insert(indices.end(), value.begin(), value.end());
+	}
+	return indices;
+}
+
 void WebServer::setup()
 {
-	try
+	setRealToVirt();
+	std::vector<size_t> indices = extractVirtualHostsIndices();
+	try  // try to be removed as it exist in main 
 	{
-		std::cout << "Number of servers: " << config.size() << "\n";
-		for (size_t i = 0; i < config.size(); ++i) {
+		std::cout << "[INFO] Total number of servers: " << config.size()
+			<< " . Total number of virtual hosts " << indices.size()
+			<< ".\n";
+		for (size_t i = 0; i < config.size(); ++i)
+		{
+			auto it = std::find(indices.begin(), indices.end(), i);
+			if (it != indices.end())
+				continue;
 			_servers.emplace_back(config.getAll(), i);
-			std::cout << "Server " << i << " is initialized with port " << _servers[i].get_port() << "\n";
+			std::cout << "[INFO] Server " << i << " is created.\n";
+			_servers.back().setVirthostList(_real_to_virt[i]);
+			_servers.back().setVirthostMap();
 		}
-		for (Server &srv : _servers){
-			std::cout << "Starting server " << srv.index << " with port " << srv.get_port() << "\n";
+		for (Server &srv : _servers)
+		{
 			srv.start(_fds);
+			std::cout << "[INFO] Server " << srv.index << " is started with port " << srv.get_port() << "\n";
 		}
 	}
 	catch(char const *e)
 	{
 		perror(e);
-		exit(EXIT_FAILURE);
+		std::exit(EXIT_FAILURE);
 	}
 }
 
@@ -50,38 +76,59 @@ bool WebServer::fd_is_server(int fd)
 	return (false);
 }
 
-void WebServer::fd_is_client(int fd)
+bool WebServer::fd_is_client(pollfd &pfd)
 {
 	Client *client;
-
+    
 	for (Server &srv : _servers)
-		if ((client = srv.get_client(fd)))
+		if ((client = srv.get_client(pfd.fd)))
 		{
-			client->handle_request(srv);
-			client->close_connection(srv);
-			return ;
+            if (pfd.revents & POLLOUT)
+            {
+                std::cout << " pollout" << std::endl;
+                client->send_response();
+                client->close_connection(srv);
+                return true;
+            }
+            if (pfd.revents & POLLIN)
+            {
+                std::cout << " pollin" << std::endl;
+			    int ret = client->handle_request(srv);
+                if (ret == 0)
+                    pfd.events |= POLLOUT;
+                if (ret == -1)
+                {
+    			    client->close_connection(srv);
+                    return true;
+                }
+                return false;
+            }
 		}
+	return false;
 }
 
 void WebServer::run()
 {
 	while (1)
 	{
-		std::cout << "\nWaiting for action... - size of pollfd vector: " << _fds.size() << std::endl;
+		std::cout << "Waiting for action... - size of pollfd vector: " << _fds.size() << std::endl;
 		int poll_result = poll(_fds.data(), _fds.size(), -1);
 		if (poll_result == -1)
 			return (perror("poll"));
-		for (std::vector<pollfd>::iterator pfdit = _fds.begin(); pfdit != _fds.end();)
+		for (std::vector<pollfd>::iterator it = _fds.begin(); it != _fds.end();)
 		{
-			if (pfdit->revents & POLLIN)
+			if (it->revents & (POLLIN|POLLOUT))
 			{
-				if (fd_is_server(pfdit->fd))
+				if (fd_is_server(it->fd))
 					break;
-				fd_is_client(pfdit->fd);
-				_fds.erase(pfdit);
-				break;
+                if (fd_is_client(*it))
+                {
+                    std::cout << "erasing it" << std::endl;
+                    it = _fds.erase(it);
+                    continue;
+                }
 			}
-			pfdit++;
+            it++;
 		}
     }
 }

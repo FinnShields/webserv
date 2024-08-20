@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   WebServer.hpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:19 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/06/23 15:32:45 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/08/08 10:26:42 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,11 +33,15 @@ class WebServer
 	private:
 		std::vector<pollfd> _fds;
 		std::vector<Server> _servers;
+		std::map<size_t, std::vector<size_t>> _real_to_virt;
 
 		void setServers();
 		//void parse_file(std::string filename);
 		bool fd_is_server(int fd);
-		void fd_is_client(int fd);
+		bool fd_is_client(pollfd &pfd);
+		//std::vector<size_t>  virtualHostIndices;
+		void setRealToVirt();
+		std::vector<size_t>  extractVirtualHostsIndices();
 		
 		WebServer();
 		WebServer(const WebServer &copy);

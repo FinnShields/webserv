@@ -15,8 +15,8 @@
 #include "Parser.hpp"
 #include "Config.hpp"
 
-
 int main(int argc, char *argv[]) {
+    std::cout << argv[0] << "\n";
     if (argc < 2) {
         std::cerr << "Usage: ./webserv [configuration file]" << std::endl;
         return 1;
@@ -29,8 +29,6 @@ int main(int argc, char *argv[]) {
 		<< data.get()
 		<< "----- END of DATA ---------------\n";
         data.isValid();
-        //Config config(argv[1]);
-        //WebServer webserv(config);
         WebServer webserv(data.get());
         webserv.setup();
         webserv.run();

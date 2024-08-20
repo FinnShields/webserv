@@ -165,6 +165,7 @@ std::string Config::selectLocation(std::string target) const {
 	return best_location;
 }
 
+/*
 t_vector_str Config::getValues(std::string target, std::string key, t_vector_str default_values) const
 {
 	std::string group = selectLocation(target);
@@ -174,7 +175,56 @@ t_vector_str Config::getValues(std::string target, std::string key, t_vector_str
 		return vec;
 	return default_values;
 }
+*/
 
+t_vector_str Config::getValues(size_t virt_index, std::string target, std::string key, t_vector_str default_values) const
+{
+	std::string group = selectLocation(target);
+	//std::cout << "group=" << group << "\n";
+	t_vector_str vec = getAll(virt_index)[group][key];
+	if (0 < vec.size())
+		return vec;
+	return default_values;
+}
+
+t_vector_str Config::getBestValues(size_t virt_index, std::string target, std::string key, t_vector_str default_values) const
+{
+	return getValues(virt_index, target, key, getValues(virt_index, "main", key, default_values));
+}
+
+//void Config::setVirtualHosts() const
+std::map<size_t, std::vector<size_t>> Config::realToVirtualHosts() const
+{
+	std::vector<size_t> indices;
+	std::map<size_t, std::vector<size_t>> real_to_virt;
+	for (size_t i = 0; i < _data.size(); i++)
+	{
+		auto it = std::find(indices.begin(), indices.end(), i);
+		if (it != indices.end())
+			continue;
+		std::vector<size_t> indices_host;
+		std::string port = getAll(i, "main", "listen", 0);
+		std::string host = getAll(i, "main", "host", 0);
+		std::string name = getAll(i, "main", "server_name", 0);
+		for (size_t j = i + 1; j < _data.size(); j++)
+		{
+			if (port != getAll(j, "main", "listen", 0))
+				continue;
+			if (host != getAll(j, "main", "host", 0))
+				continue;
+			indices.push_back(j);
+			indices_host.push_back(j);
+		}
+		real_to_virt[i] = indices_host;
+	}
+	return real_to_virt;
+}
+
+/*
 bool Config::isValid(){
+	//validate server_name
+	//validate ip
+	//validate port
 	return false;
 }
+*/

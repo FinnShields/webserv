@@ -116,9 +116,28 @@ t_group Parser::parseGroupSetting()
 	t_vector_str value_list;
 	while (isAnyWord(peek()))
 	{
+		size_t	pos = _position;
 		keyword = parseWord();
 		value_list = parseWordList();
-		group[keyword] = value_list;
+		if (keyword == "error_page")
+		{
+			if (value_list.size() == 2 &&
+				value_list[0].size() == 3 &&
+				std::isdigit(value_list[0][0]) &&
+				std::isdigit(value_list[0][1]) &&
+				std::isdigit(value_list[0][2]))
+			{
+				group[value_list[0]] = {value_list[1]};
+			}
+			else
+			{
+				std::cout << "[WARRNING] Parcer: error_page has wrong format and will be ignored.\n";
+				std::cout << "[WARRNING] Ignored line:" << _filecontent.substr(pos, _position - pos) << "\n";
+			}
+			group[keyword] = {""};
+		}
+		else
+			group[keyword] = value_list;
 	}
 	if (getToken() != tok::close)
 		throw std::runtime_error(
@@ -328,12 +347,20 @@ bool Parser::isValidPort(const t_vector_str& vec) {
 	return true;
 }
 
-bool Parser::isValidNumber(const t_vector_str& vec, int limit_min, int limit_max) {
+bool Parser::isValidNumber(const t_vector_str& vec, int limit_max) {
 	if (vec.empty() || vec.size() > 1 || vec[0].empty())
 		return false;
-	try {
+	for (auto& c : vec[0])
+	{
+		if (!isdigit(c))
+			return false;
+	}
+	try
+	{
 		int num = std::stoi(vec[0]);
-		if ( num < limit_min || num > limit_max)
+		(void)limit_max;
+		//if (num < limit_min || num > limit_max)
+		if (num < 0)
 				return false;
 	}
 	catch (const std::invalid_argument&){
@@ -345,9 +372,10 @@ bool Parser::isValidNumber(const t_vector_str& vec, int limit_min, int limit_max
 	return true;
 }
 
-bool Parser::isValidMethod(t_group& group_data){
+bool Parser::isValidMethod(t_group& group_data)
+{
 	t_vector_str vec = group_data["limit_except"];
-	if (vec.empty())
+	if (vec.empty() || vec.size() > 3)
 		return true;
 	t_vector_str mtd =  {"GET", "POST", "DELETE"};
 	for (auto& m: vec){
@@ -357,37 +385,131 @@ bool Parser::isValidMethod(t_group& group_data){
 	return true;
 }
 
+bool Parser::isValidAutoIndex(t_group& group_data)
+{
+	t_vector_str vec = group_data["autoindex"];
+	if (vec.empty())
+		return true;
+	if (vec.size() > 1)
+	 	return false;
+	if (vec[0] == "on" || vec[0] == "off")
+		return true;
+	return false;
+}
+
+bool Parser::isValidOneArg(t_vector_str& vec)
+{
+	if (vec.empty())
+		return true;
+	if (vec.size() > 1)
+		return false;
+	return true;
+}
+
+bool Parser::isValidRoot(t_group& group_data)
+{
+	t_vector_str vec = group_data["root"];
+	return isValidOneArg(vec);
+}
+
+bool Parser::isValidIndex(t_group& group_data)
+{
+	t_vector_str vec = group_data["index"];
+	return isValidOneArg(vec);
+}
+
+bool Parser::isValidAlias(t_group& group_data)
+{
+	t_vector_str vec = group_data["alias"];
+	return isValidOneArg(vec);
+}
+
+bool Parser::isValidReturn(t_group& group_data)
+{
+	t_vector_str vec = group_data["return"];
+	return isValidOneArg(vec);
+}
+
+bool Parser::isValidSrvName(t_group& group_data)
+{
+	t_vector_str vec = group_data["server_name"];
+	if (vec.empty())
+		return true;
+	if (vec.size() > 1)
+	 	return false;
+	if (isValidSrvNameDNS(vec[0]))
+		return true;
+	return false;
+}
+
+bool Parser::isValidSrvNameDNS(std::string& name){
+	
+	size_t pos_beg = 0;
+	size_t pos_end = 0;
+	while (pos_end != std::string::npos)
+	{
+		pos_end = name.find('.', pos_beg);
+		if (pos_end == pos_beg)
+			return false;
+		//std::cout << name.substr(pos_beg, pos_end - pos_beg) << "\n";
+		if (!isValidSrvNameLabel(name.substr(pos_beg, pos_end - pos_beg)))
+			return false;
+		if (pos_end != std::string::npos)
+			pos_beg = pos_end + 1;
+	}
+	return true;
+}
+
+bool Parser::isValidSrvNameLabel(const std::string& label) {
+    if (label.empty() || label.length() > 63) {
+        return false;
+    }
+    std::regex labelRegex("^[a-zA-Z0-9](-?[a-zA-Z0-9])*$");
+    return std::regex_match(label, labelRegex);
+}
+
 void Parser::isValid(){
 	int srv_num = -1;
 	if (_data.empty())
-		throw std::runtime_error(", no server in config file.\n");
+		throw std::runtime_error("[ERROR] There are no servers in config file.\n");
 	for (auto& server : _data){
-		std::cout << "Server " << ++srv_num << "  ";
+		//std::cout << "[INFO] Server " << ++srv_num << "  ";
+		++srv_num;
 		if (server.empty())
-			throw std::runtime_error(", empty server.\n");
+			throw std::runtime_error("[ERROR] Server " + std::to_string(srv_num) + " is empty.\n");
 		if (server["main"].empty())
-			throw std::runtime_error(", no main or it is empty\n");
+			throw std::runtime_error("[ERROR] Server " + std::to_string(srv_num) + " has no main or it is empty\n");
 		if (!isValidPort(server["main"]["listen"]))
-			throw std::runtime_error(", none or invalid port\n");
+			throw std::runtime_error("[ERROR] Server " + std::to_string(srv_num) + " has none or invalid port\n");
 		if (!isValidIP(server["main"]["host"]))
-			throw std::runtime_error(", none or invalid IP\n");
-		
+			throw std::runtime_error("[ERROR] Server " + std::to_string(srv_num) + " has none or invalid IP\n");
+
 		for (auto& [group_name, group_data]: server){
 			if (group_data.empty())
-				throw std::runtime_error(", empty group\n");
+				throw std::runtime_error("[ERROR] Server " + std::to_string(srv_num) + " has empty group" + group_name + "\n");
 			if (group_name.empty())
-				throw std::runtime_error(", empty group name");
+				throw std::runtime_error("[ERROR] Server " + std::to_string(srv_num) + " has empty group name");
 			if (!(group_name == "main" || group_name[0] == '/'))
-				throw std::runtime_error(", invalid group: " + group_name + "\n");
+				throw std::runtime_error("[ERROR] Server " + std::to_string(srv_num) +  " has invalid group: " + group_name + "\n");
 			t_vector_str values = group_data["client_max_body_size"];
-			if (!values.empty() && !isValidNumber(values, 10000, 30000000))
-				throw std::runtime_error(", invalid client_max_body_size in group: " + group_name + "\n");
-			//values = group_data["limit_except"];
-//			std::cout << values;
-			//if (!values.empty() && !isValidMethod(values))
+			if (!values.empty() && !isValidNumber(values, CLIENT_MAX_BODY_SIZE))
+				throw std::runtime_error("[ERROR] Server " + std::to_string(srv_num)
+					+ " invalid client_max_body_size in group: " + group_name + "\n");
+			if (!isValidSrvName(group_data))
+				throw std::runtime_error("[ERROR] Server " + std::to_string(srv_num) + " has invalid server name\n");
 			if (!isValidMethod(group_data))
-				throw std::runtime_error(", invalid limit_except in group: " + group_name + "\n");
+				throw std::runtime_error("[ERROR] Server " + std::to_string(srv_num) + " has invalid limit_except in group: " + group_name + "\n");
+			if (!isValidAutoIndex(group_data))
+				throw std::runtime_error("[ERROR] Server " + std::to_string(srv_num) + " has invalid autoindex in group: " + group_name + "\n");
+			if (!isValidRoot(group_data))
+				throw std::runtime_error("[ERROR] Server " + std::to_string(srv_num) + " has invalid root in group: " + group_name + "\n");
+			if (!isValidIndex(group_data))
+				throw std::runtime_error("[ERROR] Server " + std::to_string(srv_num) + " has invalid index in group: " + group_name + "\n");
+			if (!isValidAlias(group_data))
+				throw std::runtime_error("[ERROR] Server " + std::to_string(srv_num) + " has invalid alias in group: " + group_name + "\n");
+			if (!isValidReturn(group_data))
+				throw std::runtime_error("[ERROR] Server " + std::to_string(srv_num) + " has invalid return in group: " + group_name + "\n");
 		}
-		std::cout <<  " is OK.\n";
+		std::cout <<  "[INFO] Server " << srv_num  << " is OK.\n";
 	}
 }

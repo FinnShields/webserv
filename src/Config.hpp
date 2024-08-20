@@ -42,11 +42,13 @@ class Config
 		//int			 		get0ne(std::string target, std::string key, int default_value) const;
 
 		std::string			selectLocation(std::string target) const;
-		t_vector_str 		getValues(std::string target, std::string key,  t_vector_str default_values) const;
+		//t_vector_str 		getValues(std::string target, std::string key,  t_vector_str default_values) const;
+		t_vector_str 		getValues(size_t virt_index, std::string target, std::string key,  t_vector_str default_values) const;
+        t_vector_str        getBestValues(size_t virt_index, std::string target, std::string key, t_vector_str default_values) const;
 		//std::vector<int> 	getAll(std::string target, std::string key, int default_value) const;
 		
-
-		bool				isValid();
+		std::map<size_t, std::vector<size_t>> realToVirtualHosts() const;
+		//bool				isValid();
 	private:
 		Config();
 		std::vector<t_server>& _data;

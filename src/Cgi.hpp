@@ -15,7 +15,7 @@
 
 //#define STDOUT_FILENO  1
 //#define STDIN_FILENO  0
-#define CGI_TIMEOUT	 5
+#define CGI_TIMEOUT	 10
 
 class Server;
 class Request;
@@ -27,6 +27,7 @@ class Cgi
         const Server& _server;
         std::string& _body;
         std::string _target;
+        const size_t _index_virt;
         size_t _pos_cgi;
         size_t _pos_dot;
         size_t _pos_query;
@@ -62,7 +63,7 @@ class Cgi
         void _runChildCgi();
         bool _wait();
     public:
-        Cgi(Request&, const Server&);
+        Cgi(Request&, const Server&, const size_t);
         Cgi(const Cgi&);
         Cgi &operator=(const Cgi&);
         ~Cgi();

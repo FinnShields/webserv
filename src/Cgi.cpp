@@ -39,17 +39,19 @@ Cgi::Cgi(const Cgi& other):
     _request(other._request),
     _server(other._server),
     _body(other._body),
-    _target(other._target)
+    _target(other._target),
+    _index_virt(other._index_virt)
 {
     _argv = new char*[4] {nullptr};
     _envp = nullptr;
 }
 
-Cgi::Cgi(Request& r, const Server& s):
+Cgi::Cgi(Request& r, const Server& s, const size_t virt_index):
     _request(r),
     _server(s),
     _body(_request.getRef("body")),
-    _target(_request.get("target"))
+    _target(_request.get("target")),
+    _index_virt(virt_index)
 {
     _argv = new char*[4] {nullptr};
     _envp = nullptr;
@@ -209,7 +211,7 @@ bool Cgi::isImplemented()
         std::cout << "CGI no extension\n";
         return false;
     }
-    t_vector_str ext_list = _server.config.getValues(_target, "cgi_ext", {});
+    t_vector_str ext_list = _server.config.getValues(_index_virt, _target, "cgi_ext", {});
     auto it = find(ext_list.begin(), ext_list.end(), _ext);
     if (std::find(ext_list.begin(), ext_list.end(), _ext) == ext_list.end())
     {
@@ -217,13 +219,13 @@ bool Cgi::isImplemented()
         return false;
     }
     _cgi_type = std::distance(ext_list.begin(), it);
-    auto path_list = _server.config.getValues(_target, "cgi_path", {""});
+    auto path_list = _server.config.getValues(_index_virt, _target, "cgi_path", {""});
     if (_cgi_type >= path_list.size())
     {
         std::cout << "CGI extension path is not implemented\n";
         return false;
     }
-    _cgi_path = _server.config.getValues(_target, "cgi_path", {""})[_cgi_type];
+    _cgi_path = _server.config.getValues(_index_virt, _target, "cgi_path", {""})[_cgi_type];
     return true;
 }
 
@@ -375,7 +377,7 @@ void Cgi::setEnvMap(){
     _env_map["REDIRECT_STATUS"] = "200";
     _env_map["SERVER_PROTOCOL"] = "HTTP/1.1";
 	_env_map["SERVER_SOFTWARE"] = "Webserv_FAB/1.0";
-    _env_map["DOCUMENT_ROOT"] = _server.config.getValues(_target, "root", {""})[0];
+    _env_map["DOCUMENT_ROOT"] = _server.config.getValues(_index_virt, _target, "root", {""})[0];
     if (_env_map["DOCUMENT_ROOT"].empty())
         _env_map["DOCUMENT_ROOT"] = _server.config.getFirst("main","root","") + "/cgi-bin";
 

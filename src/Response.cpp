@@ -6,14 +6,21 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/02 14:01:00 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/15 16:43:22 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Response.hpp"
 
-Response::Response(int fd, Request &req, Server &srv) : _fd(fd), _req(req), _srv(srv) {}
-Response::~Response() {}
+Response::Response(int fd, Request &req, Server &srv) : _fd(fd), _req(req), _srv(srv), _file(0){}
+Response::~Response() 
+{
+    if (_filestream.is_open())
+    {
+        _filestream.close();
+        std::cout << "[INFO] File closed" << std::endl;
+    }
+}
 
 /* Supported status codes
 200 OK
@@ -30,33 +37,61 @@ not implemented
 418 "TEAPOT" 
 */
 
-void Response::run()
+const std::string Response::appendfile()
 {
-	std::string response;
-	std::string method = _req.get("method");
+	if (_file == 1)
+    {
+        _filestream.open(_fileName, std::ios::binary | std::ios::app);
+        _file = 2;
+    }
+	std::string body = _req.get("body");
+    std::vector<char> bodyRaw = _req.getBodyRawBytes();
+    size_t end = body.find(_boundary);
+    if (end == std::string::npos)
+    {
+        end = bodyRaw.size();
+    }
+	if (_filestream.is_open())
+    {
+        _filestream.write(bodyRaw.data(), end);
+        std::cout << "[INFO] File appended" << std::endl;
+    }
+	return ("HTTP/1.1 204 No Content");    
+}
+
+const std::string Response::run()
+{
+	if (_file)
+    	return appendfile();
+    if(!check_body_size())
+        return getErrorPage(413);
+    std::string method = _req.get("method");
 	_target = _req.get("target");
-	if(isMethodValid(method, response))
-        response = 	(_target.size() > 9 && _target.substr(0, 9).compare("/cgi-bin/") == 0) ? runCGI() :
+	_index_virt = _srv.getVirtHostIndex(_req.get("host"));
+	std::cout << "[INFO] Request is addressed to server " << _srv.index << "\n";
+	if (_srv.index != _index_virt)
+		std::cout << "[INFO] Request is readdressed to virtual server " << _index_virt << "\n";
+	if(isMethodValid(method))
+        _response = (_target.size() > 9 && _target.substr(0, 9).compare("/cgi-bin/") == 0) ? runCGI() :
                     (method == "GET") ? get() : 
                     (method == "POST") ? post() :
                     (method == "DELETE") ? deleteResp() : 
                     getErrorPage(501);
-	std::cout << "------- Response ----------\n" << response << "\n------- END ---------------\n";
-	if (send(_fd, response.c_str(), response.size(), 0) < 0)
-		perror("Send error");
+    // std::cout << "------- Response ----------\n";
+    return _response;
 }
 
 std::string Response::get()
-{	
+{
 	std::string path = getPath();
     std::cout << "PATH=" << path << std::endl;
 	if (std::filesystem::is_regular_file(path) && std::filesystem::exists(path))
 		return load_file(path);
-	std::string _index = _srv.config.getValues(_target, "index", {""})[0];
+	std::string _index = _srv.config.getBestValues(_index_virt, _target, "index", DEFAULT_INDEX)[0];
     std::cout << "INDEXPATH=" << path + _index << std::endl;
 	if (_index.length() > 1 && std::filesystem::is_regular_file(path + _index) && std::filesystem::exists(path + _index))
 		return load_file(path + _index);
-	bool autoindex = _srv.config.getValues(_target, "autoindex", {"off"})[0] == "on";
+	bool autoindex = _srv.config.getBestValues(_index_virt, _target, "autoindex", {"off"})[0] == "on";
 	if (autoindex && std::filesystem::is_directory(path)) 
 		return load_directory_listing(path);
 	return (getErrorPage(404));
@@ -64,10 +99,8 @@ std::string Response::get()
 
 std::string Response::post()
 {
-    if(!check_body_size())
-        return getErrorPage(413);
     if (!_req.get("content-type").compare(0, 19, "multipart/form-data"))
-		saveFile();
+		std::cout << "saveFile returns: " << saveFile() << std::endl;
 	// int status = saveFile();
 	// return status == 500 ? "HTTP/1.1 500 Internal Server Error" :
 	// 	// status == 400 ? "HTTP/1.1 400 Bad Request" :
@@ -77,8 +110,11 @@ std::string Response::post()
 
 std::string Response::getErrorPage(int code)
 {
-	t_vector_str pages = _srv.config.getValues(_target, "error_page", {"empty"});
-	std::string responseString = "HTTP/1.1 " + std::to_string(code) + " Not Found\r\nContent-Type: text/html\r\n\r\n";
+	std::string error_page_path = _srv.config.getValues(_index_virt, _target, std::to_string(code), {"empty"})[0];
+	std::cout << "[TEST MSG, comment me] Error page for code " << code << " is ->" << error_page_path << "<-\n"; 
+	t_vector_str pages = _srv.config.getValues(_index_virt, _target, "error_page", {"empty"});
+	std::string responseString = code == 413 ? "HTTP/1.1 413 Payload Too Large\r\nContent-Type: text/html\r\n\r\n" :
+            "HTTP/1.1 " + std::to_string(code) + " Not Found\r\nContent-Type: text/html\r\n\r\n";
 	std::string errorPath = "www/error_pages/" + std::to_string(code) + ".html";
 	for (size_t i = 0; i < pages.size() - 1; i++)
 	{
@@ -99,7 +135,7 @@ std::string Response::deleteResp()
     std::string path = getPath();
 
 	replacePercent20withSpace(path);
-	// std::cout << "Deleting " << path << std::endl;
+	std::cout << "Deleting " << path << std::endl;
 	if (deleteFile(path) == 204)
 		return ("HTTP/1.1 204 No Content");
 	return (getErrorPage(404));
@@ -113,7 +149,7 @@ std::string Response::runCGI()
 		std::cout << "CGI is not configured.\n";
 		return (getErrorPage(500));
 	}
-	Cgi cgi(_req, _srv);
+	Cgi cgi(_req, _srv, _index_virt);
 	cgi.start();
 	int status = cgi.getStatus();
 	std::cout << "CGI status =" << status << "\n";
@@ -185,8 +221,8 @@ std::string Response::load_directory_listing(std::string directoryPath)
 
 bool Response::check_body_size()
 {
-    std::string max_body_size_str = _srv.config.getValues(_target, "client_max_body_size", _srv.config.getValues("main", "client_max_body_size", {""}))[0];
-    if (max_body_size_str.empty())
+    std::string max_body_size_str = _srv.config.getBestValues(_index_virt, _target, "client_max_body_size", {DEFAULT_MAX_BODY_SIZE})[0];
+	if (max_body_size_str == "0")
         return true;
     std::string body_size_str = _req.get("content-length");
     if (body_size_str.empty())
@@ -198,31 +234,46 @@ bool Response::check_body_size()
 
 int Response::saveFile()
 	{
-	std::string boundary = _req.get("Content-Type").substr(31);
+	_boundary = _req.get("Content-Type").substr(31);
 	std::string body = _req.get("body");
     std::vector<char> bodyRaw = _req.getBodyRawBytes();
 	if (body.empty())
-		return 400;
-    std::string fileName = "";
+    {
+		std::cout << "No Body" << std::endl;
+        return 400;
+    }
+    _fileName = "";
     std::string::iterator it = body.begin();
     it += body.find("filename") + 10;
 	while (*it != '\"')
-		fileName.append(1, *(it++));
-	if (fileName.empty())
-		return 400;
+		_fileName.append(1, *(it++));
+	if (_fileName.empty())
+    {
+		std::cout << "No file name" << std::endl;
+        return 400;
+    }
     
     std::string directory = getPath() + "uploads/";
     mkdir(directory.c_str(), 0777);
-    fileName = directory + fileName;
-	std::cout << std::endl;
+    _fileName = directory + _fileName;
+    std::ofstream newFile;
+    while (std::filesystem::exists(_fileName))
+    {
+        std::string filetype = _fileName.substr(_fileName.find_last_of('.'));
+        _fileName = _fileName.substr(0, _fileName.find_last_of('.')) + "_copy" + filetype;
+    }
+	newFile.open(_fileName, std::ios::binary | std::ios::trunc);
+    std::cout << "[INFO] File created" << std::endl;
+    
     size_t start = body.find("\r\n\r\n") + 4;
-    size_t len = bodyRaw.size() - boundary.length() - 9 - start;
-    std::fstream newFile;
-	newFile.open(fileName, std::ios::binary | std::ios::out);
-	for (size_t i = 0; i < len && i < bodyRaw.size(); i++) {
-		newFile << bodyRaw[start + i];
-	}
+    size_t end = body.find(_boundary+"--");
+    if (end == std::string::npos)
+    {
+        end = bodyRaw.size();
+    }
+    newFile.write(bodyRaw.data() + start, end-start);
     newFile.close();
+    _file = 1;
 	return 204;
 }
 
@@ -251,19 +302,19 @@ std::string Response::createCookie()
 	return ("Set-Cookie: session-id=" + std::to_string(newSessionId) + "\r\n");
 }
 
-bool Response::isMethodValid(std::string &method, std::string &response)
+bool Response::isMethodValid(std::string &method)
 {
 	t_vector_str mtd_default = DEFAULT_METHOD;
-	t_vector_str mtd_allowed = _srv.config.getValues(_target, "limit_except", DEFAULT_ALLOWED_METHOD);
 	if (find(mtd_default.begin(), mtd_default.end(), method) == mtd_default.end())
 	{
 		std::cout << "no supported method="  << method << "\n";
-		response = getErrorPage(501);
+		_response = getErrorPage(501);
 		return false;
 	}
+	t_vector_str mtd_allowed = _srv.config.getBestValues(_index_virt, _target, "limit_except", DEFAULT_ALLOWED_METHOD);
 	if (find(mtd_allowed.begin(), mtd_allowed.end(), method) == mtd_allowed.end())
 	{
-		response = getErrorPage(405);
+		_response = getErrorPage(405);
 		return false;
 	}
 	return true;
@@ -271,13 +322,13 @@ bool Response::isMethodValid(std::string &method, std::string &response)
 
 std::string Response::getPath()
 {
-    std::string alias = _srv.config.getValues(_target, "alias", {""})[0];
-    std::string root = _srv.config.getValues(_target, "root", {""})[0];
+    std::string alias = _srv.config.getValues(_index_virt, _target, "alias", {""})[0];
+    std::string root = _srv.config.getValues(_index_virt, _target, "root", {""})[0];
     
     if (alias.empty() && root.empty())
     {
-        alias = _srv.config.get("main", "alias", 0);
-        root = _srv.config.get("main", "root", 0);
+        alias = _srv.config.getAll(_index_virt, "main", "alias", 0);
+        root = _srv.config.getAll(_index_virt, "main", "root", 0);
     }
     if (alias.empty() && root.empty())
         return _target.substr(1);
