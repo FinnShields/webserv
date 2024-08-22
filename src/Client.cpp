@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/19 14:07:14 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/20 14:22:11 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,11 +38,17 @@ int Client::get_socket_fd()
 //return -1 = empty request
 //Return 0 == Request fully read
 //Return 1 == Request is chunked (file)
+//Return 3 == Headers not fully read
 int Client::handle_request(Server& srv)
 {
     if (!_request)
         _request = new Request();
     int ret = _request->read(_fd);
+    if (ret == 3)
+    {
+        std::cout << "Headers are not fully read\n";
+        return ret;
+    }
     if (!_res)
         _res = new Response(_fd, *_request, srv);
     _response = _res->run();
