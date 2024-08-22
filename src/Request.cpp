@@ -17,6 +17,8 @@ Request::Request()
 	_recvReturnTotal = 0;
     _bodyTotalSize = 0;
     _status = 0;
+	_chunkedReqComplete = true;
+	_incompleteChunk = false;
 }
 
 Request::~Request()
@@ -30,6 +32,7 @@ Request& Request::operator=(const Request& r)
 	_version = r._version;
 	_target = r._target;
     _recvReturnTotal = r._recvReturnTotal;
+	_chunkedReqComplete = r._chunkedReqComplete;
 	return (*this);
 }
 
@@ -87,11 +90,12 @@ int	Request::read(int _fd)
     _recvReturnTotal += recvReturn;
     if (_recvReturnTotal == 0)
         return -1;
-    _status == 1 ? resetBody() : _status == 2 ? extractBody() : parse();
+    _status == 1 ? resetBody() : _status == 2 ? moreChunks() : parse();
     _status = !_headers["transfer-encoding"].empty() ? 2 :
         !_headers["content-length"].empty() ? 1 : 0; 
     std::cout << "\nContent-length = " << _headers["content-length"] << "\nbodysize= " << _bodyRawBytes.size() << "\nbodyTotalSize=" << _bodyTotalSize << std::endl;
-    return _headers["content-length"].empty() ? 0 : 
+    return _headers["content-length"].empty() && _chunkedReqComplete ? 0 : 
+		!_chunkedReqComplete ? 1 :
         std::stol(_headers["content-length"]) > _bodyTotalSize ? 1 : 0;
 }
 
@@ -122,25 +126,62 @@ void	Request::extractHeaders(std::string& input)
 
 void	Request::handleChunks(char *reqArray, size_t start)
 {
-	size_t chunkLength = atoi(&reqArray[start]);
+	size_t chunkLength = strtol(&reqArray[start], nullptr, 16);
 	std::vector<char> contentRawBytes;
 
 	size_t i = start;
-	while (chunkLength != 0)
+	while (chunkLength != 0 && i < MAX_BUFFER_SIZE)
 	{
 		_bodyTotalSize += chunkLength;
-		while (isdigit(reqArray[i]) || reqArray[i] == '\r' || reqArray[i] == '\n')
+		while (i < MAX_BUFFER_SIZE && ((reqArray[i]) || reqArray[i] == '\r' || reqArray[i] == '\n'))
 			i ++;
-		while (reqArray[i] != '\r' && reqArray[i] != '\n')
+		if (i == MAX_BUFFER_SIZE)
+		{
+			_incompleteChunk = true;
+			break ;
+		}
+		while (i < MAX_BUFFER_SIZE && reqArray[i] != '\r' && reqArray[i] != '\n')
 			contentRawBytes.push_back(reqArray[i++]);
-		while (!isdigit(reqArray[i]))
+		while (i < MAX_BUFFER_SIZE && !isdigit(reqArray[i]))
 			i ++;
-		chunkLength = atoi(&reqArray[i]);
+		if (i == MAX_BUFFER_SIZE)
+		{
+			_incompleteChunk = true;
+			break ;
+		}
+		chunkLength = strtol(&reqArray[i], nullptr, 16);
 	}
-	_headers["content-length"] = std::to_string(_bodyTotalSize);
-	_bodyRawBytes = contentRawBytes;
+	for (i = 0; i < contentRawBytes.size(); i++)
+		_bodyRawBytes.push_back(contentRawBytes[i]);
 	for (i = 0; i < _bodyRawBytes.size(); i++)
 		_body.append(1, _bodyRawBytes[i]);
+	if (chunkLength != 0)
+		_chunkedReqComplete = false;
+	else
+		_chunkedReqComplete = true;
+}
+
+void	Request::moreChunks()
+{
+	if (_incompleteChunk)
+	{
+		size_t i = 0;
+		while (i < _reqRaw.size())
+		{
+			if (i < _reqRaw.size() - 1 && _reqRaw[i] != '\r' && _reqRaw[i + 1] != '\n')
+				_bodyRawBytes.push_back(_reqRaw[i]);
+			else if (i < _reqRaw.size()-1 && _reqRaw[i] == '\r' && _reqRaw[i + 1] == '\n')
+				break ;
+			i ++;
+		}
+		if (i != _reqRaw.size())
+		{
+			_incompleteChunk = false;
+			handleChunks(&_reqRaw[0], i + 2);
+		}	
+	}
+	else
+		handleChunks(&_reqRaw[0], 0);
 }
 
 void	Request::extractBody()
@@ -182,8 +223,6 @@ void	Request::parse()
 	extractTarget(input);
 	extractVersion(input);
 	extractHeaders(input);
-	if (!get("transfer-encoding").empty())
-		std::cout << "#### Received a " << get("transfer-encoding") << " request" << std::endl;
 	extractBody();
     display();
 }
