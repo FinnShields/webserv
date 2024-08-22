@@ -56,7 +56,7 @@ const std::string Response::appendfile()
         _filestream.write(bodyRaw.data(), end);
         std::cout << "[INFO] File appended" << std::endl;
     }
-	return ("HTTP/1.1 204 No Content");    
+	return (STATUS_LINE_204);    
 }
 
 const std::string Response::run()
@@ -105,7 +105,7 @@ std::string Response::post()
 	// return status == 500 ? "HTTP/1.1 500 Internal Server Error" :
 	// 	// status == 400 ? "HTTP/1.1 400 Bad Request" :
 	// 	"HTTP/1.1 204 No Content";
-	return ("HTTP/1.1 204 No Content"); //No reloading
+	return (STATUS_LINE_204); //No reloading
 }
 
 std::string Response::getErrorPage(int code)
@@ -137,7 +137,7 @@ std::string Response::deleteResp()
 	replacePercent20withSpace(path);
 	std::cout << "Deleting " << path << std::endl;
 	if (deleteFile(path) == 204)
-		return ("HTTP/1.1 204 No Content");
+		return (STATUS_LINE_204);
 	return (getErrorPage(404));
 }
 

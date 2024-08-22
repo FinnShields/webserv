@@ -35,6 +35,8 @@ class Request
 		ssize_t _recvReturnTotal;
         ssize_t _bodyTotalSize;
         int _status;
+		bool _chunkedReqComplete;
+		bool _incompleteChunk;
 		void parse();
 		bool extractMethod(std::string& input);
 		void extractTarget(std::string& input);
@@ -42,6 +44,7 @@ class Request
 		void extractHeaders(std::string& input);
 		void extractBody();
 		void handleChunks(char *reqArray, size_t i);
+		void moreChunks();
         void resetBody();
         int readContentLength(int);
         bool    isWholeHeader();
