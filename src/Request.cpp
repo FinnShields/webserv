@@ -133,14 +133,14 @@ void	Request::handleChunks(char *reqArray, size_t start)
 	while (chunkLength != 0 && i < MAX_BUFFER_SIZE)
 	{
 		_bodyTotalSize += chunkLength;
-		while (i < MAX_BUFFER_SIZE && ((reqArray[i]) || reqArray[i] == '\r' || reqArray[i] == '\n'))
+		while (i < MAX_BUFFER_SIZE && reqArray[i] && (reqArray[i] == '\r' || reqArray[i] == '\n'))
 			i ++;
 		if (i == MAX_BUFFER_SIZE)
 		{
 			_incompleteChunk = true;
 			break ;
 		}
-		while (i < MAX_BUFFER_SIZE && reqArray[i] != '\r' && reqArray[i] != '\n')
+		while (i < MAX_BUFFER_SIZE && reqArray[i] != '\r')
 			contentRawBytes.push_back(reqArray[i++]);
 		while (i < MAX_BUFFER_SIZE && !isdigit(reqArray[i]))
 			i ++;
