@@ -142,8 +142,10 @@ void	Request::handleChunks(char *reqArray, size_t start)
 	size_t i = start;
 	while (chunkLength != 0 && i < MAX_BUFFER_SIZE)
 	{
+		std::cout << "Size of Chunk: " << chunkLength << std::endl;
 		_bodyTotalSize += chunkLength;
-		while (i < MAX_BUFFER_SIZE && (isdigit(reqArray[i]) || reqArray[i] == '\r' || reqArray[i] == '\n'))
+		while (i < MAX_BUFFER_SIZE && (isdigit(reqArray[i]) || (reqArray[i] >= 'A' && reqArray[i] <= 'E') ||
+		reqArray[i] == '\r' || reqArray[i] == '\n'))
 			i ++;
 		if (i == MAX_BUFFER_SIZE)
 		{
@@ -157,7 +159,7 @@ void	Request::handleChunks(char *reqArray, size_t start)
 			_incompleteChunk = true;
 			break ;
 		}
-		while (i < MAX_BUFFER_SIZE && !isdigit(reqArray[i]))
+		while (i < MAX_BUFFER_SIZE && !isdigit(reqArray[i]) && !(reqArray[i] >= 'A' && reqArray[i] <= 'E'))
 			i ++;
 		if (i == MAX_BUFFER_SIZE)
 		{
