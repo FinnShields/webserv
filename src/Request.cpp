@@ -133,7 +133,7 @@ void	Request::handleChunks(char *reqArray, size_t start)
 	while (chunkLength != 0 && i < MAX_BUFFER_SIZE)
 	{
 		_bodyTotalSize += chunkLength;
-		while (i < MAX_BUFFER_SIZE && reqArray[i] && (reqArray[i] == '\r' || reqArray[i] == '\n'))
+		while (i < MAX_BUFFER_SIZE && (isdigit(reqArray[i]) || reqArray[i] == '\r' || reqArray[i] == '\n'))
 			i ++;
 		if (i == MAX_BUFFER_SIZE)
 		{
@@ -142,6 +142,11 @@ void	Request::handleChunks(char *reqArray, size_t start)
 		}
 		while (i < MAX_BUFFER_SIZE && reqArray[i] != '\r')
 			contentRawBytes.push_back(reqArray[i++]);
+		if (i == MAX_BUFFER_SIZE)
+		{
+			_incompleteChunk = true;
+			break ;
+		}
 		while (i < MAX_BUFFER_SIZE && !isdigit(reqArray[i]))
 			i ++;
 		if (i == MAX_BUFFER_SIZE)
@@ -154,7 +159,10 @@ void	Request::handleChunks(char *reqArray, size_t start)
 	for (i = 0; i < contentRawBytes.size(); i++)
 		_bodyRawBytes.push_back(contentRawBytes[i]);
 	for (i = 0; i < _bodyRawBytes.size(); i++)
+	{
+		std::cout << "adding char: " << _bodyRawBytes[i] << std::endl;
 		_body.append(1, _bodyRawBytes[i]);
+	}
 	if (chunkLength != 0)
 		_chunkedReqComplete = false;
 	else
