@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:06:10 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/14 14:02:50 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/23 14:54:42 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,6 +45,7 @@ class Response
 		Server &_srv;
         int _file;
         std::ofstream _filestream;
+        std::ifstream _filestream_read;
         std::string _fileName;
         std::string _boundary;
 		std::string _target;
@@ -63,6 +64,7 @@ class Response
 		std::string createCookie();
 		bool isMethodValid(std::string &method);
 		std::string runCGI();
+
         
         //Helper functions
         bool check_body_size();
@@ -83,6 +85,7 @@ class Response
 		~Response();
 		
 		const std::string run();
-        void closefile();
+        const std::string getNextChunk();
+        bool hasMoreChunks();
 };
 #endif
