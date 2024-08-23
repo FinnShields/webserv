@@ -180,6 +180,8 @@ void	Request::handleChunks(char *reqArray, size_t start)
 
 void	Request::moreChunks()
 {
+	_bodyRawBytes.clear();
+	_body.clear();
 	if (_incompleteChunk)
 	{
 		size_t i = 0;
@@ -198,7 +200,9 @@ void	Request::moreChunks()
 		}	
 	}
 	else
+	{
 		handleChunks(&_reqRaw[0], 0);
+	}
 }
 
 void	Request::extractBody()
