@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/23 15:16:39 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/23 16:06:38 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,6 +44,7 @@ int Client::handle_request(Server& srv)
     if (!_request)
         _request = new Request();
     int ret = _request->read(_fd);
+    std::cout << "request->read() returns: " << ret << std::endl;
     if (ret == 3)
     {
         std::cout << "Headers are not fully read\n";

@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/23 15:53:05 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/23 16:22:39 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -275,14 +275,15 @@ std::string Response::load_directory_listing(std::string directoryPath)
 
 bool Response::check_body_size()
 {
-    std::string max_body_size_str = _srv.config.getBestValues(_index_virt, _target, "client_max_body_size", {DEFAULT_MAX_BODY_SIZE})[0];
+    const std::string max_body_size_str = _srv.config.getBestValues(_index_virt, _target, "client_max_body_size", {DEFAULT_MAX_BODY_SIZE})[0];
 	if (max_body_size_str == "0")
         return true;
-    std::string body_size_str = _req.get("content-length");
+    const std::string body_size_str = _req.get("content-length");
     if (body_size_str.empty())
         return true;
-    long max_body_size = std::stoi(max_body_size_str);
-    long body_size = std::stoi(body_size_str);
+    long max_body_size = std::stol(max_body_size_str);
+    long body_size = std::stol(body_size_str);
+    std::cout << "check_body_size: \nbody:" << body_size << "\nmax: " << max_body_size << std::endl;
     return body_size > max_body_size ? false : true;
 }
 
