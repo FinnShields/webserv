@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/16 02:15:42 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/23 15:01:27 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -86,7 +86,9 @@ bool WebServer::fd_is_client(pollfd &pfd)
             if (pfd.revents & POLLOUT)
             {
                 std::cout << " pollout" << std::endl;
-                client->send_response();
+                if (!client->send_response())
+                    return false;
+                std::cout << "[INFO] Closing connection\n";
                 client->close_connection(srv);
                 return true;
             }

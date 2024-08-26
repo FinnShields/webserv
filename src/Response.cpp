@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/15 16:43:22 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/23 16:22:39 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,11 @@ Response::~Response()
     {
         _filestream.close();
         std::cout << "[INFO] File closed" << std::endl;
+    }
+    if (_filestream_read.is_open())
+    {
+        _filestream_read.close();
+        std::cout << "[INFO] File read closed" << std::endl;
     }
 }
 
@@ -35,6 +40,13 @@ Response::~Response()
 
 not implemented
 418 "TEAPOT" 
+*/
+
+/* File status
+0 = no file
+1 = file created and closed
+2 = file is opened in appending mode
+3 = has more chunks to upload
 */
 
 const std::string Response::appendfile()
@@ -65,9 +77,46 @@ const std::string Response::appendfile()
 	return (getErrorPage(404));    
 }
 
+const std::string Response::getNextChunk()
+{
+    char buffer[MAX_BUFFER_SIZE] = {0};
+    if (!_filestream_read.is_open())
+    {
+        _file = 0;
+        std::cerr << "[ERROR] File is not open" << std::endl;
+        return getErrorPage(500);
+    }
+    if (_filestream_read.eof())
+    {
+        std::cout << "[INFO] EOF reached" << std::endl;
+        _file = 0;
+        _filestream_read.close();
+        return "0\r\n\r\n";
+    }
+    _filestream_read.read(buffer, MAX_BUFFER_SIZE);
+    std::streamsize bytesRead = _filestream_read.gcount();
+    
+    if (_filestream_read.bad() || (_filestream_read.fail() && !_filestream_read.eof()))
+    {
+        _file = 0;
+        std::cerr << "[ERROR] File read error" << std::endl;
+        return getErrorPage(500);
+    }
+    std::cout << "[INFO] Chunk size = " << bytesRead << std::endl;
+    std::stringstream hexStream;
+    hexStream << std::hex << bytesRead;
+    std::string chunk = hexStream.str() + "\r\n" + std::string(buffer, bytesRead) + "\r\n";
+    return chunk;
+}
+
+bool Response::hasMoreChunks()
+{
+    return _file == 3 ? true : false;
+}
+
 const std::string Response::run()
 {
-	if (_file)
+	if (_file == 1 || _file == 2)
     	return appendfile();
     if(!check_body_size())
         return getErrorPage(413);
@@ -174,8 +223,8 @@ std::string Response::runCGI()
 
 std::string Response::load_file(std::string filepath)
 {
-	std::ifstream file(filepath);
-	if (!file.is_open())
+	_filestream_read.open(filepath, std::ios::binary);
+	if (!_filestream_read.is_open())
 		return (getErrorPage(404));
 	
 	std::stringstream buffer;
@@ -184,8 +233,6 @@ std::string Response::load_file(std::string filepath)
 	else
 		_srv.saveCookieInfo(_req.getRef("cookie"));
 	buffer << "\r\n";
-	buffer << file.rdbuf();
-	file.close();
 	
     std::string response;
     if (!_req.get("Method").compare("POST")) {
@@ -196,13 +243,20 @@ std::string Response::load_file(std::string filepath)
         response = STATUS_LINE_200;
     }
 	if (isHtml(filepath))
-		response += "Content-Type: text/html\r\n";
+    {
+		buffer << _filestream_read.rdbuf();
+        _filestream_read.close();
+        response += "Content-Type: text/html\r\n";
+	    response += buffer.str();
+    }
 	else
 	{
-		response += "Content-Type: */*\r\n";
-		response += "Content-Disposition: attachment; filename=\"" + getFileName(filepath) + "\"\r\n";
+		// response += "Content-Type: */*\r\n";
+		// response += "Content-Disposition: attachment; filename=\"" + getFileName(filepath) + "\"\r\n";
+        response += "Transfer-Encoding: chunked\r\n";
+        response += "Content-Type: application/octet-stream\r\n\r\n";
+        _file = 3;
 	}
-	response += buffer.str();
 	return response;
 }
 
@@ -236,14 +290,15 @@ std::string Response::load_directory_listing(std::string directoryPath)
 
 bool Response::check_body_size()
 {
-    std::string max_body_size_str = _srv.config.getBestValues(_index_virt, _target, "client_max_body_size", {DEFAULT_MAX_BODY_SIZE})[0];
+    const std::string max_body_size_str = _srv.config.getBestValues(_index_virt, _target, "client_max_body_size", {DEFAULT_MAX_BODY_SIZE})[0];
 	if (max_body_size_str == "0")
         return true;
-    std::string body_size_str = _req.get("content-length");
+    const std::string body_size_str = _req.get("content-length");
     if (body_size_str.empty())
         return true;
-    long max_body_size = std::stoi(max_body_size_str);
-    long body_size = std::stoi(body_size_str);
+    long max_body_size = std::stol(max_body_size_str);
+    long body_size = std::stol(body_size_str);
+    std::cout << "check_body_size: \nbody:" << body_size << "\nmax: " << max_body_size << std::endl;
     return body_size > max_body_size ? false : true;
 }
 
