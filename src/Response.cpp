@@ -154,7 +154,19 @@ std::string Response::post()
 	// return status == 500 ? "HTTP/1.1 500 Internal Server Error" :
 	// 	// status == 400 ? "HTTP/1.1 400 Bad Request" :
 	// 	"HTTP/1.1 204 No Content";
-	return (STATUS_LINE_204); //No reloading
+    
+	// return (STATUS_LINE_204); //No reloading
+
+    std::string path = getPath();
+    if (std::filesystem::is_regular_file(path) && std::filesystem::exists(path))
+		return load_file(path);
+    std::string _index = _srv.config.getBestValues(_index_virt, _target, "index", DEFAULT_INDEX)[0];
+    if (_index.length() > 1 && std::filesystem::is_regular_file(path + _index) && std::filesystem::exists(path + _index))
+		return load_file(path + _index);
+
+    //std::string responseString = STATUS_LINE_201;
+    //responseString += "Content-Type: text/plain\r\nLocation: " + _fileName + "\r\nContent created successfully\r\n";
+    return (getErrorPage(404));
 }
 
 std::string Response::getErrorPage(int code)
@@ -226,7 +238,14 @@ std::string Response::load_file(std::string filepath)
 		_srv.saveCookieInfo(_req.getRef("cookie"));
 	buffer << "\r\n";
 	
-	std::string response = STATUS_LINE_200;
+    std::string response;
+    if (!_req.get("Method").compare("POST")) {
+        response = STATUS_LINE_201;
+        response += "Location: " + _fileName + "\r\n";
+    }
+    else {
+        response = STATUS_LINE_200;
+    }
 	if (isHtml(filepath))
     {
 		buffer << _filestream_read.rdbuf();
@@ -314,8 +333,13 @@ int Response::saveFile()
     std::ofstream newFile;
     while (std::filesystem::exists(_fileName))
     {
-        std::string filetype = _fileName.substr(_fileName.find_last_of('.'));
-        _fileName = _fileName.substr(0, _fileName.find_last_of('.')) + "_copy" + filetype;
+        std::string filetype;
+        size_t lastDot = _fileName.find_last_of('.');
+        if (lastDot == std::string::npos)
+            filetype = "";
+        else
+            filetype = _fileName.substr(lastDot);
+        _fileName = _fileName.substr(0, lastDot) + "_copy" + filetype;
     }
 	newFile.open(_fileName, std::ios::binary | std::ios::trunc);
     std::cout << "[INFO] File created" << std::endl;
