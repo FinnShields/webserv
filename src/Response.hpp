@@ -23,6 +23,7 @@
 #include "Server.hpp"
 
 #define STATUS_LINE_200 "HTTP/1.1 200 OK\r\n"
+#define STATUS_LINE_201 "HTTP/1.1 201 Created\r\n"
 #define STATUS_LINE_204 "HTTP/1.1 204 No Content\r\n"
 #define RESPONSE_404 "HTTP/1.1 404 Page not found\r\nContent-Type: text/plain\r\n"
 #define RESPONSE_405 "HTTP/1.1 405 Method Not Allowed\r\nContent-Type: text/plain\r\n"
