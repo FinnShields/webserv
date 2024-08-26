@@ -56,7 +56,13 @@ const std::string Response::appendfile()
         _filestream.write(bodyRaw.data(), end);
         std::cout << "[INFO] File appended" << std::endl;
     }
-	return (STATUS_LINE_204);    
+    std::string path = getPath();
+    if (std::filesystem::is_regular_file(path) && std::filesystem::exists(path))
+		return load_file(path);
+    std::string _index = _srv.config.getBestValues(_index_virt, _target, "index", DEFAULT_INDEX)[0];
+    if (_index.length() > 1 && std::filesystem::is_regular_file(path + _index) && std::filesystem::exists(path + _index))
+		return load_file(path + _index);
+	return (getErrorPage(404));    
 }
 
 const std::string Response::run()
@@ -101,22 +107,12 @@ std::string Response::post()
 {
     if (!_req.get("content-type").compare(0, 19, "multipart/form-data"))
 		std::cout << "saveFile returns: " << saveFile() << std::endl;
-	// int status = saveFile();
-	// return status == 500 ? "HTTP/1.1 500 Internal Server Error" :
-	// 	// status == 400 ? "HTTP/1.1 400 Bad Request" :
-	// 	"HTTP/1.1 204 No Content";
-    
-	// return (STATUS_LINE_204); //No reloading
-
     std::string path = getPath();
     if (std::filesystem::is_regular_file(path) && std::filesystem::exists(path))
 		return load_file(path);
     std::string _index = _srv.config.getBestValues(_index_virt, _target, "index", DEFAULT_INDEX)[0];
     if (_index.length() > 1 && std::filesystem::is_regular_file(path + _index) && std::filesystem::exists(path + _index))
 		return load_file(path + _index);
-
-    //std::string responseString = STATUS_LINE_201;
-    //responseString += "Content-Type: text/plain\r\nLocation: " + _fileName + "\r\nContent created successfully\r\n";
     return (getErrorPage(404));
 }
 
