@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/27 12:30:22 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/27 12:56:59 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,9 +57,8 @@ const std::string Response::appendfile()
         _filestream.open(_fileName, std::ios::binary | std::ios::app);
         _file = 2;
     }
-	std::string body = _req.get("body");
     std::vector<char> bodyRaw = _req.getBodyRawBytes();
-    size_t end = body.find(_boundary);
+    size_t end = findBoundary(bodyRaw, _boundary);
     end = end == std::string::npos ? bodyRaw.size() : end - 5;
 	if (_filestream.is_open())
     {
@@ -67,6 +66,21 @@ const std::string Response::appendfile()
         std::cout << "[INFO] File appended" << std::endl;
     }
     return get(); 
+}
+
+size_t  Response::findBoundary(std::vector<char> bodyRaw, std::string boundary)
+{
+    for (size_t i = 0; i < bodyRaw.size(); i++)
+    {
+        for (size_t j = 0; j < boundary.size(); j++)
+        {
+            if (bodyRaw[i + j] != boundary[j])
+                break ;
+            if (j == boundary.size() - 1)
+                return (i);
+        }
+    }
+    return (std::string::npos);
 }
 
 const std::string Response::getNextChunk()
