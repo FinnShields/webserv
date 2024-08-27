@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/27 12:56:59 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/27 13:22:56 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -124,14 +124,16 @@ const std::string Response::run()
 {
 	if (_file == 1 || _file == 2)
     	return appendfile();
-    if(!check_body_size())
-        return getErrorPage(413);
     std::string method = _req.get("method");
 	_target = _req.get("target");
 	_index_virt = _srv.getVirtHostIndex(_req.get("host"));
 	std::cout << "[INFO] Request is addressed to server " << _srv.index << "\n";
 	if (_srv.index != _index_virt)
 		std::cout << "[INFO] Request is readdressed to virtual server " << _index_virt << "\n";
+    if(!check_body_size()) 
+    {
+        return getErrorPage(413);
+    }
 	if(isMethodValid(method))
         _response = (_target.size() > 9 && _target.substr(0, 9).compare("/cgi-bin/") == 0) ? runCGI() :
                     (method == "GET") ? get() : 
