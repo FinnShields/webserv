@@ -28,7 +28,6 @@ Request& Request::operator=(const Request& r)
 {
 	_headers = r._headers;
 	_method = r._method;
-	_body = r._body;
 	_version = r._version;
 	_target = r._target;
     _recvReturnTotal = r._recvReturnTotal;
@@ -170,8 +169,6 @@ void	Request::handleChunks(char *reqArray, size_t start)
 	}
 	for (i = 0; i < contentRawBytes.size(); i++)
 		_bodyRawBytes.push_back(contentRawBytes[i]);
-	for (i = 0; i < _bodyRawBytes.size(); i++)
-		_body.append(1, _bodyRawBytes[i]);
 	if (chunkLength != 0)
 		_chunkedReqComplete = false;
 	else
@@ -181,7 +178,6 @@ void	Request::handleChunks(char *reqArray, size_t start)
 void	Request::moreChunks()
 {
 	_bodyRawBytes.clear();
-	_body.clear();
 	if (_incompleteChunk)
 	{
 		size_t i = 0;
@@ -218,19 +214,14 @@ void	Request::extractBody()
 		return handleChunks(reqArray, start);
 	for (size_t i = 0; start + i < (size_t) _reqRaw.size(); i++)
 		_bodyRawBytes.push_back(_reqRaw[start + i]);
-	for (size_t i = 0; i < _bodyRawBytes.size(); i++)
-		_body.append(1, _bodyRawBytes[i]);
     _bodyTotalSize += _bodyRawBytes.size();
 }
 
 void    Request::resetBody()
 {
     _bodyRawBytes.clear();
-    _body.clear();
     for (size_t i = 0; i < (size_t) _reqRaw.size(); i++)
 		_bodyRawBytes.push_back(_reqRaw[i]);
-	for (size_t i = 0; i < _bodyRawBytes.size(); i++)
-		_body.append(1, _bodyRawBytes[i]);
     _bodyTotalSize += _bodyRawBytes.size();
 }
 
@@ -258,8 +249,6 @@ const std::string	Request::get(std::string toGet)
 		return (_target);
 	if (!toGet.compare("version"))
 		return (_version);
-	if (!toGet.compare("body"))
-		return (_body);
 	if (!_headers.count(toGet))
 		return ("");
 	return (_headers[toGet]);
@@ -276,8 +265,6 @@ const std::string	Request::getHeader(std::string toGet)
 
 std::string& Request::getRef(std::string toGet)
 {
-	if (!toGet.compare("body"))
-		return (_body);
 	if (!toGet.compare("method"))
 		return (_method);
 	if (!toGet.compare("target"))
@@ -312,8 +299,13 @@ void	Request::display()
 		std::cout << "_Body: <file data>" << std::endl << "---------------------" << std::endl;
 		return ;
 	}
-	if (!_body.empty())
-		std::cout << "_Body: " << _body << std::endl;
+	if (!_bodyRawBytes.empty())
+	{
+		std::cout << "_Body: ";
+		for (size_t i = 0; i < _bodyRawBytes.size(); i++)
+			std::cout << _bodyRawBytes[i];
+		std::cout << std::endl;
+	}
 	std::cout << "---------------------" << std::endl;
 	std::cout << std::endl;
 }
