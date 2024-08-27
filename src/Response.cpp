@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/27 13:22:56 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/27 13:39:10 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,7 @@
 Response::Response(int fd, Request &req, Server &srv) : _fd(fd), _req(req), _srv(srv), _file(0){}
 Response::~Response() 
 {
-    std::cout << "Response destructor" << std::endl;
+    std::cout << "[INFO] Response destructor" << std::endl;
     if (_filestream.is_open())
     {
         _filestream.close();
