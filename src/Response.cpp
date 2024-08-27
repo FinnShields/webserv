@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/23 16:22:39 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/27 13:39:10 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 Response::Response(int fd, Request &req, Server &srv) : _fd(fd), _req(req), _srv(srv), _file(0){}
 Response::~Response() 
 {
+    std::cout << "[INFO] Response destructor" << std::endl;
     if (_filestream.is_open())
     {
         _filestream.close();
@@ -58,22 +59,13 @@ const std::string Response::appendfile()
     }
     std::vector<char> bodyRaw = _req.getBodyRawBytes();
     size_t end = findBoundary(bodyRaw, _boundary);
-    if (end == std::string::npos)
-    {
-        end = bodyRaw.size();
-    }
+    end = end == std::string::npos ? bodyRaw.size() : end - 5;
 	if (_filestream.is_open())
     {
         _filestream.write(bodyRaw.data(), end);
         std::cout << "[INFO] File appended" << std::endl;
     }
-    std::string path = getPath();
-    if (std::filesystem::is_regular_file(path) && std::filesystem::exists(path))
-		return load_file(path);
-    std::string _index = _srv.config.getBestValues(_index_virt, _target, "index", DEFAULT_INDEX)[0];
-    if (_index.length() > 1 && std::filesystem::is_regular_file(path + _index) && std::filesystem::exists(path + _index))
-		return load_file(path + _index);
-	return (getErrorPage(404));    
+    return get(); 
 }
 
 size_t  Response::findBoundary(std::vector<char> bodyRaw, std::string boundary)
@@ -132,21 +124,22 @@ const std::string Response::run()
 {
 	if (_file == 1 || _file == 2)
     	return appendfile();
-    if(!check_body_size())
-        return getErrorPage(413);
     std::string method = _req.get("method");
 	_target = _req.get("target");
 	_index_virt = _srv.getVirtHostIndex(_req.get("host"));
 	std::cout << "[INFO] Request is addressed to server " << _srv.index << "\n";
 	if (_srv.index != _index_virt)
 		std::cout << "[INFO] Request is readdressed to virtual server " << _index_virt << "\n";
+    if(!check_body_size()) 
+    {
+        return getErrorPage(413);
+    }
 	if(isMethodValid(method))
         _response = (_target.size() > 9 && _target.substr(0, 9).compare("/cgi-bin/") == 0) ? runCGI() :
                     (method == "GET") ? get() : 
                     (method == "POST") ? post() :
                     (method == "DELETE") ? deleteResp() : 
                     getErrorPage(501);
-    // std::cout << "------- Response ----------\n";
     return _response;
 }
 
@@ -351,16 +344,13 @@ int Response::saveFile()
             filetype = _fileName.substr(lastDot);
         _fileName = _fileName.substr(0, lastDot) + "_copy" + filetype;
     }
-	newFile.open(_fileName, std::ios::binary | std::ios::trunc);
+	newFile.open(_fileName, std::ios::binary);
     std::cout << "[INFO] File created" << std::endl;
     
     size_t start = body.find("\r\n\r\n") + 4;
     size_t end = body.find(_boundary+"--");
-    if (end == std::string::npos)
-    {
-        end = bodyRaw.size();
-    }
-    newFile.write(bodyRaw.data() + start, end - start - 5);
+    end = end == std::string::npos ? bodyRaw.size() : end - 5;
+    newFile.write(bodyRaw.data() + start, end - start);
     newFile.close();
     _file = 1;
 	return 204;
