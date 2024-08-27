@@ -56,9 +56,8 @@ const std::string Response::appendfile()
         _filestream.open(_fileName, std::ios::binary | std::ios::app);
         _file = 2;
     }
-	std::string body = _req.get("body");
     std::vector<char> bodyRaw = _req.getBodyRawBytes();
-    size_t end = body.find(_boundary);
+    size_t end = findBoundary(bodyRaw, _boundary);
     if (end == std::string::npos)
     {
         end = bodyRaw.size();
@@ -75,6 +74,21 @@ const std::string Response::appendfile()
     if (_index.length() > 1 && std::filesystem::is_regular_file(path + _index) && std::filesystem::exists(path + _index))
 		return load_file(path + _index);
 	return (getErrorPage(404));    
+}
+
+size_t  Response::findBoundary(std::vector<char> bodyRaw, std::string boundary)
+{
+    for (size_t i = 0; i < bodyRaw.size(); i++)
+    {
+        for (size_t j = 0; j < boundary.size(); j++)
+        {
+            if (bodyRaw[i + j] != boundary[j])
+                break ;
+            if (j == boundary.size() - 1)
+                return (i);
+        }
+    }
+    return (std::string::npos);
 }
 
 const std::string Response::getNextChunk()
