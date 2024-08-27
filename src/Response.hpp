@@ -76,7 +76,7 @@ class Response
         std::string htmlEscape(const std::string& s);
 		void replacePercent20withSpace(std::string &str);
 		std::string getErrorPage(int code);
-		size_t  findBoundary(std::vector<char> bodyRaw, std::string boundary);
+		size_t  findString(std::vector<char> bodyRaw, std::string str);
         
 
 		Response();
