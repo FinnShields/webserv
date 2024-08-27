@@ -30,7 +30,7 @@
 #define RESPONSE_500 "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\n"
 #define RESPONSE_501 "HTTP/1.1 501 Not Implemented\r\nContent-Type: text/plain\r\n\r\nError: Method not recognized or not implemented"
 #define DEFAULT_INDEX {"index.html"}
-#define DEFAULT_MAX_BODY_SIZE {"1000"}
+#define DEFAULT_MAX_BODY_SIZE {"30000000"}
 
 
 
@@ -76,6 +76,7 @@ class Response
         std::string htmlEscape(const std::string& s);
 		void replacePercent20withSpace(std::string &str);
 		std::string getErrorPage(int code);
+		size_t  findBoundary(std::vector<char> bodyRaw, std::string boundary);
         
 
 		Response();
