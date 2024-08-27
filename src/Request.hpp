@@ -29,7 +29,6 @@ class Request
 		std::string _target;
 		std::string _version;
 		std::map<std::string, std::string> _headers;
-		std::string _body;
 		std::vector<char> _bodyRawBytes;
 		std::vector<char> _reqRaw;
 		ssize_t _recvReturnTotal;
