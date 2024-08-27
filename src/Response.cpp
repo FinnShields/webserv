@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/23 16:22:39 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/27 12:30:22 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 Response::Response(int fd, Request &req, Server &srv) : _fd(fd), _req(req), _srv(srv), _file(0){}
 Response::~Response() 
 {
+    std::cout << "Response destructor" << std::endl;
     if (_filestream.is_open())
     {
         _filestream.close();
@@ -59,22 +60,13 @@ const std::string Response::appendfile()
 	std::string body = _req.get("body");
     std::vector<char> bodyRaw = _req.getBodyRawBytes();
     size_t end = body.find(_boundary);
-    if (end == std::string::npos)
-    {
-        end = bodyRaw.size();
-    }
+    end = end == std::string::npos ? bodyRaw.size() : end - 5;
 	if (_filestream.is_open())
     {
         _filestream.write(bodyRaw.data(), end);
         std::cout << "[INFO] File appended" << std::endl;
     }
-    std::string path = getPath();
-    if (std::filesystem::is_regular_file(path) && std::filesystem::exists(path))
-		return load_file(path);
-    std::string _index = _srv.config.getBestValues(_index_virt, _target, "index", DEFAULT_INDEX)[0];
-    if (_index.length() > 1 && std::filesystem::is_regular_file(path + _index) && std::filesystem::exists(path + _index))
-		return load_file(path + _index);
-	return (getErrorPage(404));    
+    return get(); 
 }
 
 const std::string Response::getNextChunk()
@@ -132,7 +124,6 @@ const std::string Response::run()
                     (method == "POST") ? post() :
                     (method == "DELETE") ? deleteResp() : 
                     getErrorPage(501);
-    // std::cout << "------- Response ----------\n";
     return _response;
 }
 
@@ -337,16 +328,13 @@ int Response::saveFile()
             filetype = _fileName.substr(lastDot);
         _fileName = _fileName.substr(0, lastDot) + "_copy" + filetype;
     }
-	newFile.open(_fileName, std::ios::binary | std::ios::trunc);
+	newFile.open(_fileName, std::ios::binary);
     std::cout << "[INFO] File created" << std::endl;
     
     size_t start = body.find("\r\n\r\n") + 4;
     size_t end = body.find(_boundary+"--");
-    if (end == std::string::npos)
-    {
-        end = bodyRaw.size();
-    }
-    newFile.write(bodyRaw.data() + start, end - start - 5);
+    end = end == std::string::npos ? bodyRaw.size() : end - 5;
+    newFile.write(bodyRaw.data() + start, end - start);
     newFile.close();
     _file = 1;
 	return 204;

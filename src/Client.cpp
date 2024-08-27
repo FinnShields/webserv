@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/23 16:06:38 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/27 12:50:39 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,8 +17,17 @@ Client::Client(int fd) : _fd(fd), _request(NULL), _res(NULL), _responseSent(fals
 Client::Client(const Client &copy) : _fd(copy._fd), _request(copy._request), _res(copy._res), _responseSent(copy._responseSent){}
 Client::~Client() 
 {
-    delete _request;
-    delete _res;
+    std::cout << "[INFO] Client destructor" << std::endl;
+    if (_res)
+    {
+        delete _res;
+        _res = nullptr;
+    }
+    if (_request)
+    {
+        delete _request;
+        _request = nullptr;
+    }
 }
 
 Client &Client::operator=(const Client &assign)
@@ -73,6 +82,11 @@ int Client::send_response()
         std::cout << "[INFO] More chunks to send\n";
         _response = _res->getNextChunk();
         return 0;
+    }
+    if (_res)
+    {
+        delete _res;
+        _res = nullptr;
     }
     return 1;
 }
