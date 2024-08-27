@@ -58,7 +58,7 @@ const std::string Response::appendfile()
         _file = 2;
     }
     std::vector<char> bodyRaw = _req.getBodyRawBytes();
-    size_t end = findBoundary(bodyRaw, _boundary);
+    size_t end = findString(bodyRaw, _boundary);
     end = end == std::string::npos ? bodyRaw.size() : end - 5;
 	if (_filestream.is_open())
     {
@@ -68,15 +68,15 @@ const std::string Response::appendfile()
     return get(); 
 }
 
-size_t  Response::findBoundary(std::vector<char> bodyRaw, std::string boundary)
+size_t  Response::findString(std::vector<char> bodyRaw, std::string str)
 {
     for (size_t i = 0; i < bodyRaw.size(); i++)
     {
-        for (size_t j = 0; j < boundary.size(); j++)
+        for (size_t j = 0; j < str.size(); j++)
         {
-            if (bodyRaw[i + j] != boundary[j])
+            if (bodyRaw[i + j] != str[j])
                 break ;
-            if (j == boundary.size() - 1)
+            if (j == str.size() - 1)
                 return (i);
         }
     }
@@ -312,16 +312,15 @@ bool Response::check_body_size()
 int Response::saveFile()
 	{
 	_boundary = _req.get("Content-Type").substr(31);
-	std::string body = _req.get("body");
     std::vector<char> bodyRaw = _req.getBodyRawBytes();
-	if (body.empty())
+	if (bodyRaw.empty())
     {
 		std::cout << "No Body" << std::endl;
         return 400;
     }
     _fileName = "";
-    std::string::iterator it = body.begin();
-    it += body.find("filename") + 10;
+    std::vector<char>::iterator it = bodyRaw.begin();
+    it += findString(bodyRaw, "filename") + 10;
 	while (*it != '\"')
 		_fileName.append(1, *(it++));
 	if (_fileName.empty())
@@ -329,7 +328,6 @@ int Response::saveFile()
 		std::cout << "No file name" << std::endl;
         return 400;
     }
-    
     std::string directory = getPath() + "uploads/";
     mkdir(directory.c_str(), 0777);
     _fileName = directory + _fileName;
@@ -347,8 +345,8 @@ int Response::saveFile()
 	newFile.open(_fileName, std::ios::binary);
     std::cout << "[INFO] File created" << std::endl;
     
-    size_t start = body.find("\r\n\r\n") + 4;
-    size_t end = body.find(_boundary+"--");
+    size_t start = findString(bodyRaw, "\r\n\r\n") + 4;
+    size_t end = findString(bodyRaw, _boundary+"--");
     end = end == std::string::npos ? bodyRaw.size() : end - 5;
     newFile.write(bodyRaw.data() + start, end - start);
     newFile.close();
