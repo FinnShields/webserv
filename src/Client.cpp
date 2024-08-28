@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/28 12:05:19 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/28 14:23:16 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,7 +66,10 @@ int Client::send_response()
 {
     _res->display();
     if (send(_fd, _response.c_str(), _response.size(), 0) < 0)
+    {
         perror("Send error");
+        return 1;
+    }
     std::cout << "[INFO] Response sent\n";
     if (_res->hasMoreChunks())
     {

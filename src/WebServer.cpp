@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/28 12:06:08 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/28 14:18:42 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,7 +35,8 @@ std::vector<size_t> WebServer::extractVirtualHostsIndices()
 
 void WebServer::setup()
 {
-	setRealToVirt();
+	signal(SIGPIPE, SIG_IGN);
+    setRealToVirt();
 	std::vector<size_t> indices = extractVirtualHostsIndices();
 	try  // try to be removed as it exist in main 
 	{
