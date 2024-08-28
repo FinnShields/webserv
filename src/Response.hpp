@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:06:10 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/23 14:54:42 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/28 09:30:13 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -90,7 +90,8 @@ class Response
 		
 		const std::string run();
         const std::string getNextChunk();
-        bool hasMoreChunks();
-		void display();
+        bool hasMoreChunks() const;
+		void display() const;
+        int getcode() const;
 };
 #endif

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:10 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/03 11:28:16 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/08/28 10:19:55 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,7 +39,7 @@ class Client;
 class Server 
 {
     private:
-        std::vector<Client> _clients;
+        std::vector<Client*> _clients;
         std::unordered_map<size_t, size_t> cookies;
 		
         struct sockaddr_in _address;

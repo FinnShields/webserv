@@ -6,15 +6,15 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/27 13:44:09 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/28 10:55:26 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Client.hpp"
 
 
-Client::Client(int fd) : _fd(fd), _request(NULL), _res(NULL), _responseSent(false) {}
-Client::Client(const Client &copy) : _fd(copy._fd), _request(copy._request), _res(copy._res), _responseSent(copy._responseSent){}
+Client::Client(int fd, Server *server) : _fd(fd), _server(server), _request(nullptr), _res(nullptr), _responseSent(false) {}
+// Client::Client(const Client &copy) : _fd(copy._fd), _request(copy._request), _res(copy._res), _responseSent(copy._responseSent){}
 Client::~Client() 
 {
     std::cout << "[INFO] Client destructor" << std::endl;
@@ -28,16 +28,17 @@ Client::~Client()
         delete _request;
         _request = nullptr;
     }
+    close_connection();
 }
 
-Client &Client::operator=(const Client &assign)
-{
-	this->_fd = assign._fd;
-    this->_request = assign._request;
-    _res = assign._res;
-    _responseSent = assign._responseSent;
-	return (*this);
-}
+// Client &Client::operator=(const Client &assign)
+// {
+// 	this->_fd = assign._fd;
+//     this->_request = assign._request;
+//     _res = assign._res;
+//     _responseSent = assign._responseSent;
+// 	return (*this);
+// }
 
 int Client::get_socket_fd()
 {
@@ -48,21 +49,21 @@ int Client::get_socket_fd()
 //Return 0 == Request fully read
 //Return 1 == Request is chunked (file)
 //Return 3 == Headers not fully read
-int Client::handle_request(Server& srv)
+int Client::handle_request()
 {
     if (!_request)
         _request = new Request();
     int ret = _request->read(_fd);
-    std::cout << "request->read() returns: " << ret << std::endl;
+    // std::cout << "request->read() returns: " << ret << std::endl;
     if (ret == 3 || ret == -1)
     {
         std::cout << ((ret == 3) ? "Headers are not fully read" : "Empty request") << std::endl;
         return ret;
     }
     if (!_res)
-        _res = new Response(_fd, *_request, srv);
+        _res = new Response(_fd, *_request, *_server);
     _response = _res->run();
-    if (_response.substr(0, 12).compare("HTTP/1.1 413") == 0)
+    if (_res->getcode() == 413)
         ret = 0 ;
     return ret;
 }
@@ -83,16 +84,12 @@ int Client::send_response()
         _response = _res->getNextChunk();
         return 0;
     }
-    if (_res)
-    {
-        delete _res;
-        _res = nullptr;
-    }
     return 1;
 }
 
-void Client::close_connection(Server &srv)
+void Client::close_connection()
 {
+    std::cout << "[INFO] Closing connection" << std::endl;
     close(_fd);
-    srv.remove_client(_fd);
+    _server->remove_client(_fd);
 }
