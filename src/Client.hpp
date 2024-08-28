@@ -35,9 +35,9 @@ class Client
     private:
         int _fd;
         Server *_server;
-        Request *_request;
+        std::unique_ptr<Request> _request;
         std::string _response;
-        Response *_res;
+        std::unique_ptr<Response> _res;
         bool _responseSent;
 
         Client();

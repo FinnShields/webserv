@@ -19,15 +19,9 @@ Client::~Client()
 {
     std::cout << "[INFO] Client destructor" << std::endl;
     if (_res)
-    {
-        delete _res;
-        _res = nullptr;
-    }
+        _res.reset();
     if (_request)
-    {
-        delete _request;
-        _request = nullptr;
-    }
+        _request.reset();
     // close_connection();
 }
 
@@ -52,7 +46,7 @@ int Client::get_socket_fd()
 int Client::handle_request()
 {
     if (!_request)
-        _request = new Request();
+        _request = std::make_unique<Request>();
     int ret = _request->read(_fd);
     // std::cout << "request->read() returns: " << ret << std::endl;
     if (ret == 3 || ret == -1)
@@ -61,7 +55,7 @@ int Client::handle_request()
         return ret;
     }
     if (!_res)
-        _res = new Response(_fd, *_request, *_server);
+        _res = std::make_unique<Response>(_fd, *_request, *_server);
     _response = _res->run();
     if (_res->getcode() == 413)
         ret = 0 ;
