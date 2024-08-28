@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:06 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/28 10:28:53 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/28 12:04:36 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -76,13 +76,13 @@ void Server::accept_new_connection(std::vector<pollfd> &_fds)
 		return (perror("accept"));
 	client.events = POLLIN;
 	_fds.push_back(client);
-	_clients.push_back(new Client(client.fd, this));
+	_clients.push_back(std::make_unique<Client>(client.fd, this));
 }
 
 void Server::remove_client(int fd)
 {
 	for (auto it = _clients.begin(); it != _clients.end(); it++)
-		if ((*it)->get_socket_fd() == fd)
+		if ((*it).get()->get_socket_fd() == fd)
 		{
 			_clients.erase(it);
 			break ;
@@ -91,9 +91,9 @@ void Server::remove_client(int fd)
 
 Client *Server::get_client(int fd)
 {
-	for (Client *client : _clients)
+	for (std::unique_ptr<Client> &client : _clients)
 		if (client->get_socket_fd() == fd)
-			return (client);
+			return (client.get());
 	return (NULL);
 }
 

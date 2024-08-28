@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/28 10:55:26 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/28 12:05:19 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,7 +28,7 @@ Client::~Client()
         delete _request;
         _request = nullptr;
     }
-    close_connection();
+    // close_connection();
 }
 
 // Client &Client::operator=(const Client &assign)

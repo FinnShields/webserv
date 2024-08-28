@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/28 10:55:35 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/28 12:06:08 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -88,7 +88,7 @@ bool WebServer::fd_is_client(pollfd &pfd)
                 // std::cout << " pollout" << std::endl;
                 if (!client->send_response())
                     return false;
-                delete client;
+                client->close_connection();
                 return true;
             }
             if (pfd.revents & POLLIN)
@@ -99,7 +99,7 @@ bool WebServer::fd_is_client(pollfd &pfd)
                     pfd.events |= POLLOUT;
                 if (ret == -1)
                 {
-                    delete client;
+                    client->close_connection();
                     return true;
                 }
                 return false;
