@@ -18,10 +18,6 @@ Client::Client(int fd, Server *server) : _fd(fd), _server(server), _request(null
 Client::~Client() 
 {
     std::cout << "[INFO] Client destructor" << std::endl;
-    if (_res)
-        _res.reset();
-    if (_request)
-        _request.reset();
     // close_connection();
 }
 
