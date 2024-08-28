@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/27 13:39:10 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/28 10:54:41 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,6 +65,7 @@ const std::string Response::appendfile()
         _filestream.write(bodyRaw.data(), end);
         std::cout << "[INFO] File appended" << std::endl;
     }
+    std::cout << "\nDownloading: " << _req.getBodyTotalSize() << "/" << _req.getHeader("content-length") << std::endl;
     return get(); 
 }
 
@@ -115,7 +116,7 @@ const std::string Response::getNextChunk()
     return chunk;
 }
 
-bool Response::hasMoreChunks()
+bool Response::hasMoreChunks() const
 {
     return _file == 3 ? true : false;
 }
@@ -150,11 +151,11 @@ std::string Response::get()
         _message = "OK";
     }
 	std::string path = getPath();
-    std::cout << "PATH=" << path << std::endl;
+    // std::cout << "PATH=" << path << std::endl;
 	if (std::filesystem::is_regular_file(path) && std::filesystem::exists(path))
 		return load_file(path);
 	std::string _index = _srv.config.getBestValues(_index_virt, _target, "index", DEFAULT_INDEX)[0];
-    std::cout << "INDEXPATH=" << path + _index << std::endl;
+    // std::cout << "INDEXPATH=" << path + _index << std::endl;
 	if (_index.length() > 1 && std::filesystem::is_regular_file(path + _index) && std::filesystem::exists(path + _index))
 		return load_file(path + _index);
 	bool autoindex = _srv.config.getBestValues(_index_virt, _target, "autoindex", {"off"})[0] == "on";
@@ -375,6 +376,7 @@ int Response::saveFile()
     newFile.write(bodyRaw.data() + start, end - start);
     newFile.close();
     _file = 1;
+    std::cout << "\nDownloading: " << _req.getBodyTotalSize() << "/" << _req.getHeader("content-length") << std::endl;
 	return 204;
 }
 
@@ -511,11 +513,16 @@ void Response::replacePercent20withSpace(std::string &str)
 	}
 }
 
-void Response::display()
+void Response::display() const
 {
     if (!_code)
         return ;
     std::cout << "------- Response ----------" << std::endl;
     std::cout << "HTTP/1.1 " << _code << " " << _message << std::endl;
     std::cout << "---------------------------" << std::endl;
+}
+
+int Response::getcode() const
+{
+    return _code;
 }

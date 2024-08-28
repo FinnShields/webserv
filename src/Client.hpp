@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:36 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/16 01:58:23 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/28 10:29:58 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,21 +34,22 @@ class Client
 {
     private:
         int _fd;
+        Server *_server;
         Request *_request;
         std::string _response;
         Response *_res;
         bool _responseSent;
 
         Client();
-    public:
-        Client(int socket_fd);
         Client(const Client &copy);
         Client &operator=(const Client &assign);
+    public:
+        Client(int socket_fd, Server *srv);
         ~Client();
         
-        int handle_request(Server& srv);
+        int handle_request();
         int send_response();
-        void close_connection(Server &srv);
+        void close_connection();
         int get_socket_fd();
         std::string& get_fileName();
         bool responseReady();

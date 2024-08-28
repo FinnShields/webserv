@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/27 15:15:37 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/28 10:55:35 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -78,28 +78,28 @@ bool WebServer::fd_is_server(int fd)
 
 bool WebServer::fd_is_client(pollfd &pfd)
 {
-	Client *client;
+	Client *client = nullptr;
     
 	for (Server &srv : _servers)
 		if ((client = srv.get_client(pfd.fd)))
 		{
             if (pfd.revents & POLLOUT)
             {
-                std::cout << " pollout" << std::endl;
+                // std::cout << " pollout" << std::endl;
                 if (!client->send_response())
                     return false;
-                client->close_connection(srv);
+                delete client;
                 return true;
             }
             if (pfd.revents & POLLIN)
             {
-                std::cout << " pollin" << std::endl;
-			    int ret = client->handle_request(srv);
+                // std::cout << " pollin" << std::endl;
+			    int ret = client->handle_request();
                 if (ret == 0)
                     pfd.events |= POLLOUT;
                 if (ret == -1)
                 {
-    			    client->close_connection(srv);
+                    delete client;
                     return true;
                 }
                 return false;
