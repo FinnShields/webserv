@@ -45,6 +45,8 @@ class Response
 		Request &_req;
 		Server &_srv;
         int _file;
+		int	_code;
+		std::string _message;
         std::ofstream _filestream;
         std::ifstream _filestream_read;
         std::string _fileName;
@@ -89,5 +91,6 @@ class Response
 		const std::string run();
         const std::string getNextChunk();
         bool hasMoreChunks();
+		void display();
 };
 #endif

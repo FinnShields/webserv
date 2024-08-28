@@ -73,7 +73,7 @@ bool Client::responseReady()
 
 int Client::send_response()
 {
-    std::cout << "------- Response ----------\n" << _response << "\n------- END ---------------\n";
+    _res->display();
     if (send(_fd, _response.c_str(), _response.size(), 0) < 0)
         perror("Send error");
     std::cout << "[INFO] Response sent\n";

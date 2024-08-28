@@ -12,7 +12,7 @@
 
 #include "Response.hpp"
 
-Response::Response(int fd, Request &req, Server &srv) : _fd(fd), _req(req), _srv(srv), _file(0){}
+Response::Response(int fd, Request &req, Server &srv) : _fd(fd), _req(req), _srv(srv), _file(0), _code(0){}
 Response::~Response() 
 {
     std::cout << "[INFO] Response destructor" << std::endl;
@@ -145,6 +145,10 @@ const std::string Response::run()
 
 std::string Response::get()
 {
+    if (!_code) {
+        _code = 200;
+        _message = "OK";
+    }
 	std::string path = getPath();
     std::cout << "PATH=" << path << std::endl;
 	if (std::filesystem::is_regular_file(path) && std::filesystem::exists(path))
@@ -161,6 +165,8 @@ std::string Response::get()
 
 std::string Response::post()
 {
+    _code = 201;
+    _message = "Created";
     if (!_req.get("content-type").compare(0, 19, "multipart/form-data"))
 		std::cout << "saveFile returns: " << saveFile() << std::endl;
     std::string path = getPath();
@@ -174,10 +180,27 @@ std::string Response::post()
 
 std::string Response::getErrorPage(int code)
 {
+    _code = code;
+    switch (code) {
+        case 405:
+            _message = "Not allowed";
+            break;
+        case 413:
+            _message = "Content too large";
+            break;
+        case 500:
+            _message = "Internal server error";
+            break;
+        case 501:
+            _message = "Not implemented";
+            break;
+        default:
+            _message = "Not found";
+    }
 	std::string error_page_path = _srv.config.getValues(_index_virt, _target, std::to_string(code), {"empty"})[0];
 	std::cout << "[TEST MSG, comment me] Error page for code " << code << " is ->" << error_page_path << "<-\n"; 
 	t_vector_str pages = _srv.config.getValues(_index_virt, _target, "error_page", {"empty"});
-	std::string responseString = code == 413 ? "HTTP/1.1 413 Payload Too Large\r\nContent-Type: text/html\r\n\r\n" :
+	std::string responseString = code == 413 ? "HTTP/1.1 413 Content Too Large\r\nContent-Type: text/html\r\n\r\n" :
             "HTTP/1.1 " + std::to_string(code) + " Not Found\r\nContent-Type: text/html\r\n\r\n";
 	std::string errorPath = "www/error_pages/" + std::to_string(code) + ".html";
 	for (size_t i = 0; i < pages.size() - 1; i++)
@@ -196,8 +219,9 @@ std::string Response::getErrorPage(int code)
 
 std::string Response::deleteResp()
 {
+    _code = 204;
+    _message = "No content";
     std::string path = getPath();
-
 	replacePercent20withSpace(path);
 	std::cout << "Deleting " << path << std::endl;
 	if (deleteFile(path) == 204)
@@ -485,4 +509,13 @@ void Response::replacePercent20withSpace(std::string &str)
 		str.replace(pos, 3, " ");
 		pos = str.find("%20", pos + 1);
 	}
+}
+
+void Response::display()
+{
+    if (!_code)
+        return ;
+    std::cout << "------- Response ----------" << std::endl;
+    std::cout << "HTTP/1.1 " << _code << " " << _message << std::endl;
+    std::cout << "---------------------------" << std::endl;
 }
