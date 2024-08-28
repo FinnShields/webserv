@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/08/23 16:05:49 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/28 10:47:05 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -95,7 +95,7 @@ int	Request::read(int _fd)
     _reqRaw.clear();
     _status = !_headers["transfer-encoding"].empty() ? 2 :
         !_headers["content-length"].empty() ? 1 : 0; 
-    std::cout << "\nContent-length = " << _headers["content-length"] << "\nbodysize= " << _bodyRawBytes.size() << "\nbodyTotalSize=" << _bodyTotalSize << std::endl;
+    
     if (_status == 1)
         return std::stol(_headers["content-length"]) > _bodyTotalSize ? 1 : 0;
     return _chunkedReqComplete ? 0 : !_chunkedReqComplete ? 1 : 0;
