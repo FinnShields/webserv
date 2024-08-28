@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/27 13:44:09 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/27 15:15:44 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -93,6 +93,7 @@ int Client::send_response()
 
 void Client::close_connection(Server &srv)
 {
+    std::cout << "[INFO] Closing connection" << std::endl;
     close(_fd);
     srv.remove_client(_fd);
 }

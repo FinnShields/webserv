@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:06 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/14 11:53:24 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/27 15:10:15 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -76,7 +76,7 @@ void Server::accept_new_connection(std::vector<pollfd> &_fds)
 		return (perror("accept"));
 	client.events = POLLIN;
 	_fds.push_back(client);
-	_clients.push_back(client.fd);
+	_clients.emplace_back(client.fd);
 }
 
 void Server::remove_client(int fd)
