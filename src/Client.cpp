@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/28 14:17:35 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/28 14:23:16 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,10 +18,6 @@ Client::Client(int fd, Server *server) : _fd(fd), _server(server), _request(null
 Client::~Client() 
 {
     std::cout << "[INFO] Client destructor" << std::endl;
-    // if (_res)
-    //     _res.reset();
-    // if (_request)
-    //     _request.reset();
     // close_connection();
 }
 
