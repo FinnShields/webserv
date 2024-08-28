@@ -334,6 +334,23 @@ bool Response::check_body_size()
     return body_size > max_body_size ? false : true;
 }
 
+char Response::decodeChar(const char *ch)
+{
+    char    rtn = 0;
+    char    first = *(ch + 1);
+    char    last = *(ch + 2);
+
+    if (first >= '2' && first <= '9')
+        rtn = 16 * (first - '0');
+    else if (first >= 'A' && first <= 'F')
+        rtn = 16 * (first - 'A' + 10);
+    if (last >= '0' && last <= '9')
+        rtn += last - '0';
+    else if (last >= 'A' && last <= 'F')
+        rtn += last - 'A' + 10;
+    return (rtn);
+}
+
 int Response::saveFile()
 	{
 	_boundary = _req.get("Content-Type").substr(31);
@@ -382,7 +399,18 @@ int Response::saveFile()
 
 int Response::deleteFile(const std::string &file)
 {
-    if (std::remove(file.c_str()) < 0)
+    std::string decodedFileName = "";
+    for (size_t i = 0; i < file.size(); i ++)
+    {
+        if (file[i] == '%')
+        {
+            decodedFileName.append(1, decodeChar(&file.c_str()[i]));
+            i += 2;
+        }
+        else
+            decodedFileName.append(1, file[i]);
+    }
+    if (std::remove(decodedFileName.c_str()) < 0)
 	{
         perror("remove");
 		return 404;
