@@ -58,6 +58,20 @@ const std::string Response::appendfile()
         _file = 2;
     }
     std::vector<char> bodyRaw = _req.getBodyRawBytes();
+    if (_fileCurrentSize + bodyRaw.size() >= _bodyMaxSize)
+    {
+        _file = 0;
+        if (std::remove(_fileName.c_str()) < 0)
+        {
+            perror("delete");
+            _code = 404;
+            _message = "Not found";
+            return (getErrorPage(404));
+        }
+        _code = 413;
+        _message = "Content too large";
+        return (getErrorPage(413));
+    }
     size_t end = findString(bodyRaw, _boundary);
     end = end == std::string::npos ? bodyRaw.size() : end - 5;
 	if (_filestream.is_open())
@@ -329,6 +343,7 @@ bool Response::check_body_size()
     if (body_size_str.empty())
         return true;
     long max_body_size = std::stol(max_body_size_str);
+    _bodyMaxSize = max_body_size;
     long body_size = std::stol(body_size_str);
     std::cout << "check_body_size: \nbody:" << body_size << "\nmax: " << max_body_size << std::endl;
     return body_size > max_body_size ? false : true;
@@ -353,6 +368,7 @@ char Response::decodeChar(const char *ch)
 
 int Response::saveFile()
 	{
+    _fileCurrentSize = 0;
 	_boundary = _req.get("Content-Type").substr(31);
     std::vector<char> bodyRaw = _req.getBodyRawBytes();
 	if (bodyRaw.empty())
@@ -392,6 +408,7 @@ int Response::saveFile()
     end = end == std::string::npos ? bodyRaw.size() : end - 5;
     newFile.write(bodyRaw.data() + start, end - start);
     newFile.close();
+    _fileCurrentSize += bodyRaw.size();
     _file = 1;
     std::cout << "\nDownloading: " << _req.getBodyTotalSize() << "/" << _req.getHeader("content-length") << std::endl;
 	return 204;
