@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/29 14:29:02 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/29 15:52:38 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,6 +37,7 @@ void WebServer::setup()
 {
 	signal(SIGPIPE, SIG_IGN);
     setRealToVirt();
+    Response::setAbsolutePath();
 	std::vector<size_t> indices = extractVirtualHostsIndices();
     std::cout << "[INFO] Total number of servers: " << config.size()
         << " . Total number of virtual hosts " << indices.size()

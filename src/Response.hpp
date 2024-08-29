@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:06:10 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/28 09:30:13 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/29 15:52:39 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,9 +38,12 @@ class Request;
 class Server;
 using t_vector_str = std::vector<std::string>;
 
+
 class Response
 {
 	private:
+        static std::string ABSOULTE_PATH;
+
 		int	_fd;
 		Request &_req;
 		Server &_srv;
@@ -95,5 +98,6 @@ class Response
         bool hasMoreChunks() const;
 		void display() const;
         int getcode() const;
+        static void setAbsolutePath();
 };
 #endif

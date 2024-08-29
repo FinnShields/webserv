@@ -6,11 +6,19 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/28 10:54:41 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/29 15:57:22 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Response.hpp"
+
+std::string Response::ABSOULTE_PATH;
+
+void Response::setAbsolutePath()
+{
+    std::filesystem::path exePath = std::filesystem::read_symlink("/proc/self/exe");
+    ABSOULTE_PATH = exePath.parent_path().string() + '/';
+}
 
 Response::Response(int fd, Request &req, Server &srv) : _fd(fd), _req(req), _srv(srv), _file(0), _code(0){}
 Response::~Response() 
@@ -479,13 +487,13 @@ std::string Response::getPath()
         root = _srv.config.getAll(_index_virt, "main", "root", 0);
     }
     if (alias.empty() && root.empty())
-        return _target.substr(1);
+        return ABSOULTE_PATH + _target.substr(1);
     if (alias.empty())
-        return root + _target;
+        return ABSOULTE_PATH + root + _target;
     std::string loc = _srv.config.selectLocation(_target);
     loc = loc == "main" ? "/" : loc;
     std::string target = _target.substr(loc.length());
-    return alias + target;
+    return ABSOULTE_PATH + alias + target;
 }
 
 bool Response::isHtml(const std::string fileName)
