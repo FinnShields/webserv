@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   main.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:39 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/07/07 12:09:05 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/08/29 13:59:42 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,19 +15,17 @@
 #include "Parser.hpp"
 #include "Config.hpp"
 
+#define DEFAULT_CONFIG "config/three_servers.conf"
+
 int main(int argc, char *argv[]) {
-    std::cout << argv[0] << "\n";
-    if (argc < 2) {
-        std::cerr << "Usage: ./webserv [configuration file]" << std::endl;
-        return 1;
-    }
     try
     {
-        Parser data(argv[1]);
-        std::cout
-		<< "----- EXTRACTED DATA ------------\n"
-		<< data.get()
-		<< "----- END of DATA ---------------\n";
+        std::string filename = argc < 2 ? DEFAULT_CONFIG : argv[1];
+        std::cout << "FAB WebServer\nConfig: " << filename << std::endl;
+        Parser data(filename);
+        std::cout << "----- EXTRACTED DATA ------------\n"
+		        << data.get()
+    	    	<< "----- END of DATA ---------------\n";
         data.isValid();
         WebServer webserv(data.get());
         webserv.setup();
@@ -37,7 +35,8 @@ int main(int argc, char *argv[]) {
     {
         std::cerr << e.what() << std::endl;
     }
-    catch (const std::runtime_error& e){
+    catch (const std::runtime_error& e)
+    {
          std::cerr << e.what() << "\n";
          return 1;
     }
