@@ -50,6 +50,8 @@ class Response
         std::ofstream _filestream;
         std::ifstream _filestream_read;
         std::string _fileName;
+		size_t _fileCurrentSize;
+		size_t _bodyMaxSize;
         std::string _boundary;
 		std::string _target;
 		size_t _index_virt;
