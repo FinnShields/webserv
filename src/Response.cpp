@@ -87,6 +87,7 @@ const std::string Response::appendfile()
         _filestream.write(bodyRaw.data(), end);
         std::cout << "[INFO] File appended" << std::endl;
     }
+    _fileCurrentSize += bodyRaw.size();
     std::cout << "\nDownloading: " << _req.getBodyTotalSize() << "/" << _req.getHeader("content-length") << std::endl;
     return get(); 
 }
