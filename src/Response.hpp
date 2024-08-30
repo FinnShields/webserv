@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:06:10 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/28 09:30:13 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/29 16:18:21 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,9 +38,13 @@ class Request;
 class Server;
 using t_vector_str = std::vector<std::string>;
 
+
 class Response
 {
 	private:
+        static const std::string ABSOLUTE_PATH;
+        static const std::string setAbsolutePath();
+
 		int	_fd;
 		Request &_req;
 		Server &_srv;
