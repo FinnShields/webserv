@@ -44,10 +44,11 @@ void Server::setup_socket()
 	_address.sin_family = AF_INET;
     _address.sin_addr.s_addr = _ip;
     _address.sin_port = htons(_port);
-    if (bind(_server_fd, (struct sockaddr *)&_address, sizeof(_address)) < 0)
+    if (bind(_server_fd, (struct sockaddr *)&_address, sizeof(_address)) < 0) {
         throw std::runtime_error(_name + " bind failed");
-
-    std::cout << "[INFO] Socket setup complete. Listening on IP: " << inet_ntoa(_address.sin_addr) << " Port: " << ntohs(_address.sin_port) << "\n";
+	}
+	ft_inet_ntoa(_address.sin_addr.s_addr);
+    std::cout << "[INFO] Socket setup complete. Listening on IP: " << ft_inet_ntoa(_address.sin_addr.s_addr) << " Port: " << ntohs(_address.sin_port) << "\n";
 }
 
 void Server::start_listen()
@@ -106,8 +107,8 @@ std::string Server::get_ip_string() const
 {
 	struct in_addr ip;
     ip.s_addr = _ip;
-	const char * str = inet_ntoa(ip); //no need to clean? stored in static buffer of funciton
-	return std::string(str);
+	std::string str = ft_inet_ntoa(ip.s_addr); //no need to clean? stored in static buffer of funciton
+	return (str);
 }
 
 in_addr_t	Server::get_ip() const
@@ -145,10 +146,40 @@ void Server::set_name(const std::string &name)
 	_name = name;
 }
 
+in_addr_t Server::ft_inet_addr(std::string ip_addr)
+{
+	int	i = 0;
+	uint8_t d = (uint8_t)atoi(ip_addr.c_str());
+	while (ip_addr[i++] != '.'){}
+	uint8_t c = (uint8_t)atoi(ip_addr.c_str() + i);
+	while (ip_addr[i++] != '.'){}
+	uint8_t b = (uint8_t)atoi(ip_addr.c_str() + i);
+	while (ip_addr[i++] != '.'){}
+	uint8_t a = (uint8_t)atoi(ip_addr.c_str() + i);
+	in_addr_t rtn = (uint32_t) a;
+	rtn <<= 8;
+	rtn |= (uint32_t) b;
+	rtn <<= 8;
+	rtn |= (uint32_t) c;
+	rtn <<= 8;
+	rtn |= (uint32_t) d;
+	return (rtn);
+}
+
+std::string Server::ft_inet_ntoa(in_addr_t addr) const
+{
+	uint8_t d = (uint8_t) (addr >> 24);
+	uint8_t c = (uint8_t) (addr >> 16);
+	uint8_t b = (uint8_t) (addr >> 8);
+	uint8_t a =  (uint8_t) addr;
+	std::string rtn = std::to_string(a) + '.' + std::to_string(b) + '.' + std::to_string(c) + '.' + std::to_string(d);
+	return (rtn);
+}
+
 // "0.0.0.0" is string for INADDR_ANY
 void Server::set_all_config(){
 	_port = config.getFirst("main", "listen", DEFAULT_PORT);
-	_ip = inet_addr(config.getFirst("main", "host", DEFAULT_IP).c_str());
+	_ip = ft_inet_addr(config.getFirst("main", "host", DEFAULT_IP).c_str());
 	_name = config.getFirst("main", "server_name", DEFAULT_SRV_NAME + std::to_string(index));
 }
 
