@@ -56,6 +56,8 @@ class Server
         
         void setup_socket();
 		void start_listen();
+        in_addr_t ft_inet_addr(std::string ip_addr);
+        std::string ft_inet_ntoa(in_addr_t addr) const;
         
         Server();
         Server &operator=(const Server &copy);
