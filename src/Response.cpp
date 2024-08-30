@@ -72,7 +72,19 @@ const std::string Response::appendfile()
         _message = "Content too large";
         return (getErrorPage(413));
     }
-    size_t end = findString(bodyRaw, _boundary);
+    size_t end = findString(bodyRaw, _boundary + "--", 0);
+    size_t otherBoundary = 0;
+    while (otherBoundary != std::string::npos)
+    {
+        otherBoundary = findString(bodyRaw, _boundary, 0);
+        if (otherBoundary == end)
+            break ;
+        if (otherBoundary != std::string::npos)
+        {
+            bodyRaw.erase(bodyRaw.begin() + otherBoundary, bodyRaw.begin() + otherBoundary + _boundary.size());
+            end -= _boundary.size();
+        }
+    }
     end = end == std::string::npos ? bodyRaw.size() : end - 5;
 	if (_filestream.is_open())
     {
@@ -84,9 +96,9 @@ const std::string Response::appendfile()
     return get(); 
 }
 
-size_t  Response::findString(std::vector<char> bodyRaw, std::string str)
+size_t  Response::findString(std::vector<char> bodyRaw, std::string str, size_t offset)
 {
-    for (size_t i = 0; i < bodyRaw.size(); i++)
+    for (size_t i = offset; i < bodyRaw.size(); i++)
     {
         for (size_t j = 0; j < str.size(); j++)
         {
@@ -379,7 +391,7 @@ int Response::saveFile()
     }
     _fileName = "";
     std::vector<char>::iterator it = bodyRaw.begin();
-    it += findString(bodyRaw, "filename") + 10;
+    it += findString(bodyRaw, "filename", 0) + 10;
 	while (*it != '\"')
 		_fileName.append(1, *(it++));
 	if (_fileName.empty())
@@ -404,8 +416,21 @@ int Response::saveFile()
 	newFile.open(_fileName, std::ios::binary);
     std::cout << "[INFO] File created" << std::endl;
     
-    size_t start = findString(bodyRaw, "\r\n\r\n") + 4;
-    size_t end = findString(bodyRaw, _boundary+"--");
+    size_t start = findString(bodyRaw, "\r\n\r\n", 0) + 4;
+    size_t end = findString(bodyRaw, _boundary+"--", 0);
+    size_t otherBoundary = 0;
+    while (otherBoundary != std::string::npos)
+    {
+        std::cout << "###" << std::endl;
+        otherBoundary = findString(bodyRaw, _boundary, _boundary.size());
+        if (otherBoundary == end)
+            break ;
+        if (otherBoundary != std::string::npos)
+        {
+            bodyRaw.erase(bodyRaw.begin() + otherBoundary, bodyRaw.begin() + otherBoundary + _boundary.size());
+            end -= _boundary.size();
+        }
+    }
     end = end == std::string::npos ? bodyRaw.size() : end - 5;
     newFile.write(bodyRaw.data() + start, end - start);
     newFile.close();
