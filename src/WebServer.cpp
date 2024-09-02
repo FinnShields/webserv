@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/28 10:55:35 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/29 16:18:44 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,34 +35,27 @@ std::vector<size_t> WebServer::extractVirtualHostsIndices()
 
 void WebServer::setup()
 {
-	setRealToVirt();
+	signal(SIGPIPE, SIG_IGN);
+    setRealToVirt();
 	std::vector<size_t> indices = extractVirtualHostsIndices();
-	try  // try to be removed as it exist in main 
-	{
-		std::cout << "[INFO] Total number of servers: " << config.size()
-			<< " . Total number of virtual hosts " << indices.size()
-			<< ".\n";
-		for (size_t i = 0; i < config.size(); ++i)
-		{
-			auto it = std::find(indices.begin(), indices.end(), i);
-			if (it != indices.end())
-				continue;
-			_servers.emplace_back(config.getAll(), i);
-			std::cout << "[INFO] Server " << i << " is created.\n";
-			_servers.back().setVirthostList(_real_to_virt[i]);
-			_servers.back().setVirthostMap();
-		}
-		for (Server &srv : _servers)
-		{
-			srv.start(_fds);
-			std::cout << "[INFO] Server " << srv.index << " is started with port " << srv.get_port() << "\n";
-		}
-	}
-	catch(char const *e)
-	{
-		perror(e);
-		std::exit(EXIT_FAILURE);
-	}
+    std::cout << "[INFO] Total number of servers: " << config.size()
+        << " . Total number of virtual hosts " << indices.size()
+        << ".\n";
+    for (size_t i = 0; i < config.size(); ++i)
+    {
+        auto it = std::find(indices.begin(), indices.end(), i);
+        if (it != indices.end())
+            continue;
+        _servers.emplace_back(config.getAll(), i);
+        std::cout << "[INFO] Server " << i << " is created.\n";
+        _servers.back().setVirthostList(_real_to_virt[i]);
+        _servers.back().setVirthostMap();
+    }
+    for (Server &srv : _servers)
+    {
+        srv.start(_fds);
+        std::cout << "[INFO] Server " << srv.index << " is started with port " << srv.get_port() << "\n";
+    }
 }
 
 bool WebServer::fd_is_server(int fd)
@@ -88,7 +81,7 @@ bool WebServer::fd_is_client(pollfd &pfd)
                 // std::cout << " pollout" << std::endl;
                 if (!client->send_response())
                     return false;
-                delete client;
+                client->close_connection();
                 return true;
             }
             if (pfd.revents & POLLIN)
@@ -99,7 +92,7 @@ bool WebServer::fd_is_client(pollfd &pfd)
                     pfd.events |= POLLOUT;
                 if (ret == -1)
                 {
-                    delete client;
+                    client->close_connection();
                     return true;
                 }
                 return false;

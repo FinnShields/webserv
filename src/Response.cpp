@@ -6,11 +6,19 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/28 10:54:41 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/29 16:20:29 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Response.hpp"
+
+const std::string Response::ABSOLUTE_PATH = Response::setAbsolutePath();
+
+const std::string Response::setAbsolutePath()
+{
+    std::filesystem::path exePath = std::filesystem::read_symlink("/proc/self/exe");
+    return exePath.parent_path().string() + '/';
+}
 
 Response::Response(int fd, Request &req, Server &srv) : _fd(fd), _req(req), _srv(srv), _file(0), _code(0){}
 Response::~Response() 
@@ -58,20 +66,47 @@ const std::string Response::appendfile()
         _file = 2;
     }
     std::vector<char> bodyRaw = _req.getBodyRawBytes();
-    size_t end = findString(bodyRaw, _boundary);
+    if (_fileCurrentSize + bodyRaw.size() >= _bodyMaxSize)
+    {
+        _file = 0;
+        if (std::remove(_fileName.c_str()) < 0)
+        {
+            perror("delete");
+            _code = 404;
+            _message = "Not found";
+            return (getErrorPage(404));
+        }
+        _code = 413;
+        _message = "Content too large";
+        return (getErrorPage(413));
+    }
+    size_t end = findString(bodyRaw, _boundary + "--", 0);
+    size_t otherBoundary = 0;
+    while (otherBoundary != std::string::npos)
+    {
+        otherBoundary = findString(bodyRaw, _boundary, 0);
+        if (otherBoundary == end)
+            break ;
+        if (otherBoundary != std::string::npos)
+        {
+            bodyRaw.erase(bodyRaw.begin() + otherBoundary, bodyRaw.begin() + otherBoundary + _boundary.size());
+            end -= _boundary.size();
+        }
+    }
     end = end == std::string::npos ? bodyRaw.size() : end - 5;
 	if (_filestream.is_open())
     {
         _filestream.write(bodyRaw.data(), end);
         std::cout << "[INFO] File appended" << std::endl;
     }
+    _fileCurrentSize += bodyRaw.size();
     std::cout << "\nDownloading: " << _req.getBodyTotalSize() << "/" << _req.getHeader("content-length") << std::endl;
     return get(); 
 }
 
-size_t  Response::findString(std::vector<char> bodyRaw, std::string str)
+size_t  Response::findString(std::vector<char> bodyRaw, std::string str, size_t offset)
 {
-    for (size_t i = 0; i < bodyRaw.size(); i++)
+    for (size_t i = offset; i < bodyRaw.size(); i++)
     {
         for (size_t j = 0; j < str.size(); j++)
         {
@@ -329,13 +364,32 @@ bool Response::check_body_size()
     if (body_size_str.empty())
         return true;
     long max_body_size = std::stol(max_body_size_str);
+    _bodyMaxSize = max_body_size;
     long body_size = std::stol(body_size_str);
     std::cout << "check_body_size: \nbody:" << body_size << "\nmax: " << max_body_size << std::endl;
     return body_size > max_body_size ? false : true;
 }
 
+char Response::decodeChar(const char *ch)
+{
+    char    rtn = 0;
+    char    first = *(ch + 1);
+    char    last = *(ch + 2);
+
+    if (first >= '2' && first <= '9')
+        rtn = 16 * (first - '0');
+    else if (first >= 'A' && first <= 'F')
+        rtn = 16 * (first - 'A' + 10);
+    if (last >= '0' && last <= '9')
+        rtn += last - '0';
+    else if (last >= 'A' && last <= 'F')
+        rtn += last - 'A' + 10;
+    return (rtn);
+}
+
 int Response::saveFile()
 	{
+    _fileCurrentSize = 0;
 	_boundary = _req.get("Content-Type").substr(31);
     std::vector<char> bodyRaw = _req.getBodyRawBytes();
 	if (bodyRaw.empty())
@@ -345,7 +399,7 @@ int Response::saveFile()
     }
     _fileName = "";
     std::vector<char>::iterator it = bodyRaw.begin();
-    it += findString(bodyRaw, "filename") + 10;
+    it += findString(bodyRaw, "filename", 0) + 10;
 	while (*it != '\"')
 		_fileName.append(1, *(it++));
 	if (_fileName.empty())
@@ -370,11 +424,25 @@ int Response::saveFile()
 	newFile.open(_fileName, std::ios::binary);
     std::cout << "[INFO] File created" << std::endl;
     
-    size_t start = findString(bodyRaw, "\r\n\r\n") + 4;
-    size_t end = findString(bodyRaw, _boundary+"--");
+    size_t start = findString(bodyRaw, "\r\n\r\n", 0) + 4;
+    size_t end = findString(bodyRaw, _boundary+"--", 0);
+    size_t otherBoundary = 0;
+    while (otherBoundary != std::string::npos)
+    {
+        std::cout << "###" << std::endl;
+        otherBoundary = findString(bodyRaw, _boundary, _boundary.size());
+        if (otherBoundary == end)
+            break ;
+        if (otherBoundary != std::string::npos)
+        {
+            bodyRaw.erase(bodyRaw.begin() + otherBoundary, bodyRaw.begin() + otherBoundary + _boundary.size());
+            end -= _boundary.size();
+        }
+    }
     end = end == std::string::npos ? bodyRaw.size() : end - 5;
     newFile.write(bodyRaw.data() + start, end - start);
     newFile.close();
+    _fileCurrentSize += bodyRaw.size();
     _file = 1;
     std::cout << "\nDownloading: " << _req.getBodyTotalSize() << "/" << _req.getHeader("content-length") << std::endl;
 	return 204;
@@ -382,7 +450,18 @@ int Response::saveFile()
 
 int Response::deleteFile(const std::string &file)
 {
-    if (std::remove(file.c_str()) < 0)
+    std::string decodedFileName = "";
+    for (size_t i = 0; i < file.size(); i ++)
+    {
+        if (file[i] == '%')
+        {
+            decodedFileName.append(1, decodeChar(&file.c_str()[i]));
+            i += 2;
+        }
+        else
+            decodedFileName.append(1, file[i]);
+    }
+    if (std::remove(decodedFileName.c_str()) < 0)
 	{
         perror("remove");
 		return 404;
@@ -434,13 +513,13 @@ std::string Response::getPath()
         root = _srv.config.getAll(_index_virt, "main", "root", 0);
     }
     if (alias.empty() && root.empty())
-        return _target.substr(1);
+        return ABSOLUTE_PATH + _target.substr(1);
     if (alias.empty())
-        return root + _target;
+        return ABSOLUTE_PATH + root + _target;
     std::string loc = _srv.config.selectLocation(_target);
     loc = loc == "main" ? "/" : loc;
     std::string target = _target.substr(loc.length());
-    return alias + target;
+    return ABSOLUTE_PATH + alias + target;
 }
 
 bool Response::isHtml(const std::string fileName)

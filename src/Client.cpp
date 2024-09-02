@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/28 10:55:26 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/28 14:23:16 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,17 +18,7 @@ Client::Client(int fd, Server *server) : _fd(fd), _server(server), _request(null
 Client::~Client() 
 {
     std::cout << "[INFO] Client destructor" << std::endl;
-    if (_res)
-    {
-        delete _res;
-        _res = nullptr;
-    }
-    if (_request)
-    {
-        delete _request;
-        _request = nullptr;
-    }
-    close_connection();
+    // close_connection();
 }
 
 // Client &Client::operator=(const Client &assign)
@@ -52,7 +42,7 @@ int Client::get_socket_fd()
 int Client::handle_request()
 {
     if (!_request)
-        _request = new Request();
+        _request = std::make_unique<Request>();
     int ret = _request->read(_fd);
     // std::cout << "request->read() returns: " << ret << std::endl;
     if (ret == 3 || ret == -1)
@@ -61,7 +51,7 @@ int Client::handle_request()
         return ret;
     }
     if (!_res)
-        _res = new Response(_fd, *_request, *_server);
+        _res = std::make_unique<Response>(_fd, *_request, *_server);
     _response = _res->run();
     if (_res->getcode() == 413)
         ret = 0 ;
@@ -76,7 +66,10 @@ int Client::send_response()
 {
     _res->display();
     if (send(_fd, _response.c_str(), _response.size(), 0) < 0)
+    {
         perror("Send error");
+        return 1;
+    }
     std::cout << "[INFO] Response sent\n";
     if (_res->hasMoreChunks())
     {

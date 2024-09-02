@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:19 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/08 10:26:42 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/08/29 15:50:26 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,6 +26,7 @@
 #include "Server.hpp"
 #include "Parser.hpp"
 #include "Config.hpp"
+#include "Response.hpp"
 
 
 class WebServer
@@ -42,6 +43,7 @@ class WebServer
 		//std::vector<size_t>  virtualHostIndices;
 		void setRealToVirt();
 		std::vector<size_t>  extractVirtualHostsIndices();
+        void setAbsolutPath();
 		
 		WebServer();
 		WebServer(const WebServer &copy);
