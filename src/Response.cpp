@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/29 16:20:29 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/02 16:20:00 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -279,12 +279,12 @@ std::string Response::runCGI()
 	std::cout << "CGI status =" << status << "\n";
 	std::cout << "------- END ----------" << std::endl;
 	return status == 0 ? STATUS_LINE_200 + cgi.getResponse() :
-			status == 403 ?  getErrorPage(500) :
-			status == 404 ?  getErrorPage(500) :
+			status == 403 ?  getErrorPage(403) :
+			status == 404 ?  getErrorPage(404) :
 			status == 500 ?  getErrorPage(500) :
 			status == 501 ?  getErrorPage(501) : // cgi's ext is not implemented. 
-			status == 502 ?  getErrorPage(500) : //Bad Gateway
-			status == 504 ?  getErrorPage(500) : // time out
+			status == 502 ?  getErrorPage(502) : //Bad Gateway
+			status == 504 ?  getErrorPage(504) : // time out
 			getErrorPage(500);
 }
 
