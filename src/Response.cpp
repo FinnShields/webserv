@@ -6,7 +6,7 @@
 /*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/02 16:20:00 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/09/02 16:29:45 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -258,7 +258,7 @@ std::string Response::deleteResp()
     _code = 204;
     _message = "No content";
     std::string path = getPath();
-	replacePercent20withSpace(path);
+	// replacePercent20withSpace(path);
 	std::cout << "Deleting " << path << std::endl;
 	if (deleteFile(path) == 204)
 		return (STATUS_LINE_204);
@@ -336,6 +336,8 @@ std::string Response::load_directory_listing(std::string directoryPath)
     if (!load_directory_entries(directoryPath, directories, files))
         return ("HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\n\r\nError: Could not open directory");
 
+    if (_target == "/")
+        _target = "";
     buffer << "<html><head><title>Directory Listing</title></head><body>"
             << "<h2>Directory Listing of " << htmlEscape(directoryPath) << "</h2><ul>";
     buffer << "<li><a href=\"../\">..</a>";
@@ -461,6 +463,7 @@ int Response::deleteFile(const std::string &file)
         else
             decodedFileName.append(1, file[i]);
     }
+    std::cout << "Decoded name: \"" << decodedFileName << "\"" << std::endl;
     if (std::remove(decodedFileName.c_str()) < 0)
 	{
         perror("remove");
