@@ -2,6 +2,7 @@
 
 import cgi
 import cgitb
+import os  # Import the os module
 
 # Enable error handling
 cgitb.enable()
@@ -11,6 +12,9 @@ form = cgi.FieldStorage()
 
 # Get data from fields
 text_content = form.getvalue('textcontent')
+
+# Get the current working directory
+current_directory = os.getcwd()
 
 # HTTP header
 print("Content-Type: text/html\n")
@@ -24,6 +28,9 @@ print(f"""
 <body>
   <h2>Your Submitted Text</h2>
   <p>{text_content}</p>
+
+  <h2>Current Directory</h2>
+  <p>{current_directory}</p>
 </body>
 </html>
 """)

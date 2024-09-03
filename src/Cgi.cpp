@@ -55,6 +55,8 @@ Cgi::Cgi(Request& r, const Server& s, const size_t virt_index):
 {
     _argv = new char*[4] {nullptr};
     _envp = nullptr;
+
+    std::cout << "[REMOVE ME] body in constructor of CGI is \n->" << _body << "<-\n";
 }
 
 Cgi& Cgi::operator=(const Cgi&){
