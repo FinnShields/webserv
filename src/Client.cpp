@@ -37,7 +37,7 @@ int Client::get_socket_fd()
 
 //return -1 = empty request
 //Return 0 == Request fully read
-//Return 1 == Request is chunked (file)
+//Return 1 == Body is not fully read
 //Return 3 == Headers not fully read
 int Client::handle_request()
 {

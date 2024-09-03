@@ -220,10 +220,13 @@ void	Request::extractBody()
 
 void    Request::resetBody()
 {
-    _bodyRawBytes.clear();
+	if (!get("content-type").compare("multipart/form-data"))
+		_bodyRawBytes.clear();
     for (size_t i = 0; i < (size_t) _reqRaw.size(); i++)
 		_bodyRawBytes.push_back(_reqRaw[i]);
     _bodyTotalSize += _bodyRawBytes.size();
+	if (get("content-type").compare("multipart/form-data"))
+		_bodyTotalSize = _bodyRawBytes.size();
 }
 
 void	Request::parse()
