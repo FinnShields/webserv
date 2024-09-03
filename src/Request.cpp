@@ -177,7 +177,8 @@ void	Request::handleChunks(char *reqArray, size_t start)
 
 void	Request::moreChunks()
 {
-	_bodyRawBytes.clear();
+	if (!get("content-type").compare("multipart/form-data"))
+		_bodyRawBytes.clear();
 	if (_incompleteChunk)
 	{
 		size_t i = 0;

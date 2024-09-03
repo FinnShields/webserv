@@ -234,21 +234,27 @@ std::string Response::getErrorPage(int code)
             _message = "Not found";
     }
 	std::string error_page_path = _srv.config.getValues(_index_virt, _target, std::to_string(code), {"empty"})[0];
-	std::cout << "[TEST MSG, comment me] Error page for code " << code << " is ->" << error_page_path << "<-\n"; 
-	t_vector_str pages = _srv.config.getValues(_index_virt, _target, "error_page", {"empty"});
-	std::string responseString = code == 413 ? "HTTP/1.1 413 Content Too Large\r\nContent-Type: text/html\r\n\r\n" :
-            "HTTP/1.1 " + std::to_string(code) + " Not Found\r\nContent-Type: text/html\r\n\r\n";
-	std::string errorPath = "www/error_pages/" + std::to_string(code) + ".html";
-	for (size_t i = 0; i < pages.size() - 1; i++)
-	{
-		if (!pages[i].compare(std::to_string(code)) && !pages[i+1].empty() && 
-		!access(pages[i+1].c_str(), R_OK) && isHtml(pages[i+1]))
-			errorPath = pages[i+1];
-	}
+    std::string errorPath;
+    if (error_page_path != "empty" && !access(error_page_path.c_str(), R_OK)) {
+        errorPath = error_page_path;
+    }
+    else {
+        std::cout << "access: " << access(error_page_path.c_str(), R_OK) << " error_page_path: " << error_page_path << std::endl;
+        errorPath = "www/error_pages/" + std::to_string(code) + ".html";
+    }
+	std::cout << "[TEST MSG, comment me] Error page for code " << code << " is ->" << errorPath << "<-\n"; 
+	//t_vector_str pages = _srv.config.getValues(_index_virt, _target, "error_page", {"empty"});
+	// for (size_t i = 0; i < pages.size() - 1; i++)
+	// {
+	// 	if (!pages[i].compare(std::to_string(code)) && !pages[i+1].empty() && 
+	// 	!access(pages[i+1].c_str(), R_OK) && isHtml(pages[i+1]))
+	// 		errorPath = pages[i+1];
+	// }
 	std::ifstream errorPage(errorPath);
 	std::stringstream buffer;
 	buffer << errorPage.rdbuf();
 	errorPage.close();
+    std::string responseString = "HTTP/1.1 " + std::to_string(code) + " " + _message + "\r\nContent-Type: text/html\r\n\r\n";
 	responseString += buffer.str();
 	return (responseString);
 }
