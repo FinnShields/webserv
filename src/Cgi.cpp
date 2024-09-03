@@ -38,7 +38,8 @@ not implemented
 Cgi::Cgi(const Cgi& other):
     _request(other._request),
     _server(other._server),
-    _body(other._body),
+   // _body_old(other._body_old),
+   // _body(other._body),
     _target(other._target),
     _index_virt(other._index_virt)
 {
@@ -49,14 +50,16 @@ Cgi::Cgi(const Cgi& other):
 Cgi::Cgi(Request& r, const Server& s, const size_t virt_index):
     _request(r),
     _server(s),
-    _body(_request.getRef("body")),
+   // _body_old(_request.getRef("body")),
+   // _body(nullptr), //_request.getBodyRawBytes().data()),
     _target(_request.get("target")),
     _index_virt(virt_index)
 {
     _argv = new char*[4] {nullptr};
     _envp = nullptr;
 
-    std::cout << "[REMOVE ME] body in constructor of CGI is \n->" << _body << "<-\n";
+ //   std::cout << "[REMOVE ME] depricated body in constructor of CGI is \n->" << _body_old << "<-\n";
+ //   std::cout << "[REMOVE ME] body in constructor of CGI is \n->" << _request.getBodyRawBytes().data() << "<-\n";
 }
 
 Cgi& Cgi::operator=(const Cgi&){
@@ -341,8 +344,9 @@ void Cgi::runCmd(){
     //std::cout << "This is parent CGI part \n";
     if (close(_fd_to_cgi[0]) == -1 || close(_fd_from_cgi[1]) == -1)
         throw std::runtime_error("close error occurred!");
-    //std::cout << "parent body: " << _body.c_str() << std::endl;
-    write(_fd_to_cgi[1], _body.c_str(), _body.size());
+    //std::cout << "parent body: " << _body_old.c_str() << std::endl;
+    //write(_fd_to_cgi[1], _body_old.c_str(), _body_old.size());
+    write(_fd_to_cgi[1], _request.getBodyRawBytes().data(), _request.getBodyRawBytes().size());
     if (close(_fd_to_cgi[1]) == -1)
         throw std::runtime_error("close error occurred!");
     if (!_wait())
