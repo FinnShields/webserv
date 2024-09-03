@@ -220,7 +220,7 @@ void	Request::extractBody()
 
 void    Request::resetBody()
 {
-	if (!get("content-type").compare("multipart/form-data"))
+	if (!get("content-type").compare("multipart/form-data") && _target.substr(0, 9).compare("/cgi-bin/"))
 		_bodyRawBytes.clear();
     for (size_t i = 0; i < (size_t) _reqRaw.size(); i++)
 		_bodyRawBytes.push_back(_reqRaw[i]);
