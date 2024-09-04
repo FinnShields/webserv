@@ -78,6 +78,7 @@ const std::string Response::appendfile()
         }
         _code = 413;
         _message = "Content too large";
+        std::cout << "_fileCurrentSize: " << _fileCurrentSize <<"\nbodyRawSize: " << bodyRaw.size() << std::endl;
         return (getErrorPage(413));
     }
     size_t end = findString(bodyRaw, _boundary + "--", 0);
@@ -438,7 +439,6 @@ int Response::saveFile()
     size_t otherBoundary = 0;
     while (otherBoundary != std::string::npos)
     {
-        std::cout << "###" << std::endl;
         otherBoundary = findString(bodyRaw, _boundary, _boundary.size());
         if (otherBoundary == end)
             break ;
