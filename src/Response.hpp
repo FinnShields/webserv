@@ -84,7 +84,7 @@ class Response
         int setFileName(std::vector<char> &bodyRaw);
         void setDirectoryToFileName();
         void RenameIfFileExists();
-        void checkOtherBoundary(std::vector<char> &bodyRaw, size_t &end);
+        void checkOtherBoundary(std::vector<char> &bodyRaw, size_t &end, size_t offset);
         int checkBodySize(std::vector<char> &bodyRaw);
         std::string htmlEscape(const std::string& s);
 		std::string getErrorPage(int code);

@@ -365,12 +365,12 @@ void Response::RenameIfFileExists()
     }
 }
 
-void Response::checkOtherBoundary(std::vector<char> &bodyRaw, size_t &end)
+void Response::checkOtherBoundary(std::vector<char> &bodyRaw, size_t &end, size_t offset)
 {
     size_t otherBoundary = 0;
     while (otherBoundary != std::string::npos)
     {
-        otherBoundary = findString(bodyRaw, _boundary, 0);
+        otherBoundary = findString(bodyRaw, _boundary, offset);
         if (otherBoundary == end)
             break ;
         if (otherBoundary != std::string::npos)
@@ -415,7 +415,7 @@ int Response::saveFile()
 	_boundary = _req.get("Content-Type").substr(31);
     size_t start = findString(bodyRaw, "\r\n\r\n", 0) + 4;
     size_t end = findString(bodyRaw, _boundary+"--", 0);
-    checkOtherBoundary(bodyRaw, end);
+    checkOtherBoundary(bodyRaw, end, _boundary.size());
     end = end == std::string::npos ? bodyRaw.size() : end - 5;
     
     std::ofstream newFile(_fileName, std::ios::binary);
@@ -442,7 +442,7 @@ const std::string Response::appendfile()
     if (int status = checkBodySize(bodyRaw) != 0)
         return getErrorPage(status);
     size_t end = findString(bodyRaw, _boundary + "--", 0);
-    checkOtherBoundary(bodyRaw, end);
+    checkOtherBoundary(bodyRaw, end, 0);
     end = end == std::string::npos ? bodyRaw.size() : end - 5;
 	if (_filestream.is_open())
     {
