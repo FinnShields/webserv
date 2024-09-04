@@ -37,7 +37,7 @@ int Client::get_socket_fd()
 
 //return -1 = empty request
 //Return 0 == Request fully read
-//Return 1 == Request is chunked (file)
+//Return 1 == Body is not fully read
 //Return 3 == Headers not fully read
 int Client::handle_request()
 {
@@ -47,7 +47,7 @@ int Client::handle_request()
     // std::cout << "request->read() returns: " << ret << std::endl;
     if (ret == 3 || ret == -1)
     {
-        std::cout << ((ret == 3) ? "Headers are not fully read" : "Empty request") << std::endl;
+        std::cout << ((ret == 3) ? "More to read..." : "Empty request") << std::endl;
         return ret;
     }
     if (!_res)

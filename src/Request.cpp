@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/08/28 10:47:05 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/04 15:03:34 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -97,10 +97,14 @@ int	Request::read(int _fd)
         !_headers["content-length"].empty() ? 1 : 0; 
     
     if (_status == 1)
-        return std::stol(_headers["content-length"]) > _bodyTotalSize ? 1 : 0;
-    return _chunkedReqComplete ? 0 : !_chunkedReqComplete ? 1 : 0;
+        return std::stol(_headers["content-length"]) > _bodyTotalSize ? (isCGI() ? 3 : 1) : 0;
+    return _chunkedReqComplete ? 0 : !_chunkedReqComplete ? (isCGI() ? 3 : 1) : 0;
 }
 
+int Request::isCGI()
+{
+     return (_target.size() > 9 && !_target.substr(0, 9).compare("/cgi-bin/"));
+}
 bool Request::isWholeHeader()
 {
     char *ch = strstr(_reqRaw.data(), "\r\n\r\n");
@@ -220,10 +224,11 @@ void	Request::extractBody()
 
 void    Request::resetBody()
 {
-    _bodyRawBytes.clear();
-    for (size_t i = 0; i < (size_t) _reqRaw.size(); i++)
+	if ((!get("content-type").compare(0, 19, "multipart/form-data")) && (!isCGI()))
+		_bodyRawBytes.clear();
+    for (size_t i = 0; i < _reqRaw.size(); i++)
 		_bodyRawBytes.push_back(_reqRaw[i]);
-    _bodyTotalSize += _bodyRawBytes.size();
+	_bodyTotalSize += _reqRaw.size();
 }
 
 void	Request::parse()

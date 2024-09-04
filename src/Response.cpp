@@ -58,7 +58,6 @@ not implemented
 3 = has more chunks to upload
 */
 
-
 const std::string Response::getNextChunk()
 {
     char buffer[MAX_BUFFER_SIZE] = {0};
