@@ -25,7 +25,8 @@ class Cgi
     private:
         Request& _request;
         const Server& _server;
-        std::string& _body;
+        //std::string& _body_old;
+        //const char* _body;
         std::string _target;
         const size_t _index_virt;
         size_t _pos_cgi;
