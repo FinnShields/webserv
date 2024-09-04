@@ -47,7 +47,7 @@ int Client::handle_request()
     // std::cout << "request->read() returns: " << ret << std::endl;
     if (ret == 3 || ret == -1)
     {
-        std::cout << ((ret == 3) ? "Headers are not fully read" : "Empty request") << std::endl;
+        std::cout << ((ret == 3) ? "More to read..." : "Empty request") << std::endl;
         return ret;
     }
     if (!_res)
