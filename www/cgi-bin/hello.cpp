@@ -7,10 +7,10 @@
 
 std::string readFromFd(int fd) {
     std::string result;
-    char buffer[1024];
+    char buffer[4096];
     ssize_t size;
     while ((size = read(fd, buffer, sizeof(buffer))) > 0) {
-         std::cerr << "From cgi script: size=" << size <<"\n";
+        // std::cerr << "From cgi script: size=" << size <<"\n";
         result.append(buffer, size);
     }
     if (size < 0) {

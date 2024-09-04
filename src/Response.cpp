@@ -6,7 +6,7 @@
 /*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/03 16:34:44 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/09/04 13:40:41 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -170,7 +170,7 @@ const std::string Response::run()
     {
         return getErrorPage(413);
     }
-    //std::cout << "-----\n------\nbody size" << _req.getBodyRawBytes().size() << "\n";
+    std::cout << "-----\n------\nbody size" << _req.getBodyRawBytes().size() << "\n";
 	if(isMethodValid(method))
         _response = (_target.size() > 9 && _target.substr(0, 9).compare("/cgi-bin/") == 0) ? runCGI() :
                     (method == "GET") ? get() : 
