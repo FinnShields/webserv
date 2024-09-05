@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/04 14:07:06 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/05 11:11:06 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,6 +52,7 @@ not implemented
 */
 
 /* File status
+-1 = File failure
 0 = no file
 1 = file created and closed
 2 = file is opened in appending mode
@@ -63,7 +64,7 @@ const std::string Response::getNextChunk()
     char buffer[MAX_BUFFER_SIZE] = {0};
     if (!_filestream_read.is_open())
     {
-        _file = 0;
+        _file = -1;
         std::cerr << "[ERROR] File is not open" << std::endl;
         return getErrorPage(500);
     }
@@ -79,7 +80,7 @@ const std::string Response::getNextChunk()
     
     if (_filestream_read.bad() || (_filestream_read.fail() && !_filestream_read.eof()))
     {
-        _file = 0;
+        _file = -1;
         std::cerr << "[ERROR] File read error" << std::endl;
         return getErrorPage(500);
     }
@@ -97,8 +98,8 @@ bool Response::hasMoreChunks() const
 
 const std::string Response::run()
 {
-	if (_file == 1 || _file == 2)
-    	return appendfile();
+	if (_file != 0)
+    	return _file == -1 ? getErrorPage(500) : appendfile();
     std::string method = _req.get("method");
 	_target = _req.get("target");
 	_index_virt = _srv.getVirtHostIndex(_req.get("host"));
@@ -144,7 +145,8 @@ std::string Response::post()
     _code = 201;
     _message = "Created";
     if (!_req.get("content-type").compare(0, 19, "multipart/form-data"))
-		std::cout << "saveFile returns: " << saveFile() << std::endl;
+		if(saveFile() == 500)
+            return getErrorPage(500);
     return get();
 }
 
@@ -198,7 +200,6 @@ std::string Response::deleteResp()
     _code = 204;
     _message = "No content";
     std::string path = getPath();
-	std::cout << "Deleting " << path << std::endl;
 	if (deleteFile(path) == 204)
 		return (STATUS_LINE_204);
 	return (getErrorPage(404));
@@ -401,7 +402,7 @@ int Response::checkBodySize(std::vector<char> &bodyRaw)
 }
 
 int Response::saveFile()
-	{
+{
     std::vector<char> bodyRaw = _req.getBodyRawBytes();
 	if (bodyRaw.empty())
     {
@@ -410,7 +411,7 @@ int Response::saveFile()
     }
     if (setFileName(bodyRaw) == 0)
     {
-        return 400;
+        return 500;
     }
 	_boundary = _req.get("Content-Type").substr(31);
     size_t start = findString(bodyRaw, "\r\n\r\n", 0) + 4;
@@ -421,14 +422,17 @@ int Response::saveFile()
     std::ofstream newFile(_fileName, std::ios::binary);
     if (newFile.is_open())
     {
-        std::cout << "[INFO] File created" << std::endl;
         newFile.write(bodyRaw.data() + start, end - start);
         newFile.close();
+        _fileCurrentSize = end - start;
+        _file = 1;
+        std::cout << "[INFO] File created  " << _req.getBodyTotalSize() << "/" << _req.getHeader("content-length") << std::endl;
+        return 204;
     }
-    _fileCurrentSize = end - start;
-    _file = 1;
-    std::cout << "\nDownloading: " << _req.getBodyTotalSize() << "/" << _req.getHeader("content-length") << std::endl;
-	return 204;
+    _file = -1;
+    std::cerr << "[ERROR] File is not opened" << std::endl;
+    deleteFile(_fileName);
+    return 500;
 }
 
 const std::string Response::appendfile()
@@ -447,11 +451,14 @@ const std::string Response::appendfile()
 	if (_filestream.is_open())
     {
         _filestream.write(bodyRaw.data(), end);
-        std::cout << "[INFO] File appended" << std::endl;
+        _fileCurrentSize += end;
+        std::cout << "[INFO] File appended " << _req.getBodyTotalSize() << "/" << _req.getHeader("content-length") << std::endl;
+        return get(); 
     }
-    _fileCurrentSize += end;
-    std::cout << "\nDownloading: " << _req.getBodyTotalSize() << "/" << _req.getHeader("content-length") << std::endl;
-    return get(); 
+    _file = -1;
+    std::cerr << "[ERROR] File is not open" << std::endl;
+    deleteFile(_fileName);
+    return getErrorPage(500);
 }
 
 size_t  Response::findString(std::vector<char> bodyRaw, std::string str, size_t offset)
@@ -488,6 +495,7 @@ int Response::deleteFile(const std::string &file)
         perror("remove");
 		return 404;
 	}
+    std::cout << "[INFO] Deleted " << file << std::endl;
 	return 204;
 }
 
