@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   main.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:39 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/29 14:29:40 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/05 10:46:09 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,16 +16,19 @@
 #include "Config.hpp"
 
 #define DEFAULT_CONFIG "config/three_servers.conf"
+#define DEBUG_MODE 0
 
 int main(int argc, char *argv[]) {
     try
     {
         std::string filename = argc < 2 ? DEFAULT_CONFIG : argv[1];
-        std::cout << "FAB WebServer\nConfig: " << filename << std::endl;
+        std::cout << "FAB WebServer\n[INFO] Config file: " << filename << std::endl;
         Parser data(filename);
-        std::cout << "----- EXTRACTED DATA ------------\n"
-		        << data.get()
-    	    	<< "----- END of DATA ---------------\n";
+        if (DEBUG_MODE){
+            std::cout << "----- EXTRACTED DATA ------------\n"
+                    << data.get()
+                    << "----- END of DATA ---------------\n";
+        }
         data.isValid();
         WebServer webserv(data.get());
         webserv.setup();
