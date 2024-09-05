@@ -6,7 +6,7 @@
 /*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/05 12:35:27 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/09/05 12:37:55 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -145,8 +145,16 @@ std::string Response::post()
     _code = 201;
     _message = "Created";
     if (!_req.get("content-type").compare(0, 19, "multipart/form-data"))
-		if(saveFile() == 500)
+		try
+        {
+            saveFile();
+        }
+        catch(const std::exception& e)
+        {
+            std::cerr << "[ERROR] " << e.what() << '\n';
+            _file = -1;
             return getErrorPage(500);
+        }
     return get();
 }
 
@@ -274,7 +282,7 @@ std::string Response::load_directory_listing(std::string directoryPath)
     t_vector_str        files;
 
     if (!load_directory_entries(directoryPath, directories, files))
-        return ("HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\n\r\nError: Could not open directory");
+        return (getErrorPage(403));
 
     if (_target == "/")
         _target = "";
@@ -336,10 +344,7 @@ int Response::setFileName(std::vector<char> &bodyRaw)
     while (*it != '\"')
         _fileName.append(1, *(it++));
     if (_fileName.empty())
-    {
-        std::cout << "[INFO] No filename" << std::endl;
-        return 0;
-    }
+        throw std::invalid_argument("No filename");
     setDirectoryToFileName();
     RenameIfFileExists();
     return 1;
@@ -348,7 +353,7 @@ int Response::setFileName(std::vector<char> &bodyRaw)
 void Response::setDirectoryToFileName()
 {
     std::string directory = getPath() + "uploads/";
-    mkdir(directory.c_str(), 0777);
+    std::filesystem::create_directory(directory);
     _fileName = directory + _fileName;
 }
 
@@ -409,35 +414,29 @@ int Response::saveFile()
 		std::cout << "[INFO] No Body" << std::endl;
         return 400;
     }
-    if (setFileName(bodyRaw) == 0)
-    {
-        return 500;
-    }
-	_boundary = _req.get("Content-Type").substr(31);
+    setFileName(bodyRaw);
+    _boundary = _req.get("Content-Type").substr(31);
     size_t start = findString(bodyRaw, "\r\n\r\n", 0) + 4;
     size_t end = findString(bodyRaw, _boundary+"--", 0);
     checkOtherBoundary(bodyRaw, end, _boundary.size());
     end = end == std::string::npos ? bodyRaw.size() : end - 5;
-    
     std::ofstream newFile(_fileName, std::ios::binary);
-    if (newFile.is_open())
+    if (!newFile.is_open())
     {
-        newFile.write(bodyRaw.data() + start, end - start);
-        newFile.close();
-        _fileCurrentSize = end - start;
-        _file = 1;
-        std::cout << "[INFO] File created  " << _req.getBodyTotalSize() << "/" << _req.getHeader("content-length") << std::endl;
-        return 204;
+        deleteFile(_fileName);
+        throw std::runtime_error("File is not opened");
     }
-    _file = -1;
-    std::cerr << "[ERROR] File is not opened" << std::endl;
-    deleteFile(_fileName);
-    return 500;
+    newFile.write(bodyRaw.data() + start, end - start);
+    newFile.close();
+    _fileCurrentSize = end - start;
+    _file = 1;
+    std::cout << "[INFO] File created  " << _req.getBodyTotalSize() << "/" << _req.getHeader("content-length") << std::endl;
+    return 204;
 }
 
 const std::string Response::appendfile()
 {
-	if (_file == 1)
+    if (_file == 1)
     {
         _filestream.open(_fileName, std::ios::binary | std::ios::app);
         _file = 2;
