@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/05 12:32:16 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/05 14:29:20 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -290,15 +290,15 @@ std::string Response::load_directory_listing(std::string directoryPath)
             << "<h2>Directory Listing of " << htmlEscape(directoryPath) << "</h2><ul>";
     buffer << "<li><a href=\"../\">..</a>";
     for (const auto& dirName : directories) 
-        buffer << "<li><a href=\"" << _target << "/" << dirName << "\">" << dirName << "</a>"
-                << "<button onclick=\"deleteFile('" << dirName << "')\">Delete</button></li>";
+        buffer << "<li id=\"" << dirName << "\"><a href=\"" << _target << "/" << dirName << "\">" << dirName << "</a>"
+                << "<button type=\"button\" onclick=\"deleteFile('" << dirName << "')\">Delete</button></li>";
     for (const auto& fileName : files) 
-        buffer << "<li><a href=\"" << _target << "/" << fileName << "\" download>" << fileName << "</a>"
-                << "<button onclick=\"deleteFile('" << fileName << "')\">Delete</button></li>";
+        buffer << "<li id=\"" << fileName << "\"><a href=\"" << _target << "/" << fileName << "\" download>" << fileName << "</a>"
+                << "<button type=\"button\" onclick=\"deleteFile('" << fileName << "')\">Delete</button></li>";
     buffer << "</ul><script>"
         << "function deleteFile(fileName) {"
         << "  fetch('" << _target << "/' + encodeURIComponent(fileName), { method: 'DELETE' })"
-        << "    .then(response => { if (response.ok) location.reload(); })"
+        << "    .then(response => { if (response.ok) document.getElementById(fileName).remove(); })"
         << "    .catch(error => console.error('Error:', error));"
         << "}</script>"
         << "</body></html>";
@@ -352,8 +352,10 @@ int Response::setFileName(std::vector<char> &bodyRaw)
 
 void Response::setDirectoryToFileName()
 {
-    std::string directory = getPath() + "uploads/";
+    std::string directory = getPath();
     std::filesystem::create_directory(directory);
+    if (directory.back() != '/')
+        directory += '/';
     _fileName = directory + _fileName;
 }
 
@@ -535,7 +537,6 @@ std::string Response::getPath()
 {
     std::string alias = _srv.config.getValues(_index_virt, _target, "alias", {""})[0];
     std::string root = _srv.config.getValues(_index_virt, _target, "root", {""})[0];
-    
     if (alias.empty() && root.empty())
     {
         alias = _srv.config.getAll(_index_virt, "main", "alias", 0);
