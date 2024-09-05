@@ -6,7 +6,7 @@
 /*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/04 13:40:41 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/09/05 11:28:17 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,67 +57,6 @@ not implemented
 2 = file is opened in appending mode
 3 = has more chunks to upload
 */
-
-const std::string Response::appendfile()
-{
-	if (_file == 1)
-    {
-        _filestream.open(_fileName, std::ios::binary | std::ios::app);
-        _file = 2;
-    }
-    std::vector<char> bodyRaw = _req.getBodyRawBytes();
-    if (_fileCurrentSize + bodyRaw.size() >= _bodyMaxSize)
-    {
-        _file = 0;
-        if (std::remove(_fileName.c_str()) < 0)
-        {
-            perror("delete");
-            _code = 404;
-            _message = "Not found";
-            return (getErrorPage(404));
-        }
-        _code = 413;
-        _message = "Content too large";
-        return (getErrorPage(413));
-    }
-    size_t end = findString(bodyRaw, _boundary + "--", 0);
-    size_t otherBoundary = 0;
-    while (otherBoundary != std::string::npos)
-    {
-        otherBoundary = findString(bodyRaw, _boundary, 0);
-        if (otherBoundary == end)
-            break ;
-        if (otherBoundary != std::string::npos)
-        {
-            bodyRaw.erase(bodyRaw.begin() + otherBoundary, bodyRaw.begin() + otherBoundary + _boundary.size());
-            end -= _boundary.size();
-        }
-    }
-    end = end == std::string::npos ? bodyRaw.size() : end - 5;
-	if (_filestream.is_open())
-    {
-        _filestream.write(bodyRaw.data(), end);
-        std::cout << "[INFO] File appended" << std::endl;
-    }
-    _fileCurrentSize += bodyRaw.size();
-    std::cout << "\nDownloading: " << _req.getBodyTotalSize() << "/" << _req.getHeader("content-length") << std::endl;
-    return get(); 
-}
-
-size_t  Response::findString(std::vector<char> bodyRaw, std::string str, size_t offset)
-{
-    for (size_t i = offset; i < bodyRaw.size(); i++)
-    {
-        for (size_t j = 0; j < str.size(); j++)
-        {
-            if (bodyRaw[i + j] != str[j])
-                break ;
-            if (j == str.size() - 1)
-                return (i);
-        }
-    }
-    return (std::string::npos);
-}
 
 const std::string Response::getNextChunk()
 {
@@ -206,13 +145,7 @@ std::string Response::post()
     _message = "Created";
     if (!_req.get("content-type").compare(0, 19, "multipart/form-data"))
 		std::cout << "saveFile returns: " << saveFile() << std::endl;
-    std::string path = getPath();
-    if (std::filesystem::is_regular_file(path) && std::filesystem::exists(path))
-		return load_file(path);
-    std::string _index = _srv.config.getBestValues(_index_virt, _target, "index", DEFAULT_INDEX)[0];
-    if (_index.length() > 1 && std::filesystem::is_regular_file(path + _index) && std::filesystem::exists(path + _index))
-		return load_file(path + _index);
-    return (getErrorPage(404));
+    return get();
 }
 
 std::string Response::getErrorPage(int code)
@@ -265,7 +198,6 @@ std::string Response::deleteResp()
     _code = 204;
     _message = "No content";
     std::string path = getPath();
-	// replacePercent20withSpace(path);
 	std::cout << "Deleting " << path << std::endl;
 	if (deleteFile(path) == 204)
 		return (STATUS_LINE_204);
@@ -396,30 +328,31 @@ char Response::decodeChar(const char *ch)
     return (rtn);
 }
 
-int Response::saveFile()
-	{
-    _fileCurrentSize = 0;
-	_boundary = _req.get("Content-Type").substr(31);
-    std::vector<char> bodyRaw = _req.getBodyRawBytes();
-	if (bodyRaw.empty())
-    {
-		std::cout << "No Body" << std::endl;
-        return 400;
-    }
-    _fileName = "";
+int Response::setFileName(std::vector<char> &bodyRaw)
+{
     std::vector<char>::iterator it = bodyRaw.begin();
     it += findString(bodyRaw, "filename", 0) + 10;
-	while (*it != '\"')
-		_fileName.append(1, *(it++));
-	if (_fileName.empty())
+    while (*it != '\"')
+        _fileName.append(1, *(it++));
+    if (_fileName.empty())
     {
-		std::cout << "No file name" << std::endl;
-        return 400;
+        std::cout << "[INFO] No filename" << std::endl;
+        return 0;
     }
+    setDirectoryToFileName();
+    RenameIfFileExists();
+    return 1;
+}
+
+void Response::setDirectoryToFileName()
+{
     std::string directory = getPath() + "uploads/";
     mkdir(directory.c_str(), 0777);
     _fileName = directory + _fileName;
-    std::ofstream newFile;
+}
+
+void Response::RenameIfFileExists()
+{
     while (std::filesystem::exists(_fileName))
     {
         std::string filetype;
@@ -430,16 +363,14 @@ int Response::saveFile()
             filetype = _fileName.substr(lastDot);
         _fileName = _fileName.substr(0, lastDot) + "_copy" + filetype;
     }
-	newFile.open(_fileName, std::ios::binary);
-    std::cout << "[INFO] File created" << std::endl;
-    
-    size_t start = findString(bodyRaw, "\r\n\r\n", 0) + 4;
-    size_t end = findString(bodyRaw, _boundary+"--", 0);
+}
+
+void Response::checkOtherBoundary(std::vector<char> &bodyRaw, size_t &end, size_t offset)
+{
     size_t otherBoundary = 0;
     while (otherBoundary != std::string::npos)
     {
-        std::cout << "###" << std::endl;
-        otherBoundary = findString(bodyRaw, _boundary, _boundary.size());
+        otherBoundary = findString(bodyRaw, _boundary, offset);
         if (otherBoundary == end)
             break ;
         if (otherBoundary != std::string::npos)
@@ -448,13 +379,94 @@ int Response::saveFile()
             end -= _boundary.size();
         }
     }
+}
+
+int Response::checkBodySize(std::vector<char> &bodyRaw)
+{
+    if (_fileCurrentSize + bodyRaw.size() >= _bodyMaxSize)
+    {
+        _file = 0;
+        if (std::remove(_fileName.c_str()) < 0)
+        {
+            perror("delete");
+            _code = 404;
+            _message = "Not found";
+            return (404);
+        }
+        _code = 413;
+        _message = "Content too large";
+        return (413);
+    }
+    return 0;
+}
+
+int Response::saveFile()
+	{
+    std::vector<char> bodyRaw = _req.getBodyRawBytes();
+	if (bodyRaw.empty())
+    {
+		std::cout << "[INFO] No Body" << std::endl;
+        return 400;
+    }
+    if (setFileName(bodyRaw) == 0)
+    {
+        return 400;
+    }
+	_boundary = _req.get("Content-Type").substr(31);
+    size_t start = findString(bodyRaw, "\r\n\r\n", 0) + 4;
+    size_t end = findString(bodyRaw, _boundary+"--", 0);
+    checkOtherBoundary(bodyRaw, end, _boundary.size());
     end = end == std::string::npos ? bodyRaw.size() : end - 5;
-    newFile.write(bodyRaw.data() + start, end - start);
-    newFile.close();
-    _fileCurrentSize += bodyRaw.size();
+    
+    std::ofstream newFile(_fileName, std::ios::binary);
+    if (newFile.is_open())
+    {
+        std::cout << "[INFO] File created" << std::endl;
+        newFile.write(bodyRaw.data() + start, end - start);
+        newFile.close();
+    }
+    _fileCurrentSize = end - start;
     _file = 1;
     std::cout << "\nDownloading: " << _req.getBodyTotalSize() << "/" << _req.getHeader("content-length") << std::endl;
 	return 204;
+}
+
+const std::string Response::appendfile()
+{
+	if (_file == 1)
+    {
+        _filestream.open(_fileName, std::ios::binary | std::ios::app);
+        _file = 2;
+    }
+    std::vector<char> bodyRaw = _req.getBodyRawBytes();
+    if (int status = checkBodySize(bodyRaw) != 0)
+        return getErrorPage(status);
+    size_t end = findString(bodyRaw, _boundary + "--", 0);
+    checkOtherBoundary(bodyRaw, end, 0);
+    end = end == std::string::npos ? bodyRaw.size() : end - 5;
+	if (_filestream.is_open())
+    {
+        _filestream.write(bodyRaw.data(), end);
+        std::cout << "[INFO] File appended" << std::endl;
+    }
+    _fileCurrentSize += end;
+    std::cout << "\nDownloading: " << _req.getBodyTotalSize() << "/" << _req.getHeader("content-length") << std::endl;
+    return get(); 
+}
+
+size_t  Response::findString(std::vector<char> bodyRaw, std::string str, size_t offset)
+{
+    for (size_t i = offset; i < bodyRaw.size(); i++)
+    {
+        for (size_t j = 0; j < str.size(); j++)
+        {
+            if (bodyRaw[i + j] != str[j])
+                break ;
+            if (j == str.size() - 1)
+                return (i);
+        }
+    }
+    return (std::string::npos);
 }
 
 int Response::deleteFile(const std::string &file)
@@ -590,16 +602,6 @@ bool Response::load_directory_entries(const std::string directoryPath, t_vector_
         return true;
     }
     return false;
-}
-
-void Response::replacePercent20withSpace(std::string &str)
-{
-	size_t pos = str.find("%20");
-	while (pos != std::string::npos)
-	{
-		str.replace(pos, 3, " ");
-		pos = str.find("%20", pos + 1);
-	}
 }
 
 void Response::display() const

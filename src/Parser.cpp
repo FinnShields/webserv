@@ -24,8 +24,7 @@ std::string Parser::readFile(const std::string filename) const
 {
 	std::ifstream	infile(filename);
 	if (!infile.is_open())
-		throw  std::ios_base::failure("Parser::readFile can't open " + filename);
-	std::cout << "Reading file" << std::endl;
+		throw  std::ios_base::failure("[ERROR] Parser::readFile can't open " + filename);
 	std::stringstream	buffer;
 	buffer << infile.rdbuf();
 	infile.close();

@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:06:10 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/29 16:18:21 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/04 13:56:29 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -81,8 +81,12 @@ class Response
         bool isHtml(const std::string fileName);
         bool load_directory_entries(const std::string directoryPath, t_vector_str &directories, t_vector_str &files);
         std::string getFileName(const std::string filepath);
+        int setFileName(std::vector<char> &bodyRaw);
+        void setDirectoryToFileName();
+        void RenameIfFileExists();
+        void checkOtherBoundary(std::vector<char> &bodyRaw, size_t &end, size_t offset);
+        int checkBodySize(std::vector<char> &bodyRaw);
         std::string htmlEscape(const std::string& s);
-		void replacePercent20withSpace(std::string &str);
 		std::string getErrorPage(int code);
 		size_t  findString(std::vector<char> bodyRaw, std::string str, size_t offset);
         char decodeChar(const char *ch);
