@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/05 12:26:37 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/05 12:32:16 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -282,7 +282,7 @@ std::string Response::load_directory_listing(std::string directoryPath)
     t_vector_str        files;
 
     if (!load_directory_entries(directoryPath, directories, files))
-        return ("HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\n\r\nError: Could not open directory");
+        return (getErrorPage(403));
 
     if (_target == "/")
         _target = "";
