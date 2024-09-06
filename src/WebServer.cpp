@@ -49,6 +49,7 @@ void WebServer::closeAllThenExit(int signal)
 void WebServer::setup()
 {
     signal(SIGINT, WebServer::closeAllThenExit);
+    signal(SIGPIPE, SIG_IGN);
     setRealToVirt();
 	std::vector<size_t> indices = extractVirtualHostsIndices();
     std::cout << "[INFO] Total number of servers: " << config.size()

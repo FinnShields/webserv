@@ -114,7 +114,7 @@ const std::string Response::run()
         _response = _srv.config.getBestValues(_index_virt, _target, "return", {""})[0] != "" ? redirect() :
                     (_target.size() > 9 && _target.substr(0, 9).compare("/cgi-bin/") == 0) ? runCGI() :
                     (method == "GET") ? get() : 
-                    (method == "POST") ? post() :
+                    (method == "POST" || method == "PUT") ? postOrPut() :
                     (method == "DELETE") ? deleteResp() : 
                     getErrorPage(501);
     return _response;
@@ -142,6 +142,9 @@ const std::string Response::get()
         _code = 200;
         _message = "OK";
     }
+    if (_code == 204) {
+        return STATUS_LINE_204;
+    }
 	std::string path = getPath();
     std::cout << "PATH=" << path << std::endl;
 	if (std::filesystem::is_regular_file(path) && std::filesystem::exists(path))
@@ -156,7 +159,7 @@ const std::string Response::get()
 	return (getErrorPage(404));
 }
 
-const std::string Response::post()
+const std::string Response::postOrPut()
 {
     _code = 201;
     _message = "Created";
@@ -339,7 +342,8 @@ int Response::setFileName(std::vector<char> &bodyRaw)
     if (_fileName.empty())
         throw std::invalid_argument("No filename");
     setDirectoryToFileName();
-    RenameIfFileExists();
+    if (!_req.get("method").compare("POST"))
+        RenameIfFileExists();
     return 1;
 }
 
@@ -410,6 +414,11 @@ int Response::saveFile()
         return 400;
     }
     setFileName(bodyRaw);
+    if (!_req.get("method").compare("PUT") && std::filesystem::exists(_fileName)) {
+        _code = 204;
+        _message = "No content";
+        return 204;
+    }
     _boundary = _req.get("Content-Type").substr(31);
     size_t start = findString(bodyRaw, "\r\n\r\n", 0) + 4;
     size_t end = findString(bodyRaw, _boundary+"--", 0);
@@ -426,7 +435,7 @@ int Response::saveFile()
     _fileCurrentSize = end - start;
     _file = 1;
     std::cout << "[INFO] File created  " << _req.getBodyTotalSize() << "/" << _req.getHeader("content-length") << std::endl;
-    return 204;
+    return 201;
 }
 
 const std::string Response::appendfile()

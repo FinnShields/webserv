@@ -64,7 +64,7 @@ class Response
 		const std::string redirect();
 		const std::string runCGI();
         const std::string get();
-		const std::string post();
+		const std::string postOrPut();
 		const std::string deleteResp();
 		const std::string load_file(std::string filename);
 		const std::string load_directory_listing(std::string directoryPath);
