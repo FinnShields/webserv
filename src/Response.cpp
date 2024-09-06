@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/04 14:07:06 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/05 14:55:34 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,6 +52,7 @@ not implemented
 */
 
 /* File status
+-1 = File failure
 0 = no file
 1 = file created and closed
 2 = file is opened in appending mode
@@ -63,7 +64,7 @@ const std::string Response::getNextChunk()
     char buffer[MAX_BUFFER_SIZE] = {0};
     if (!_filestream_read.is_open())
     {
-        _file = 0;
+        _file = -1;
         std::cerr << "[ERROR] File is not open" << std::endl;
         return getErrorPage(500);
     }
@@ -79,7 +80,7 @@ const std::string Response::getNextChunk()
     
     if (_filestream_read.bad() || (_filestream_read.fail() && !_filestream_read.eof()))
     {
-        _file = 0;
+        _file = -1;
         std::cerr << "[ERROR] File read error" << std::endl;
         return getErrorPage(500);
     }
@@ -97,8 +98,8 @@ bool Response::hasMoreChunks() const
 
 const std::string Response::run()
 {
-	if (_file == 1 || _file == 2)
-    	return appendfile();
+	if (_file != 0)
+    	return _file == -1 ? getErrorPage(500) : appendfile();
     std::string method = _req.get("method");
 	_target = _req.get("target");
 	_index_virt = _srv.getVirtHostIndex(_req.get("host"));
@@ -109,7 +110,7 @@ const std::string Response::run()
     {
         return getErrorPage(413);
     }
-    //std::cout << "-----\n------\nbody size" << _req.getBodyRawBytes().size() << "\n";
+    std::cout << "-----\n------\nbody size" << _req.getBodyRawBytes().size() << "\n";
 	if(isMethodValid(method))
         _response = (_target.size() > 9 && _target.substr(0, 9).compare("/cgi-bin/") == 0) ? runCGI() :
                     (method == "GET") ? get() : 
@@ -126,11 +127,11 @@ std::string Response::get()
         _message = "OK";
     }
 	std::string path = getPath();
-    // std::cout << "PATH=" << path << std::endl;
+    std::cout << "PATH=" << path << std::endl;
 	if (std::filesystem::is_regular_file(path) && std::filesystem::exists(path))
 		return load_file(path);
 	std::string _index = _srv.config.getBestValues(_index_virt, _target, "index", DEFAULT_INDEX)[0];
-    // std::cout << "INDEXPATH=" << path + _index << std::endl;
+    path = path.back() == '/' ? path : path + '/';
 	if (_index.length() > 1 && std::filesystem::is_regular_file(path + _index) && std::filesystem::exists(path + _index))
 		return load_file(path + _index);
 	bool autoindex = _srv.config.getBestValues(_index_virt, _target, "autoindex", {"off"})[0] == "on";
@@ -144,7 +145,16 @@ std::string Response::post()
     _code = 201;
     _message = "Created";
     if (!_req.get("content-type").compare(0, 19, "multipart/form-data"))
-		std::cout << "saveFile returns: " << saveFile() << std::endl;
+		try
+        {
+            saveFile();
+        }
+        catch(const std::exception& e)
+        {
+            std::cerr << "[ERROR] " << e.what() << '\n';
+            _file = -1;
+            return getErrorPage(500);
+        }
     return get();
 }
 
@@ -198,7 +208,6 @@ std::string Response::deleteResp()
     _code = 204;
     _message = "No content";
     std::string path = getPath();
-	std::cout << "Deleting " << path << std::endl;
 	if (deleteFile(path) == 204)
 		return (STATUS_LINE_204);
 	return (getErrorPage(404));
@@ -273,7 +282,7 @@ std::string Response::load_directory_listing(std::string directoryPath)
     t_vector_str        files;
 
     if (!load_directory_entries(directoryPath, directories, files))
-        return ("HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\n\r\nError: Could not open directory");
+        return (getErrorPage(403));
 
     if (_target == "/")
         _target = "";
@@ -281,15 +290,15 @@ std::string Response::load_directory_listing(std::string directoryPath)
             << "<h2>Directory Listing of " << htmlEscape(directoryPath) << "</h2><ul>";
     buffer << "<li><a href=\"../\">..</a>";
     for (const auto& dirName : directories) 
-        buffer << "<li><a href=\"" << _target << "/" << dirName << "\">" << dirName << "</a>"
-                << "<button onclick=\"deleteFile('" << dirName << "')\">Delete</button></li>";
+        buffer << "<li id=\"" << dirName << "\"><a href=\"" << _target << "/" << dirName << "\">" << dirName << "</a>"
+                << "<button type=\"button\" onclick=\"deleteFile('" << dirName << "')\">Delete</button></li>";
     for (const auto& fileName : files) 
-        buffer << "<li><a href=\"" << _target << "/" << fileName << "\" download>" << fileName << "</a>"
-                << "<button onclick=\"deleteFile('" << fileName << "')\">Delete</button></li>";
+        buffer << "<li id=\"" << fileName << "\"><a href=\"" << _target << "/" << fileName << "\" download>" << fileName << "</a>"
+                << "<button type=\"button\" onclick=\"deleteFile('" << fileName << "')\">Delete</button></li>";
     buffer << "</ul><script>"
         << "function deleteFile(fileName) {"
         << "  fetch('" << _target << "/' + encodeURIComponent(fileName), { method: 'DELETE' })"
-        << "    .then(response => { if (response.ok) location.reload(); })"
+        << "    .then(response => { if (response.ok) document.getElementById(fileName).remove(); })"
         << "    .catch(error => console.error('Error:', error));"
         << "}</script>"
         << "</body></html>";
@@ -335,10 +344,7 @@ int Response::setFileName(std::vector<char> &bodyRaw)
     while (*it != '\"')
         _fileName.append(1, *(it++));
     if (_fileName.empty())
-    {
-        std::cout << "[INFO] No filename" << std::endl;
-        return 0;
-    }
+        throw std::invalid_argument("No filename");
     setDirectoryToFileName();
     RenameIfFileExists();
     return 1;
@@ -346,8 +352,10 @@ int Response::setFileName(std::vector<char> &bodyRaw)
 
 void Response::setDirectoryToFileName()
 {
-    std::string directory = getPath() + "uploads/";
-    mkdir(directory.c_str(), 0777);
+    std::string directory = getPath();
+    std::filesystem::create_directory(directory);
+    if (directory.back() != '/')
+        directory += '/';
     _fileName = directory + _fileName;
 }
 
@@ -401,39 +409,36 @@ int Response::checkBodySize(std::vector<char> &bodyRaw)
 }
 
 int Response::saveFile()
-	{
+{
     std::vector<char> bodyRaw = _req.getBodyRawBytes();
 	if (bodyRaw.empty())
     {
 		std::cout << "[INFO] No Body" << std::endl;
         return 400;
     }
-    if (setFileName(bodyRaw) == 0)
-    {
-        return 400;
-    }
-	_boundary = _req.get("Content-Type").substr(31);
+    setFileName(bodyRaw);
+    _boundary = _req.get("Content-Type").substr(31);
     size_t start = findString(bodyRaw, "\r\n\r\n", 0) + 4;
     size_t end = findString(bodyRaw, _boundary+"--", 0);
     checkOtherBoundary(bodyRaw, end, _boundary.size());
     end = end == std::string::npos ? bodyRaw.size() : end - 5;
-    
     std::ofstream newFile(_fileName, std::ios::binary);
-    if (newFile.is_open())
+    if (!newFile.is_open())
     {
-        std::cout << "[INFO] File created" << std::endl;
-        newFile.write(bodyRaw.data() + start, end - start);
-        newFile.close();
+        deleteFile(_fileName);
+        throw std::runtime_error("File is not opened");
     }
+    newFile.write(bodyRaw.data() + start, end - start);
+    newFile.close();
     _fileCurrentSize = end - start;
     _file = 1;
-    std::cout << "\nDownloading: " << _req.getBodyTotalSize() << "/" << _req.getHeader("content-length") << std::endl;
-	return 204;
+    std::cout << "[INFO] File created  " << _req.getBodyTotalSize() << "/" << _req.getHeader("content-length") << std::endl;
+    return 204;
 }
 
 const std::string Response::appendfile()
 {
-	if (_file == 1)
+    if (_file == 1)
     {
         _filestream.open(_fileName, std::ios::binary | std::ios::app);
         _file = 2;
@@ -447,11 +452,14 @@ const std::string Response::appendfile()
 	if (_filestream.is_open())
     {
         _filestream.write(bodyRaw.data(), end);
-        std::cout << "[INFO] File appended" << std::endl;
+        _fileCurrentSize += end;
+        std::cout << "[INFO] File appended " << _req.getBodyTotalSize() << "/" << _req.getHeader("content-length") << std::endl;
+        return get(); 
     }
-    _fileCurrentSize += end;
-    std::cout << "\nDownloading: " << _req.getBodyTotalSize() << "/" << _req.getHeader("content-length") << std::endl;
-    return get(); 
+    _file = -1;
+    std::cerr << "[ERROR] File is not open" << std::endl;
+    deleteFile(_fileName);
+    return getErrorPage(500);
 }
 
 size_t  Response::findString(std::vector<char> bodyRaw, std::string str, size_t offset)
@@ -488,6 +496,7 @@ int Response::deleteFile(const std::string &file)
         perror("remove");
 		return 404;
 	}
+    std::cout << "[INFO] Deleted " << file << std::endl;
 	return 204;
 }
 
@@ -528,7 +537,6 @@ std::string Response::getPath()
 {
     std::string alias = _srv.config.getValues(_index_virt, _target, "alias", {""})[0];
     std::string root = _srv.config.getValues(_index_virt, _target, "root", {""})[0];
-    
     if (alias.empty() && root.empty())
     {
         alias = _srv.config.getAll(_index_virt, "main", "alias", 0);

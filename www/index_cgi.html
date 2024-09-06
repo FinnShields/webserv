@@ -5,20 +5,20 @@
   </head>
   <body>
     <p>Welcome to FAB WebServer.</p>
-    <form method="post" enctype="multipart/form-data">
+    <form method="post" action="/uploads" enctype="multipart/form-data">
       <label for="fileInput">Upload a file!</label>
       <input id="fileInput" name="fileInput" type="file" placeholder="Upload a file"/>
       <button id="uploadButton">Upload</button>
     </form>
     <div>
       <button id="deleteButton">Delete some files?</button>
-      </form>
+    </div>
       <script>
         document.getElementById("deleteButton").addEventListener("click", function() {
+            event.preventDefault();
           window.location.href = "/uploads"
         })
       </script>
-    </div>
     <h1>_______________________________</h1>
     <p>CGI GET with query</p>
     <form action = "/cgi-bin/hello.cgi" method = "get">
