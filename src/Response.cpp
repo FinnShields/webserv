@@ -200,7 +200,6 @@ const std::string Response::getErrorPage(int code)
         errorPath = error_page_path;
     }
     else {
-        std::cout << "access: " << access(error_page_path.c_str(), R_OK) << " error_page_path: " << error_page_path << std::endl;
         errorPath = "www/error_pages/" + std::to_string(code) + ".html";
     }
 	std::cout << "[TEST MSG, comment me] Error page for code " << code << " is ->" << errorPath << "<-\n"; 

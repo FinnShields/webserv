@@ -33,9 +33,19 @@ std::vector<size_t> WebServer::extractVirtualHostsIndices()
 	return indices;
 }
 
+void WebServer::closeAllThenExit(int signal)
+{
+    if (signal == SIGINT)
+        std::cout << " -- Closing due to SIGINT (ctl-c)" << std::endl;
+    size_t fd = 3;
+    while (close(fd) != -1)
+        fd ++;
+    exit(0);
+}
+
 void WebServer::setup()
 {
-	signal(SIGPIPE, SIG_IGN);
+    signal(SIGINT, WebServer::closeAllThenExit);
     setRealToVirt();
 	std::vector<size_t> indices = extractVirtualHostsIndices();
     std::cout << "[INFO] Total number of servers: " << config.size()
