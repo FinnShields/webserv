@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:06:10 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/06 13:08:21 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/06 13:55:41 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,22 +61,21 @@ class Response
 		size_t _index_virt;
         std::string _response;
 
-		const std::string redriect();
+		const std::string redirect();
+		const std::string runCGI();
         const std::string get();
 		const std::string post();
 		const std::string deleteResp();
 		const std::string load_file(std::string filename);
 		const std::string load_directory_listing(std::string directoryPath);
-		const std::string appendfile();
 		const std::string getErrorPage(int code);
-		const std::string runCGI();
-        int saveFile();
-        
+		const std::string appendfile();
+
+        int saveFile();        
         int deleteFile(const std::string &);
 		std::string createCookie();
 		bool isMethodValid(std::string &method);
 
-        
         //Helper functions
         bool check_body_size();
         std::string getPath();

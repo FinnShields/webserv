@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/06 13:19:20 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/06 14:07:46 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -110,9 +110,8 @@ const std::string Response::run()
     {
         return getErrorPage(413);
     }
-    std::cout << "-----\n------\nbody size" << _req.getBodyRawBytes().size() << "\n";
 	if(isMethodValid(method))
-        _response = _srv.config.getBestValues(_index_virt, _target, "return", {""})[0] != "" ? redriect() :
+        _response = _srv.config.getBestValues(_index_virt, _target, "return", {""})[0] != "" ? redirect() :
                     (_target.size() > 9 && _target.substr(0, 9).compare("/cgi-bin/") == 0) ? runCGI() :
                     (method == "GET") ? get() : 
                     (method == "POST") ? post() :
@@ -121,7 +120,7 @@ const std::string Response::run()
     return _response;
 }
 
-const std::string Response::redriect()
+const std::string Response::redirect()
 {
     t_vector_str redirect = _srv.config.getBestValues(_index_virt, _target, "return", {""});
     std::string response = redirect[0] == "301" ? "HTTP/1.1 301 Moved Permanently\r\n" :
@@ -178,31 +177,17 @@ const std::string Response::post()
 const std::string Response::getErrorPage(int code)
 {
     _code = code;
-    switch (code) {
-        case 405:
-            _message = "Not allowed";
-            break;
-        case 413:
-            _message = "Content too large";
-            break;
-        case 500:
-            _message = "Internal server error";
-            break;
-        case 501:
-            _message = "Not implemented";
-            break;
-        default:
-            _message = "Not found";
-    }
+    _message = code == 405 ? "Not Allowed" :
+                code == 413 ? "Content Too Large" :
+                code == 500 ? "Internal Server Error" :
+                code == 501 ? "Not Implemented" :
+                code == 502 ? "Bad Gateway" :
+                code == 504 ? "Gateway Timeout" :
+                "Not Found";
 	std::string error_page_path = _srv.config.getValues(_index_virt, _target, std::to_string(code), {"empty"})[0];
-    std::string errorPath;
-    if (error_page_path != "empty" && !access(error_page_path.c_str(), R_OK)) {
-        errorPath = error_page_path;
-    }
-    else {
-        errorPath = "www/error_pages/" + std::to_string(code) + ".html";
-    }
-	std::cout << "[TEST MSG, comment me] Error page for code " << code << " is ->" << errorPath << "<-\n"; 
+    std::string errorPath = (error_page_path != "empty" && !access(error_page_path.c_str(), R_OK)) ? error_page_path : 
+                            "www/error_pages/" + std::to_string(code) + ".html";
+	// std::cout << "[TEST MSG, comment me] Error page for code " << code << " is ->" << errorPath << "<-\n"; 
 	//t_vector_str pages = _srv.config.getValues(_index_virt, _target, "error_page", {"empty"});
 	// for (size_t i = 0; i < pages.size() - 1; i++)
 	// {
@@ -265,14 +250,8 @@ const std::string Response::load_file(std::string filepath)
 		_srv.saveCookieInfo(_req.getRef("cookie"));
 	buffer << "\r\n";
 	
-    std::string response;
-    if (!_req.get("Method").compare("POST")) {
-        response = STATUS_LINE_201;
-        response += "Location: " + _fileName + "\r\n";
-    }
-    else {
-        response = STATUS_LINE_200;
-    }
+    std::string response = (!_req.get("Method").compare("POST")) ? STATUS_LINE_201 + ("Location: " + _fileName + "\r\n") : 
+                            STATUS_LINE_200;
 	if (isHtml(filepath))
     {
 		buffer << _filestream_read.rdbuf();
@@ -282,8 +261,6 @@ const std::string Response::load_file(std::string filepath)
     }
 	else
 	{
-		// response += "Content-Type: */*\r\n";
-		// response += "Content-Disposition: attachment; filename=\"" + getFileName(filepath) + "\"\r\n";
         response += "Transfer-Encoding: chunked\r\n";
         response += "Content-Type: application/octet-stream\r\n\r\n";
         _file = 3;
@@ -506,7 +483,7 @@ int Response::deleteFile(const std::string &file)
         else
             decodedFileName.append(1, file[i]);
     }
-    std::cout << "Decoded name: \"" << decodedFileName << "\"" << std::endl;
+    std::cout << "[INFO] Decoded name: \"" << decodedFileName << "\"" << std::endl;
     if (std::remove(decodedFileName.c_str()) < 0)
 	{
         perror("remove");
