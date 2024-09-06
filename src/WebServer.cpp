@@ -14,6 +14,8 @@
 #include "Config.hpp"
 #include "WebServer.hpp"
 
+static std::vector<pollfd> *_fds_ptr;
+
 WebServer::~WebServer() {}
 
 WebServer::WebServer(std::vector<t_server>& data):config(Config(data, 0)) {}
@@ -35,12 +37,13 @@ std::vector<size_t> WebServer::extractVirtualHostsIndices()
 
 void WebServer::closeAllThenExit(int signal)
 {
+    std::vector<pollfd> _fds;
+    _fds = *_fds_ptr;
     if (signal == SIGINT)
-        std::cout << " -- Closing due to SIGINT (ctl-c)" << std::endl;
-    size_t fd = 3;
-    while (close(fd) != -1)
-        fd ++;
-    exit(0);
+        std::cout << " -- Closing due to SIGINT (ctl-c) " << std::endl;
+    for (size_t i = 0; i < _fds.size(); i ++)
+        close(_fds[i].fd);
+    exit(130);
 }
 
 void WebServer::setup()
@@ -64,6 +67,7 @@ void WebServer::setup()
     for (Server &srv : _servers)
     {
         srv.start(_fds);
+        _fds_ptr = &_fds;
         std::cout << "[INFO] Server " << srv.index << " is started with port " << srv.get_port() << "\n";
     }
 }
