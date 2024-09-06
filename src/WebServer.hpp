@@ -37,6 +37,7 @@ class WebServer
 		std::map<size_t, std::vector<size_t>> _real_to_virt;
 
 		void setServers();
+		static void closeAllThenExit(int signal);
 		//void parse_file(std::string filename);
 		bool fd_is_server(int fd);
 		bool fd_is_client(pollfd &pfd);
