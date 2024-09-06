@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/05 14:55:34 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/06 13:19:20 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -112,7 +112,8 @@ const std::string Response::run()
     }
     std::cout << "-----\n------\nbody size" << _req.getBodyRawBytes().size() << "\n";
 	if(isMethodValid(method))
-        _response = (_target.size() > 9 && _target.substr(0, 9).compare("/cgi-bin/") == 0) ? runCGI() :
+        _response = _srv.config.getBestValues(_index_virt, _target, "return", {""})[0] != "" ? redriect() :
+                    (_target.size() > 9 && _target.substr(0, 9).compare("/cgi-bin/") == 0) ? runCGI() :
                     (method == "GET") ? get() : 
                     (method == "POST") ? post() :
                     (method == "DELETE") ? deleteResp() : 
@@ -120,7 +121,23 @@ const std::string Response::run()
     return _response;
 }
 
-std::string Response::get()
+const std::string Response::redriect()
+{
+    t_vector_str redirect = _srv.config.getBestValues(_index_virt, _target, "return", {""});
+    std::string response = redirect[0] == "301" ? "HTTP/1.1 301 Moved Permanently\r\n" :
+                redirect[0] == "302" ? "HTTP/1.1 302 Found\r\n" :
+                redirect[0] == "303" ? "HTTP/1.1 303 See Other\r\n" :
+                redirect[0] == "307" ? "HTTP/1.1 307 Temporary Redirect\r\n" : "";
+    if (response.empty())
+        return getErrorPage(500);
+    if (redirect.size() > 1 && !redirect[1].empty())
+        response += "Location: " + redirect[1] + "\r\n";
+    response += "Content-Length: 0\r\n"
+                "Connection: close\r\n\r\n";
+    return response;
+}
+
+const std::string Response::get()
 {
     if (!_code) {
         _code = 200;
@@ -140,7 +157,7 @@ std::string Response::get()
 	return (getErrorPage(404));
 }
 
-std::string Response::post()
+const std::string Response::post()
 {
     _code = 201;
     _message = "Created";
@@ -158,7 +175,7 @@ std::string Response::post()
     return get();
 }
 
-std::string Response::getErrorPage(int code)
+const std::string Response::getErrorPage(int code)
 {
     _code = code;
     switch (code) {
@@ -203,7 +220,7 @@ std::string Response::getErrorPage(int code)
 	return (responseString);
 }
 
-std::string Response::deleteResp()
+const std::string Response::deleteResp()
 {
     _code = 204;
     _message = "No content";
@@ -213,7 +230,7 @@ std::string Response::deleteResp()
 	return (getErrorPage(404));
 }
 
-std::string Response::runCGI()
+const std::string Response::runCGI()
 {
 	std::cout << "------- CGI ----------\n";
 	if (_srv.config.selectLocation(_target) != "/cgi-bin")
@@ -236,7 +253,7 @@ std::string Response::runCGI()
 			getErrorPage(500);
 }
 
-std::string Response::load_file(std::string filepath)
+const std::string Response::load_file(std::string filepath)
 {
 	_filestream_read.open(filepath, std::ios::binary);
 	if (!_filestream_read.is_open())
@@ -275,7 +292,7 @@ std::string Response::load_file(std::string filepath)
 	return response;
 }
 
-std::string Response::load_directory_listing(std::string directoryPath)
+const std::string Response::load_directory_listing(std::string directoryPath)
 {
     std::stringstream   buffer;
     t_vector_str        directories;
