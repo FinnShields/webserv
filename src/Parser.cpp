@@ -426,7 +426,16 @@ bool Parser::isValidAlias(t_group& group_data)
 bool Parser::isValidReturn(t_group& group_data)
 {
 	t_vector_str vec = group_data["return"];
-	return isValidOneArg(vec);
+	if (vec.empty())
+		return true;
+	if (vec.size() != 2 || vec[0].size() != 3)
+		return false;
+	for (auto& c : vec[0])
+	{
+		if (!isdigit(c))
+			return false;
+	}
+	return true;
 }
 
 bool Parser::isValidSrvName(t_group& group_data)
