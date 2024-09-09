@@ -114,7 +114,7 @@ const std::string Response::run()
         _response = _srv.config.getBestValues(_index_virt, _target, "return", {""})[0] != "" ? redirect() :
                     (_target.size() > 9 && _target.substr(0, 9).compare("/cgi-bin/") == 0) ? runCGI() :
                     (method == "GET") ? get() : 
-                    (method == "POST" || method == "PUT") ? postOrPut() :
+                    (method == "POST") ? post() :
                     (method == "DELETE") ? deleteResp() : 
                     getErrorPage(501);
     return _response;
@@ -159,7 +159,7 @@ const std::string Response::get()
 	return (getErrorPage(404));
 }
 
-const std::string Response::postOrPut()
+const std::string Response::post()
 {
     _code = 201;
     _message = "Created";
@@ -342,8 +342,7 @@ int Response::setFileName(std::vector<char> &bodyRaw)
     if (_fileName.empty())
         throw std::invalid_argument("No filename");
     setDirectoryToFileName();
-    if (!_req.get("method").compare("POST"))
-        RenameIfFileExists();
+    RenameIfFileExists();
     return 1;
 }
 
@@ -414,11 +413,6 @@ int Response::saveFile()
         return 400;
     }
     setFileName(bodyRaw);
-    if (!_req.get("method").compare("PUT") && std::filesystem::exists(_fileName)) {
-        _code = 204;
-        _message = "No content";
-        return 204;
-    }
     _boundary = _req.get("Content-Type").substr(31);
     size_t start = findString(bodyRaw, "\r\n\r\n", 0) + 4;
     size_t end = findString(bodyRaw, _boundary+"--", 0);
