@@ -142,9 +142,6 @@ const std::string Response::get()
         _code = 200;
         _message = "OK";
     }
-    if (_code == 204) {
-        return STATUS_LINE_204;
-    }
 	std::string path = getPath();
     std::cout << "PATH=" << path << std::endl;
 	if (std::filesystem::is_regular_file(path) && std::filesystem::exists(path))
