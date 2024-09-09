@@ -426,7 +426,7 @@ int Response::saveFile()
     _fileCurrentSize = end - start;
     _file = 1;
     std::cout << "[INFO] File created  " << _req.getBodyTotalSize() << "/" << _req.getHeader("content-length") << std::endl;
-    return 204;
+    return 201;
 }
 
 const std::string Response::appendfile()
