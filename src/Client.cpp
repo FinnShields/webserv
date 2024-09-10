@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/06 13:41:25 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/09 13:27:22 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,16 +64,23 @@ bool Client::responseReady()
 
 int Client::send_response()
 {
-    _res->display();
-    if (send(_fd, _response.c_str(), _response.size(), 0) < 0)
+    ssize_t bytesSent;
+	_res->display();
+    if ((bytesSent = send(_fd, _response.c_str(), std::min((size_t) 100000, _response.size()), 0)) < 0)
     {
         perror("Send error");
         return 1;
     }
-    std::cout << "[INFO] Response sent\n";
+	std::cout << "[INFO] Response Bytes sent: " << bytesSent << "/" << _response.size() << std::endl;
+	if (bytesSent < (ssize_t) _response.size())
+	{
+		std::cout << "[INFO] Response will send the remaining on next loop\n";
+		_response = _response.substr(bytesSent);
+		return 0;
+	}
     if (_res->hasMoreChunks())
     {
-        std::cout << "[INFO] More chunks to send\n";
+        std::cout << "[INFO] Response has more chunks to send\n";
         _response = _res->getNextChunk();
         return 0;
     }
