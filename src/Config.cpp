@@ -1,7 +1,5 @@
 #include "Config.hpp"
 
-//Config::Config(): index(0){}
-
 Config::~Config(){}
 
 Config::Config(std::vector<t_server>& data, size_t i): index(i), _data(data) 
@@ -9,12 +7,6 @@ Config::Config(std::vector<t_server>& data, size_t i): index(i), _data(data)
 	if (i >= _data.size())
 			throw  std::runtime_error("Config constructor: index is too big\n");
 }
-
-/*
-Config::Config(Parser& pars, size_t index):
-	_data(pars.getAll()),
-	index(index) {}
-*/
 
 Config::Config(const Config& other): index(other.index), _data(other._data) {}
 
@@ -165,22 +157,9 @@ std::string Config::selectLocation(std::string target) const {
 	return best_location;
 }
 
-/*
-t_vector_str Config::getValues(std::string target, std::string key, t_vector_str default_values) const
-{
-	std::string group = selectLocation(target);
-//	std::cout << "group=" << group << "\n";
-	t_vector_str vec = get()[group][key];
-	if (0 < vec.size())
-		return vec;
-	return default_values;
-}
-*/
-
 t_vector_str Config::getValues(size_t virt_index, std::string target, std::string key, t_vector_str default_values) const
 {
 	std::string group = selectLocation(target);
-	//std::cout << "group=" << group << "\n";
 	t_vector_str vec = getAll(virt_index)[group][key];
 	if (0 < vec.size())
 		return vec;
@@ -192,7 +171,6 @@ t_vector_str Config::getBestValues(size_t virt_index, std::string target, std::s
 	return getValues(virt_index, target, key, getValues(virt_index, "main", key, default_values));
 }
 
-//void Config::setVirtualHosts() const
 std::map<size_t, std::vector<size_t>> Config::realToVirtualHosts() const
 {
 	std::vector<size_t> indices;
@@ -219,12 +197,3 @@ std::map<size_t, std::vector<size_t>> Config::realToVirtualHosts() const
 	}
 	return real_to_virt;
 }
-
-/*
-bool Config::isValid(){
-	//validate server_name
-	//validate ip
-	//validate port
-	return false;
-}
-*/

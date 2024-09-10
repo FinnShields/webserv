@@ -14,37 +14,45 @@
 
 
 Client::Client(int fd, Server *server) : _fd(fd), _server(server), _request(nullptr), _res(nullptr), _responseSent(false) {}
-// Client::Client(const Client &copy) : _fd(copy._fd), _request(copy._request), _res(copy._res), _responseSent(copy._responseSent){}
+
+Client::Client(const Client &copy)
+{
+    *this = copy;
+}
+
+Client& Client::operator=(const Client &assign)
+{
+    _request = std::make_unique<Request>(*assign._request);
+    _res = std::make_unique<Response>(*assign._res);
+
+    *_request = *(assign._request);
+    *_res = *(assign._res);
+    _fd = assign._fd;
+    _server = assign._server;
+    _response = assign._response;
+    _responseSent = assign._responseSent;
+    return (*this);
+}
+
 Client::~Client() 
 {
     std::cout << "[INFO] Client destructor" << std::endl;
-    // close_connection();
 }
-
-// Client &Client::operator=(const Client &assign)
-// {
-// 	this->_fd = assign._fd;
-//     this->_request = assign._request;
-//     _res = assign._res;
-//     _responseSent = assign._responseSent;
-// 	return (*this);
-// }
 
 int Client::get_socket_fd()
 {
     return (_fd);
 } 
 
-//return -1 = empty request
-//Return 0 == Request fully read
-//Return 1 == Body is not fully read
-//Return 3 == Headers not fully read
+//Return -1: empty request
+//Return  0: Request fully read
+//Return  1: Body is not fully read
+//Return  3: Headers not fully read
 int Client::handle_request()
 {
     if (!_request)
         _request = std::make_unique<Request>();
     int ret = _request->read(_fd);
-    // std::cout << "request->read() returns: " << ret << std::endl;
     if (ret == 3 || ret == -1)
     {
         std::cout << "[INFO] Request " << ((ret == 3) ? "has unread headers" : "is empty") << std::endl;

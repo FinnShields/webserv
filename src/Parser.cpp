@@ -100,7 +100,7 @@ t_vector_str	Parser::parseWordList()
 	while (isAnyWord(peek()))
 		value_list.push_back(parseWord());
 	if (getToken() != tok::semicol)
-		throw std::runtime_error("Syntax error: expected semicolumn, but got: " + leftoverString());
+		throw std::runtime_error("Syntax error: expected semicolon, but got: " + leftoverString());
 	return value_list;
 }
 
@@ -111,7 +111,7 @@ t_group Parser::parseGroupSetting()
 			"Syntax error: expected {, but got: "
 			+ leftoverString());
 	t_group group;
-	std::string keyword; // = parseWord();
+	std::string keyword;
 	t_vector_str value_list;
 	while (isAnyWord(peek()))
 	{
@@ -191,7 +191,6 @@ std::vector<t_server>& Parser::parseFile()
 
 std::string Parser::leftoverString()
 {
-	//if (getToken() == tok::eof)
 	if (peek() == tok::eof)
 		return "EOF";
 	std::string read_str = _filecontent.substr(0, _position);
@@ -358,7 +357,6 @@ bool Parser::isValidNumber(const t_vector_str& vec, int limit_max) {
 	{
 		int num = std::stoi(vec[0]);
 		(void)limit_max;
-		//if (num < limit_min || num > limit_max)
 		if (num < 0)
 				return false;
 	}
@@ -461,7 +459,6 @@ bool Parser::isValidSrvNameDNS(std::string& name){
 		pos_end = name.find('.', pos_beg);
 		if (pos_end == pos_beg)
 			return false;
-		//std::cout << name.substr(pos_beg, pos_end - pos_beg) << "\n";
 		if (!isValidSrvNameLabel(name.substr(pos_beg, pos_end - pos_beg)))
 			return false;
 		if (pos_end != std::string::npos)
@@ -483,7 +480,6 @@ void Parser::isValid(){
 	if (_data.empty())
 		throw std::runtime_error("[ERROR] There are no servers in config file.\n");
 	for (auto& server : _data){
-		//std::cout << "[INFO] Server " << ++srv_num << "  ";
 		++srv_num;
 		if (server.empty())
 			throw std::runtime_error("[ERROR] Server " + std::to_string(srv_num) + " is empty.\n");

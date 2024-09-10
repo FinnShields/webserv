@@ -60,9 +60,9 @@ class Server
         std::string ft_inet_ntoa(in_addr_t addr) const;
         
         Server();
-        Server &operator=(const Server &copy);
     public:
         Server (const Server &copy);
+        Server &operator=(const Server &copy);
         Server(std::vector<t_server>&, size_t);
         ~Server();
   
