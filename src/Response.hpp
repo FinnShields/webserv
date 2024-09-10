@@ -91,11 +91,11 @@ class Response
 		size_t  findString(std::vector<char> bodyRaw, std::string str, size_t offset);
         char decodeChar(const char *ch);
 
-		Response();
+	public:
+		// Response();
+		Response(int fd, Request &req, Server &srv);
 		Response(const Response &copy);
 		Response &operator=(const Response &assign);
-	public:
-		Response(int fd, Request &req, Server &srv);
 		~Response();
 		
 		const std::string run();

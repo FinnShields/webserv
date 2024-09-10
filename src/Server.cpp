@@ -149,13 +149,13 @@ void Server::set_name(const std::string &name)
 in_addr_t Server::ft_inet_addr(std::string ip_addr)
 {
 	int	i = 0;
-	uint8_t d = (uint8_t)atoi(ip_addr.c_str());
+	uint8_t d = (uint8_t) std::atoi(ip_addr.c_str());
 	while (ip_addr[i++] != '.'){}
-	uint8_t c = (uint8_t)atoi(ip_addr.c_str() + i);
+	uint8_t c = (uint8_t) std::atoi(ip_addr.c_str() + i);
 	while (ip_addr[i++] != '.'){}
-	uint8_t b = (uint8_t)atoi(ip_addr.c_str() + i);
+	uint8_t b = (uint8_t) std::atoi(ip_addr.c_str() + i);
 	while (ip_addr[i++] != '.'){}
-	uint8_t a = (uint8_t)atoi(ip_addr.c_str() + i);
+	uint8_t a = (uint8_t) std::atoi(ip_addr.c_str() + i);
 	in_addr_t rtn = (uint32_t) a;
 	rtn <<= 8;
 	rtn |= (uint32_t) b;
@@ -200,7 +200,7 @@ void Server::setNewCookie(size_t value)
 
 void Server::saveCookieInfo(std::string& cookie)
 {
-	size_t value = (size_t) atoi(cookie.c_str() + 11);
+	size_t value = (size_t) std::atoi(cookie.c_str() + 11);
 	setNewCookie(value);
 }
 
