@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/06 14:07:46 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/09 14:02:05 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -216,16 +216,16 @@ const std::string Response::deleteResp()
 
 const std::string Response::runCGI()
 {
-	std::cout << "------- CGI ----------\n";
+	std::cerr << "------- CGI ----------\n";
 	if (_srv.config.selectLocation(_target) != "/cgi-bin")
 	{
-		std::cout << "CGI is not configured.\n";
+		std::cerr << "CGI is not configured.\n";
 		return (getErrorPage(500));
 	}
 	Cgi cgi(_req, _srv, _index_virt);
 	cgi.start();
 	int status = cgi.getStatus();
-	std::cout << "CGI status =" << status << "\n";
+	std::cerr << "CGI status =" << status << "\n";
 	std::cout << "------- END ----------" << std::endl;
 	return status == 0 ? STATUS_LINE_200 + cgi.getResponse() :
 			status == 403 ?  getErrorPage(403) :

@@ -6,7 +6,7 @@
 /*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/06 13:41:04 by apimikov          #+#    #+#             */
-/*   Updated: 2024/09/06 13:42:36 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/09/10 10:31:10 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -269,12 +269,12 @@ int Cgi::_access(){
     std::cout << "CGI: access for ->" << file_path << "<-\n";
     if (access(file_path, F_OK) != 0)
     {
-        _status = 404; //"PATH NOT FOUND"
+        _status = 404;    //"PATH NOT FOUND"
         return -1;
     }
     if (access(file_path, X_OK) != 0)
     {
-        _status = 403; //"PERMISSION DENIED"
+        _status = 403;    //"PERMISSION DENIED"
         return -1;
     }
     return 0;
