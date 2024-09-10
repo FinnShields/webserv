@@ -93,7 +93,6 @@ bool WebServer::fd_is_client(pollfd &pfd)
 		{
             if (pfd.revents & POLLOUT)
             {
-                // std::cout << " pollout" << std::endl;
                 if (!client->send_response())
                     return false;
                 client->close_connection();
@@ -101,7 +100,6 @@ bool WebServer::fd_is_client(pollfd &pfd)
             }
             if (pfd.revents & POLLIN)
             {
-                // std::cout << " pollin" << std::endl;
 			    int ret = client->handle_request();
                 if (ret == 0)
                     pfd.events |= POLLOUT;
@@ -118,7 +116,7 @@ bool WebServer::fd_is_client(pollfd &pfd)
 
 void WebServer::run()
 {
-	while (1)
+	while (true)
 	{
 		std::cout << "Waiting for action... - size of pollfd vector: " << _fds.size() << std::endl;
 		int poll_result = poll(_fds.data(), _fds.size(), -1);

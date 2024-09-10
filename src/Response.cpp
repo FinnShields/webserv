@@ -21,6 +21,28 @@ const std::string Response::setAbsolutePath()
 }
 
 Response::Response(int fd, Request &req, Server &srv) : _fd(fd), _req(req), _srv(srv), _file(0), _code(0){}
+
+Response::Response(const Response &copy) : _req(copy._req), _srv(copy._srv)
+{
+    *this = copy;
+}
+
+Response& Response::operator=(const Response &assign)
+{
+    _fd = assign._fd;
+    _file = assign._file;
+    _code = assign._code;
+    _message = assign._message;
+    _fileName = assign._fileName;
+    _fileCurrentSize = assign._fileCurrentSize;
+    _bodyMaxSize = assign._bodyMaxSize;
+    _boundary = assign._boundary;
+    _target = assign._target;
+    _index_virt = assign._index_virt;
+    _response = assign._response;
+    return (*this);
+}
+
 Response::~Response() 
 {
     std::cout << "[INFO] Response destructor" << std::endl;
@@ -187,14 +209,6 @@ const std::string Response::getErrorPage(int code)
 	std::string error_page_path = _srv.config.getValues(_index_virt, _target, std::to_string(code), {"empty"})[0];
     std::string errorPath = (error_page_path != "empty" && !access(error_page_path.c_str(), R_OK)) ? error_page_path : 
                             "www/error_pages/" + std::to_string(code) + ".html";
-	// std::cout << "[TEST MSG, comment me] Error page for code " << code << " is ->" << errorPath << "<-\n"; 
-	//t_vector_str pages = _srv.config.getValues(_index_virt, _target, "error_page", {"empty"});
-	// for (size_t i = 0; i < pages.size() - 1; i++)
-	// {
-	// 	if (!pages[i].compare(std::to_string(code)) && !pages[i+1].empty() && 
-	// 	!access(pages[i+1].c_str(), R_OK) && isHtml(pages[i+1]))
-	// 		errorPath = pages[i+1];
-	// }
 	std::ifstream errorPage(errorPath);
 	std::stringstream buffer;
 	buffer << errorPage.rdbuf();
@@ -273,6 +287,7 @@ const std::string Response::load_directory_listing(std::string directoryPath)
     std::stringstream   buffer;
     t_vector_str        directories;
     t_vector_str        files;
+    std::string         res;
 
     if (!load_directory_entries(directoryPath, directories, files))
         return (getErrorPage(403));
@@ -295,7 +310,11 @@ const std::string Response::load_directory_listing(std::string directoryPath)
         << "    .catch(error => console.error('Error:', error));"
         << "}</script>"
         << "</body></html>";
-    return ("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n" + buffer.str());
+    if (_code == 201)
+        res = STATUS_LINE_201;
+    else
+        res = STATUS_LINE_200 ;
+    return (res + "Content-Type: text/html\r\n\r\n" + buffer.str());
 }
 
 bool Response::check_body_size()
@@ -551,12 +570,6 @@ bool Response::isHtml(const std::string fileName)
 		return true;
 	return false;
 }
-
-// static std::string getFileType(std::string fileName)
-// {
-// 	std::string filetype = fileName.substr(fileName.find_first_of('.'));
-// 	return filetype;
-// }
 
 std::string Response::getFileName(const std::string path)
 {

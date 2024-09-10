@@ -71,6 +71,7 @@ void Request::extractVersion(std::string& input)
 		end++;
 	_version = input.substr(start, end);
 }
+
 //Return -1: Empty request
 //Return 0: No content-length or fully read
 //Return 1: Body is not fully read
@@ -145,7 +146,6 @@ void	Request::handleChunks(char *reqArray, size_t start)
 	size_t i = start;
 	while (chunkLength != 0 && i < MAX_BUFFER_SIZE)
 	{
-		std::cout << "Size of Chunk: " << chunkLength << std::endl;
 		_bodyTotalSize += chunkLength;
 		while (i < MAX_BUFFER_SIZE && (isdigit(reqArray[i]) || (reqArray[i] >= 'A' && reqArray[i] <= 'E') ||
 		reqArray[i] == '\r' || reqArray[i] == '\n'))
@@ -169,7 +169,7 @@ void	Request::handleChunks(char *reqArray, size_t start)
 			_incompleteChunk = true;
 			break ;
 		}
-		chunkLength = strtol(&reqArray[i], nullptr, 16);
+		chunkLength = std::strtol(&reqArray[i], nullptr, 16);
 	}
 	for (i = 0; i < contentRawBytes.size(); i++)
 		_bodyRawBytes.push_back(contentRawBytes[i]);
@@ -201,9 +201,7 @@ void	Request::moreChunks()
 		}	
 	}
 	else
-	{
 		handleChunks(&_reqRaw[0], 0);
-	}
 }
 
 void	Request::extractBody()

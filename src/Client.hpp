@@ -28,7 +28,6 @@
 class Server;
 class Request;
 class Response;
-//class Cgi;
 
 class Client
 {
@@ -51,7 +50,6 @@ class Client
         int send_response();
         void close_connection();
         int get_socket_fd();
-        std::string& get_fileName();
         bool responseReady();
 };
 
