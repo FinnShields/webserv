@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/29 16:18:44 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/10 16:18:01 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -84,7 +84,7 @@ bool WebServer::fd_is_server(int fd)
 	return (false);
 }
 
-bool WebServer::fd_is_client(pollfd &pfd)
+int WebServer::fd_is_client(pollfd &pfd)
 {
 	Client *client = nullptr;
     
@@ -95,9 +95,9 @@ bool WebServer::fd_is_client(pollfd &pfd)
             {
                 // std::cout << " pollout" << std::endl;
                 if (!client->send_response())
-                    return false;
+                    return 0;
                 client->close_connection();
-                return true;
+                return 1;
             }
             if (pfd.revents & POLLIN)
             {
@@ -105,19 +105,41 @@ bool WebServer::fd_is_client(pollfd &pfd)
 			    int ret = client->handle_request();
                 if (ret == 0)
                     pfd.events |= POLLOUT;
+				if (ret == 2)
+				{
+					std::cout << "[INFO] CGI is running" << std::endl;
+					pollfd cgipfd;
+					cgipfd.events = POLLIN;
+					cgipfd.fd = client->get_cgi_fd();
+					_fds.push_back(cgipfd);
+					_cgi_clients.emplace(client->get_cgi_fd(), &pfd);
+					std::cout << "[INFO] CGI is added to pollfd, fd=" << client->get_cgi_fd() << std::endl;
+					return 2;
+				}
                 if (ret == -1)
                 {
                     client->close_connection();
-                    return true;
+                    return 1;
                 }
-                return false;
+                return 0;
             }
 		}
-	return false;
+	return -1;
+}
+
+bool WebServer::fd_is_cgi(int fd)
+{
+	if (_cgi_clients.find(fd) == _cgi_clients.end())
+		return false;
+	std::cout << "[INFO] FD is cgi" << std::endl;
+	_cgi_clients[fd]->events |= POLLOUT;
+	_cgi_clients.erase(fd);
+	return true;
 }
 
 void WebServer::run()
 {
+	int status;
 	while (1)
 	{
 		std::cout << "Waiting for action... - size of pollfd vector: " << _fds.size() << std::endl;
@@ -130,11 +152,23 @@ void WebServer::run()
 			{
 				if (fd_is_server(it->fd))
 					break;
-                if (fd_is_client(*it))
+				if (fd_is_cgi(it->fd))
+				{
+					std::cout << "[INFO] erasing cgi from pollfd" << std::endl;
+					it = _fds.erase(it);
+					continue;
+				}
+                if ((status = fd_is_client(*it)) >=0)
                 {
-                    std::cout << "[INFO] erasing client from pollfd" << std::endl;
-                    it = _fds.erase(it);
-                    continue;
+					std::cout << "FD_IS_CLIENT STATUS: " << status << std::endl;
+					if (status == 2)
+						break;
+					if (status == 1)
+					{
+						std::cout << "[INFO] erasing client from pollfd" << std::endl;
+						it = _fds.erase(it);
+						continue;
+					}
                 }
 			}
             it++;

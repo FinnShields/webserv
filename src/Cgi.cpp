@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Cgi.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/06 13:41:04 by apimikov          #+#    #+#             */
-/*   Updated: 2024/09/06 13:42:36 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/09/10 16:02:18 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -95,11 +95,15 @@ Cgi::~Cgi(){
 */
 
 Cgi::~Cgi(){
-    //std::cerr << "Cgi destructor call\n";
+    std::cerr << "[INFO] Cgi destructor call\n";
     cleanEnv();
     for (int i = 0; _argv[i] != nullptr; i++)
         delete[] _argv[i];
     delete[](_argv);
+	if (close(_fd_to_cgi[1]) == -1)
+		std::cerr << "[CGI Destructor] Failure close cgi topipe\n";
+	if (close(_fd_from_cgi[0]) == -1)
+        std::cerr << "[CGI Destructor] Failure close cgi frompipe\n";
 }
 
 void Cgi::cleanEnv(){
@@ -145,11 +149,68 @@ void Cgi::start(){
         _response = "";
         _status = 500;
     }
-    if (!_status && _response.empty())
-        _status = 502;
+    // if (!_status && _response.empty())
+    //     _status = 502;
     // Add other validation of CGI if needed;
 }
 
+void Cgi::runCmd(){
+    if (_access() != 0)
+        return ;
+    if (pipe(_fd_to_cgi) == -1)
+        throw std::runtime_error("pipe error occurred!");
+    if (pipe(_fd_from_cgi) == -1){
+        close(_fd_to_cgi[0]);
+        close(_fd_to_cgi[1]);
+        throw std::runtime_error("pipe error occurred!");
+    }
+    _pid = fork();
+    if (_pid == -1){
+        throw std::runtime_error("fork error occurred!");
+    }
+    else if (_pid == 0)
+        _runChildCgi();
+    //std::cout << "This is parent CGI part \n";
+    if (close(_fd_to_cgi[0]) == -1 || close(_fd_from_cgi[1]) == -1)
+        throw std::runtime_error("close error occurred!");
+    // write(_fd_to_cgi[1], _request.getBodyRawBytes().data(), _request.getBodyRawBytes().size());
+    if (!_wait())
+        _status = 504;
+    // else if ((_status & 0xff00) >> 8 != 0)
+    //     _status = 502;
+    else
+        _status = 0;
+}
+
+ssize_t Cgi::writeToPipe(const void *buf, size_t count)
+{
+	int bytesWritten = write(_fd_to_cgi[1], buf, count);
+	std::cout << "[CGI] Wrote to pipe " << bytesWritten << " bytes\n";
+	if (bytesWritten == 0)
+	{
+		if (close(_fd_to_cgi[1]) == -1)
+			std::cerr << "[CGI] Failure close cgi topipe\n";
+		else
+			std::cerr << "[CGI] closed CGI Pipe\n";
+	}
+	return bytesWritten;
+	
+}
+
+std::string Cgi::readFromPipe()
+{
+    char buffer[MAX_BUFFER_SIZE];
+    ssize_t size = read(_fd_from_cgi[0], buffer, sizeof(buffer));
+    if (size < 0) {
+        throw std::runtime_error("readFromFd: read error occured!");
+    }
+    return buffer;
+}
+
+int Cgi::get_pipefd()
+{
+	return _fd_from_cgi[0];
+}
 void Cgi::setExtension()
 {
     _pos_cgi = 9;
@@ -269,6 +330,7 @@ int Cgi::_access(){
     std::cout << "CGI: access for ->" << file_path << "<-\n";
     if (access(file_path, F_OK) != 0)
     {
+
         _status = 404; //"PATH NOT FOUND"
         return -1;
     }
@@ -304,7 +366,7 @@ void Cgi::_runChildCgi(){
     std::cout << "CGI: cgi_path=" << _cgi_path << "<-\n";
     std::cout << "CGI: execve for ->" << _argv[0] << "<- ->" << _argv[1] << "<- \n";
     if (close(_fd_to_cgi[1]) == -1 || close(_fd_from_cgi[0]) == -1)
-        throw std::runtime_error("close error occurred!");
+        throw std::runtime_error("close 	 error occurred!");
     if (dup2(_fd_to_cgi[0], 0) == -1 || dup2(_fd_from_cgi[1], 1) == -1)
         throw std::runtime_error("dub2 error occurred!");
     if (close(_fd_to_cgi[0]) == -1 || close(_fd_from_cgi[1]) == -1)
@@ -329,49 +391,12 @@ bool Cgi::_wait(){
 	while (difftime(std::time(NULL), start) <= CGI_TIMEOUT)
 	{
 		waitResult = waitpid(_pid, &_status, WNOHANG);
-		if (waitResult > 0)
+		if (waitResult >= 0)
 			return true;
 	}
-	kill(_pid, SIGKILL);
-	waitpid(_pid, &_status, 0);
+	// kill(_pid, SIGKILL);
+	// waitpid(_pid, &_status, 0);
 	return false;
-}
-
-void Cgi::runCmd(){
-    if (_access() != 0)
-        return ;
-    if (pipe(_fd_to_cgi) == -1)
-        throw std::runtime_error("pipe error occurred!");
-    if (pipe(_fd_from_cgi) == -1){
-        close(_fd_to_cgi[0]);
-        close(_fd_to_cgi[1]);
-        throw std::runtime_error("pipe error occurred!");
-    }
-    _pid = fork();
-    if (_pid == -1){
-        throw std::runtime_error("fork error occurred!");
-    }
-    else if (_pid == 0)
-        _runChildCgi();
-    //std::cout << "This is parent CGI part \n";
-    if (close(_fd_to_cgi[0]) == -1 || close(_fd_from_cgi[1]) == -1)
-        throw std::runtime_error("close error occurred!");
-    //std::cout << "parent body: " << _body_old.c_str() << std::endl;
-    //write(_fd_to_cgi[1], _body_old.c_str(), _body_old.size());
-    write(_fd_to_cgi[1], _request.getBodyRawBytes().data(), _request.getBodyRawBytes().size());
-    if (close(_fd_to_cgi[1]) == -1)
-        throw std::runtime_error("close error occurred!");
-    if (!_wait())
-        _status = 504;
-    else if ((_status & 0xff00) >> 8 != 0)
-        _status = 502;
-    else
-    {
-        _response = readFromFd(_fd_from_cgi[0]);
-        _status = 0;
-    }
-    if (close(_fd_from_cgi[0]) == -1)
-        throw std::runtime_error("close error occurred!");
 }
 
 void Cgi::setEnv(){

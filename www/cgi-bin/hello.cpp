@@ -24,7 +24,8 @@ int main(int argc, char** argv, char** envp) {
     (void)argv;
 
     //std::cerr << "-------argc: " << argc << std::endl;
-    std::string request_body = readFromFd(0);
+    std::string request_body;
+	readFromFd(0);
     //oss << "HTTP/1.1 200 OK\r\n";
     std::cout << "Content-Type: text/html\r\n";
 
@@ -46,10 +47,11 @@ int main(int argc, char** argv, char** envp) {
     oss << "</h1>";
     oss << "</body></html>";
     std::string body = oss.str();
-    //close(0);
+    // close(0);
    // std::cout << "Content-Length: " << body.size() << "\r\n\r\n";
     std::cout << "\r\n";
 
     std::cout << body;
+	// close(1);
     return 0;
 }

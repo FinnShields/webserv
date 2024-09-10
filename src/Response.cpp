@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/06 14:07:46 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/10 14:34:39 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -216,25 +216,38 @@ const std::string Response::deleteResp()
 
 const std::string Response::runCGI()
 {
-	std::cout << "------- CGI ----------\n";
-	if (_srv.config.selectLocation(_target) != "/cgi-bin")
+	if (_cgi.get() == nullptr)
 	{
-		std::cout << "CGI is not configured.\n";
-		return (getErrorPage(500));
+		std::cout << "------- CGI ----------\n";
+		if (_srv.config.selectLocation(_target) != "/cgi-bin")
+		{
+			std::cout << "CGI is not configured.\n";
+			return (getErrorPage(500));
+		}
+		_cgi = std::make_unique<Cgi>(_req, _srv, _index_virt);
+		_cgi->start();
+		std::cout << "CGI status =" << _cgi->getStatus() << "\n";
+		std::cout << "------- END ----------" << std::endl;
+		if (_req.getStatus() == 0 || !_req.getBodyRawBytes().empty())
+			_cgi->writeToPipe(_req.getBodyRawBytes().data(), _req.getBodyRawBytes().size());
 	}
-	Cgi cgi(_req, _srv, _index_virt);
-	cgi.start();
-	int status = cgi.getStatus();
-	std::cout << "CGI status =" << status << "\n";
-	std::cout << "------- END ----------" << std::endl;
-	return status == 0 ? STATUS_LINE_200 + cgi.getResponse() :
-			status == 403 ?  getErrorPage(403) :
-			status == 404 ?  getErrorPage(404) :
-			status == 500 ?  getErrorPage(500) :
-			status == 501 ?  getErrorPage(501) : // cgi's ext is not implemented. 
-			status == 502 ?  getErrorPage(502) : //Bad Gateway
-			status == 504 ?  getErrorPage(504) : // time out
-			getErrorPage(500);
+	else
+	{
+		int status = _cgi->writeToPipe(_req.getBodyRawBytes().data(), _req.getBodyRawBytes().size());
+		std::cout << "[CGI] Wrote to pipe " << status << " bytes\n";
+	}
+	return _cgi->getStatus() == 0 ? STATUS_LINE_200 :
+				getErrorPage(_cgi->getStatus());
+}
+
+const std::string Response::readfromCGI()
+{
+	return _cgi->readFromPipe();
+}
+
+int Response::getCGIfd()
+{
+	return _cgi->get_pipefd();
 }
 
 const std::string Response::load_file(std::string filepath)

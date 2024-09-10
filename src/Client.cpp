@@ -6,14 +6,14 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/09 13:27:22 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/10 16:15:35 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Client.hpp"
 
 
-Client::Client(int fd, Server *server) : _fd(fd), _server(server), _request(nullptr), _res(nullptr), _responseSent(false) {}
+Client::Client(int fd, Server *server) : _fd(fd), _server(server), _request(nullptr), _res(nullptr), _responseSent(false), _isCGI(false) {}
 // Client::Client(const Client &copy) : _fd(copy._fd), _request(copy._request), _res(copy._res), _responseSent(copy._responseSent){}
 Client::~Client() 
 {
@@ -33,23 +33,31 @@ Client::~Client()
 int Client::get_socket_fd()
 {
     return (_fd);
-} 
+}
+
+int Client::get_cgi_fd()
+{
+	return _res->getCGIfd();
+}
 
 //return -1 = empty request
 //Return 0 == Request fully read
 //Return 1 == Body is not fully read
+//Return 2 == Body is fully read, wait for CGI.
 //Return 3 == Headers not fully read
 int Client::handle_request()
 {
     if (!_request)
         _request = std::make_unique<Request>();
     int ret = _request->read(_fd);
-    // std::cout << "request->read() returns: " << ret << std::endl;
+    std::cout << "request->read() returns: " << ret << std::endl;
     if (ret == 3 || ret == -1)
     {
         std::cout << "[INFO] Request " << ((ret == 3) ? "has unread headers" : "is empty") << std::endl;
         return ret;
     }
+	if (ret == 2)
+		_isCGI = true;
     if (!_res)
         _res = std::make_unique<Response>(_fd, *_request, *_server);
     _response = _res->run();
@@ -66,6 +74,8 @@ int Client::send_response()
 {
     ssize_t bytesSent;
 	_res->display();
+	if (_isCGI)
+		_response.append(_res->readfromCGI());
     if ((bytesSent = send(_fd, _response.c_str(), std::min((size_t) 100000, _response.size()), 0)) < 0)
     {
         perror("Send error");

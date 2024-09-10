@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/09/04 15:03:34 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/10 15:56:48 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -71,9 +71,15 @@ void Request::extractVersion(std::string& input)
 		end++;
 	_version = input.substr(start, end);
 }
+
+int Request::getStatus()
+{
+	return _status;
+}
 //Return -1: Empty request
 //Return 0: No content-length or fully read
 //Return 1: Body is not fully read
+//Return 2: Body is fully read, but wait for CGI
 //Return 3: Headers not fully recveived
 //Status 0: No content-length or transfer-encoding
 //Status 1: Content-length (Webkitforms)
@@ -97,8 +103,8 @@ int	Request::read(int _fd)
         !_headers["content-length"].empty() ? 1 : 0; 
     
     if (_status == 1)
-        return std::stol(_headers["content-length"]) > _bodyTotalSize ? (isCGI() ? 3 : 1) : 0;
-    return _chunkedReqComplete ? 0 : !_chunkedReqComplete ? (isCGI() ? 3 : 1) : 0;
+        return std::stol(_headers["content-length"]) > _bodyTotalSize ? 1 : (isCGI() ? 2 : 0);
+    return _chunkedReqComplete ? (isCGI() ? 2 : 0) : !_chunkedReqComplete ? 1 : 0;
 }
 
 int Request::isCGI()
@@ -181,7 +187,7 @@ void	Request::handleChunks(char *reqArray, size_t start)
 
 void	Request::moreChunks()
 {
-	if (!get("content-type").compare("multipart/form-data"))
+	// if (!get("content-type").compare("multipart/form-data"))
 		_bodyRawBytes.clear();
 	if (_incompleteChunk)
 	{
@@ -224,8 +230,8 @@ void	Request::extractBody()
 
 void    Request::resetBody()
 {
-	if ((!get("content-type").compare(0, 19, "multipart/form-data")) && (!isCGI()))
-		_bodyRawBytes.clear();
+	// if ((!get("content-type").compare(0, 19, "multipart/form-data")) && (!isCGI()))
+	_bodyRawBytes.clear();
     for (size_t i = 0; i < _reqRaw.size(); i++)
 		_bodyRawBytes.push_back(_reqRaw[i]);
 	_bodyTotalSize += _reqRaw.size();
