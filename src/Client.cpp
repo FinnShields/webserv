@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/10 16:15:35 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/11 09:51:33 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,7 +50,7 @@ int Client::handle_request()
     if (!_request)
         _request = std::make_unique<Request>();
     int ret = _request->read(_fd);
-    std::cout << "request->read() returns: " << ret << std::endl;
+    std::cout << "[INFO] request->read() returns: " << ret << std::endl;
     if (ret == 3 || ret == -1)
     {
         std::cout << "[INFO] Request " << ((ret == 3) ? "has unread headers" : "is empty") << std::endl;

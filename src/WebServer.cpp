@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/10 16:18:01 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/11 10:45:46 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -93,7 +93,7 @@ int WebServer::fd_is_client(pollfd &pfd)
 		{
             if (pfd.revents & POLLOUT)
             {
-                // std::cout << " pollout" << std::endl;
+                std::cout << " pollout" << std::endl;
                 if (!client->send_response())
                     return 0;
                 client->close_connection();
@@ -101,7 +101,7 @@ int WebServer::fd_is_client(pollfd &pfd)
             }
             if (pfd.revents & POLLIN)
             {
-                // std::cout << " pollin" << std::endl;
+                std::cout << " pollin" << std::endl;
 			    int ret = client->handle_request();
                 if (ret == 0)
                     pfd.events |= POLLOUT;
@@ -112,8 +112,9 @@ int WebServer::fd_is_client(pollfd &pfd)
 					cgipfd.events = POLLIN;
 					cgipfd.fd = client->get_cgi_fd();
 					_fds.push_back(cgipfd);
-					_cgi_clients.emplace(client->get_cgi_fd(), &pfd);
-					std::cout << "[INFO] CGI is added to pollfd, fd=" << client->get_cgi_fd() << std::endl;
+					std::cout << "1. Address of pfd" << &pfd << std::endl;
+					_cgi_clients.emplace(cgipfd.fd, &pfd);
+					std::cout << "[INFO] CGI is added to pollfd, fd=" << client->get_cgi_fd() << " size of map:" << _cgi_clients.size() << std::endl;
 					return 2;
 				}
                 if (ret == -1)
@@ -129,20 +130,26 @@ int WebServer::fd_is_client(pollfd &pfd)
 
 bool WebServer::fd_is_cgi(int fd)
 {
-	if (_cgi_clients.find(fd) == _cgi_clients.end())
+	auto it = _cgi_clients.find(fd);
+	if (it == _cgi_clients.end())
 		return false;
-	std::cout << "[INFO] FD is cgi" << std::endl;
-	_cgi_clients[fd]->events |= POLLOUT;
+	it->second->events |= POLLOUT;
+	std::cout << std::endl;
+	std::cout << "[INFO] CGI is ready to write: fd = " << it->second->fd << " event = " << it->second->events << " Address of socket: " << it->second <<  std::endl;
 	_cgi_clients.erase(fd);
+	std::cout << "[INFO] FD is cgi" << "size of map:" << _cgi_clients.size() << std::endl;
 	return true;
 }
 
 void WebServer::run()
 {
 	int status;
+	_fds.reserve(100);
 	while (1)
 	{
 		std::cout << "Waiting for action... - size of pollfd vector: " << _fds.size() << std::endl;
+		for (pollfd &pfd : _fds)
+			std::cout << "fd: " << pfd.fd << " events: " << pfd.events << " revents: " << pfd.revents << " Address of object: " << &pfd << std::endl;
 		int poll_result = poll(_fds.data(), _fds.size(), -1);
 		if (poll_result == -1)
 			return (perror("poll"));
@@ -154,7 +161,7 @@ void WebServer::run()
 					break;
 				if (fd_is_cgi(it->fd))
 				{
-					std::cout << "[INFO] erasing cgi from pollfd" << std::endl;
+					std::cout << "[INFO] erasing cgi from pollfd fd: " << it->fd << std::endl;
 					it = _fds.erase(it);
 					continue;
 				}

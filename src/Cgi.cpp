@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/06 13:41:04 by apimikov          #+#    #+#             */
-/*   Updated: 2024/09/10 16:02:18 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/11 10:59:15 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,7 +45,7 @@ not implemented
 "TEAPOT", 418   
 
 */
-
+#define DEBUG 0
 
 Cgi::Cgi(const Cgi& other):
     _request(other._request),
@@ -123,9 +123,12 @@ int Cgi::getStatus(){
 }
 
 void Cgi::start(){
-    std::cout << "__________This is Cgi request._____________\n";
-    std::cout << "Method =>" << _request.get("method") << "<=\n";
-    std::cout << "Target =>" << _target << "<=\n";
+    if (DEBUG)
+	{
+		std::cout << "__________This is Cgi request._____________\n";
+		std::cout << "Method =>" << _request.get("method") << "<=\n";
+		std::cout << "Target =>" << _target << "<=\n";
+	}
     setExtension();
     if (!isImplemented())
     {
@@ -186,7 +189,7 @@ ssize_t Cgi::writeToPipe(const void *buf, size_t count)
 {
 	int bytesWritten = write(_fd_to_cgi[1], buf, count);
 	std::cout << "[CGI] Wrote to pipe " << bytesWritten << " bytes\n";
-	if (bytesWritten == 0)
+	if (bytesWritten == 0 || (_request.getStatus() == 1 && std::stol(_request.getHeader("content-length")) == _request.getBodyTotalSize()))
 	{
 		if (close(_fd_to_cgi[1]) == -1)
 			std::cerr << "[CGI] Failure close cgi topipe\n";
@@ -230,44 +233,52 @@ void Cgi::analizeTarget()
 {
     if (_pos_info == std::string::npos && _pos_query == std::string::npos)
     {
-        std::cout << "analizeTarget: no info_path, no query\n";
+        if (DEBUG)
+			std::cout << "analizeTarget: no info_path, no query\n";
         _target_file_path = _target.substr(_pos_cgi);
         _target_query = "";
         _target_path_info = "";
     }
     else if (_pos_info == std::string::npos && _pos_query != std::string::npos)
     {
-        std::cout << "analizeTarget: no info_path\n";
+        if (DEBUG)
+			std::cout << "analizeTarget: no info_path\n";
         _target_file_path = _target.substr(_pos_cgi, _pos_query - _pos_cgi);
         _target_path_info = "";
         _target_query = _target.substr(_pos_query + 1);
     }
     else if (_pos_info != std::string::npos && _pos_query == std::string::npos)
     {
-        std::cout << "analizeTarget: no query\n";
+        if (DEBUG)
+			std::cout << "analizeTarget: no query\n";
         _target_file_path = _target.substr(_pos_cgi, _pos_info - _pos_cgi);
         _target_path_info = _target.substr(_pos_info);
         _target_query = "";
     }
     else if (_pos_info < _pos_query)
     {
-        std::cout << "analizeTarget: info and query\n";
+        if (DEBUG)
+			std::cout << "analizeTarget: info and query\n";
         _target_file_path = _target.substr(_pos_cgi, _pos_info - _pos_cgi);
         _target_path_info = _target.substr(_pos_info, _pos_query - _pos_info);
         _target_query = _target.substr(_pos_query + 1);
     }
     else
     {
-        std::cout << "analizeTarget: ? in query\n";
+        if (DEBUG)
+			std::cout << "analizeTarget: ? in query\n";
         _target_file_path = _target.substr(_pos_cgi, _pos_query - _pos_cgi);
         _target_path_info = "";
         _target_query = _target.substr(_pos_query + 1);
     }
-    std::cout << " _ext=" << _ext << "\n";
-    std::cout << " _target_file_path=" << _target_file_path << "\n";
-    std::cout << " _target_path_info=" <<_target_path_info << "\n";
-    std::cout << " _target_query=" << _target_query << "\n";
-    size_t pos_file = _target_file_path.rfind('/');
+    if (DEBUG)
+	{
+		std::cout << " _ext=" << _ext << "\n";
+		std::cout << " _target_file_path=" << _target_file_path << "\n";
+		std::cout << " _target_path_info=" <<_target_path_info << "\n";
+		std::cout << " _target_query=" << _target_query << "\n";
+	}
+	size_t pos_file = _target_file_path.rfind('/');
     if (pos_file == std::string::npos)
     {
         _target_file_name = _target_file_path;
@@ -278,8 +289,11 @@ void Cgi::analizeTarget()
         _target_file_name = _target_file_path.substr(pos_file + 1);
         _target_foldername = _target_file_path.substr(0, pos_file);
     }
-    std::cout << " _target_foldername="<< _target_foldername << "\n";
-    std::cout << " _target_file_name=" << _target_file_name << "\n";
+    if (DEBUG)
+	{	
+		std::cout << " _target_foldername="<< _target_foldername << "\n";
+    	std::cout << " _target_file_name=" << _target_file_name << "\n";
+	}
 }
 
 bool Cgi::isImplemented()
@@ -327,7 +341,8 @@ std::string Cgi::readFromFd(int fd) {
 
 int Cgi::_access(){
     const char* file_path = _env_map["SCRIPT_FILENAME"].c_str();
-    std::cout << "CGI: access for ->" << file_path << "<-\n";
+    if (DEBUG)
+			std::cout << "CGI: access for ->" << file_path << "<-\n";
     if (access(file_path, F_OK) != 0)
     {
 
@@ -363,8 +378,10 @@ void Cgi::_runChildCgi(){
             throw std::runtime_error("strdup/strcpy error occurred!");
     }
     _argv[2] = nullptr;
-    std::cout << "CGI: cgi_path=" << _cgi_path << "<-\n";
-    std::cout << "CGI: execve for ->" << _argv[0] << "<- ->" << _argv[1] << "<- \n";
+    if (DEBUG)
+			std::cout << "CGI: cgi_path=" << _cgi_path << "<-\n";
+    if (DEBUG)
+			std::cout << "CGI: execve for ->" << _argv[0] << "<- ->" << _argv[1] << "<- \n";
     if (close(_fd_to_cgi[1]) == -1 || close(_fd_from_cgi[0]) == -1)
         throw std::runtime_error("close 	 error occurred!");
     if (dup2(_fd_to_cgi[0], 0) == -1 || dup2(_fd_from_cgi[1], 1) == -1)
@@ -372,7 +389,8 @@ void Cgi::_runChildCgi(){
     if (close(_fd_to_cgi[0]) == -1 || close(_fd_from_cgi[1]) == -1)
             throw std::runtime_error("close error occurred!");
     std::string path = _env_map["DOCUMENT_ROOT"] + "/" + _target_foldername;
-    std::cerr << "CGI: chdir to " << path << "\n";
+	if (DEBUG)
+			 std::cerr << "CGI: chdir to " << path << "\n";
     chdir(path.c_str());
     execve(_argv[0], _argv, _envp);
     //std::cout << "CGI: step 2 <-\n";
