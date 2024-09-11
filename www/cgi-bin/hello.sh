@@ -1,23 +1,22 @@
 #!/bin/bash
 
 # Function to parse query string
-parse_query_string() {
-    local query_string="$1"
-    local -n params=$2
-    IFS='&' read -r -a pairs <<< "$query_string"
-    for pair in "${pairs[@]}"; do
-        IFS='=' read -r key value <<< "$pair"
-        params["$key"]="$value"
-    done
-}
+# parse_query_string() {
+#     local query_string="$1"
+#     local -n params=$2
+#     IFS='&' read -r -a pairs <<< "$query_string"
+#     for pair in "${pairs[@]}"; do
+#         IFS='=' read -r key value <<< "$pair"
+#         params["$key"]="$value"
+#     done
+# }
 
-# Parse query string
-declare -A QUERY_PARAMS
-parse_query_string "$QUERY_STRING" QUERY_PARAMS
+# # Parse query string
+# declare -A QUERY_PARAMS
+# parse_query_string "$QUERY_STRING" QUERY_PARAMS
 
 # Output the CGI headers
-echo "Content-type: text/html"
-echo ""
+printf "Content-Type: text/html\r\n\r\n"
 
 # Output HTML content
 echo "<html>"

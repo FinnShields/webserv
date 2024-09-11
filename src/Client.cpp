@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/11 14:25:49 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/11 15:48:36 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,7 @@ Client::Client(int fd, Server *server) : _fd(fd), _server(server), _request(null
 // Client::Client(const Client &copy) : _fd(copy._fd), _request(copy._request), _res(copy._res), _responseSent(copy._responseSent){}
 Client::~Client() 
 {
-    std::cout << "[INFO] Client destructor" << std::endl;
+    // std::cout << "[INFO] Client destructor" << std::endl;
     // close_connection();
 }
 
@@ -50,7 +50,7 @@ int Client::handle_request()
     if (!_request)
         _request = std::make_unique<Request>();
     int ret = _request->read(_fd);
-    std::cout << "[INFO] request->read() returns: " << ret << std::endl;
+    // std::cout << "[INFO] request->read() returns: " << ret << std::endl;
     if (ret == 3 || ret == -1)
     {
         std::cout << "[INFO] Request " << ((ret == 3) ? "has unread headers" : "is empty") << std::endl;
@@ -72,8 +72,6 @@ bool Client::responseReady()
 {
     return !_response.empty();
 }
-
-#include <sys/ioctl.h> // For ioctl
 
 int Client::send_response()
 {

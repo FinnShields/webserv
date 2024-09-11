@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/06 13:41:04 by apimikov          #+#    #+#             */
-/*   Updated: 2024/09/11 14:16:34 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/11 15:47:30 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -100,8 +100,9 @@ Cgi::~Cgi(){
     for (int i = 0; _argv[i] != nullptr; i++)
         delete[] _argv[i];
     delete[](_argv);
-	if (close(_fd_to_cgi[1]) == -1)
-		std::cerr << "[CGI Destructor] Failure close cgi topipe\n";
+	close(_fd_to_cgi[1]);
+	// if (close(_fd_to_cgi[1]) == -1)
+		// std::cerr << "[CGI Destructor] Failure close cgi topipe\n";
 	if (close(_fd_from_cgi[0]) == -1)
         std::cerr << "[CGI Destructor] Failure close cgi frompipe\n";
 }
@@ -419,7 +420,8 @@ bool Cgi::_wait(){
 
 void Cgi::setEnv(){
     _envp = new char*[_env_map.size() + 1] {0};
-    std::cout << "_env_map.size() + 1" << _env_map.size() << "\n";
+    if (DEBUG)
+		std::cout << "_env_map.size() + 1" << _env_map.size() << "\n";
     char* line_pnt;
     std::string line;
     int i = 0;

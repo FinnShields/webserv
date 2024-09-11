@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/11 12:27:19 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/11 15:48:54 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,7 @@ const std::string Response::setAbsolutePath()
 Response::Response(int fd, Request &req, Server &srv) : _fd(fd), _req(req), _srv(srv), _file(0), _code(0){}
 Response::~Response() 
 {
-    std::cout << "[INFO] Response destructor" << std::endl;
+    // std::cout << "[INFO] Response destructor" << std::endl;
     if (_filestream.is_open())
     {
         _filestream.close();
@@ -84,7 +84,7 @@ const std::string Response::getNextChunk()
         std::cerr << "[ERROR] File read error" << std::endl;
         return getErrorPage(500);
     }
-    std::cout << "[INFO] Chunk size = " << bytesRead << std::endl;
+    // std::cout << "[INFO] Chunk size = " << bytesRead << std::endl;
     std::stringstream hexStream;
     hexStream << std::hex << bytesRead;
     std::string chunk = hexStream.str() + "\r\n" + std::string(buffer, bytesRead) + "\r\n";
@@ -103,7 +103,7 @@ const std::string Response::run()
     std::string method = _req.get("method");
 	_target = _req.get("target");
 	_index_virt = _srv.getVirtHostIndex(_req.get("host"));
-	std::cout << "[INFO] Request is addressed to server " << _srv.index << "\n";
+	// std::cout << "[INFO] Request is addressed to server " << _srv.index << "\n";
 	if (_srv.index != _index_virt)
 		std::cout << "[INFO] Request is readdressed to virtual server " << _index_virt << "\n";
     if(!check_body_size()) 
@@ -227,7 +227,7 @@ const std::string Response::runCGI()
 		_cgi = std::make_unique<Cgi>(_req, _srv, _index_virt);
 		_cgi->start();
 		_code = _cgi->getStatus() == 0 ? 200 : _cgi->getStatus();
-		std::cout << "CGI status =" << _cgi->getStatus() << "\n";
+		std::cout << "CGI status = " << _code << "\n";
 		std::cout << "------- END ----------" << std::endl;
 		if (_req.getStatus() == 0 || !_req.getBodyRawBytes().empty())
 			_cgi->writeToPipe(_req.getBodyRawBytes().data(), _req.getBodyRawBytes().size());

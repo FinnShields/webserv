@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/11 12:39:51 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/11 15:51:26 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -107,7 +107,7 @@ int WebServer::fd_is_client(pollfd &pfd)
                     pfd.events |= POLLOUT;
 				if (ret == 2)
 				{
-					std::cout << "[INFO] CGI is running" << std::endl;
+					std::cout << "[INFO] CGI is done reading" << std::endl;
 					_fds.push_back({client->get_cgi_fd(), POLLIN, 0});
 					_cgi_clients.emplace(client->get_cgi_fd(), &pfd);
 					return 2;
@@ -129,10 +129,8 @@ bool WebServer::fd_is_cgi(int fd)
 	if (it == _cgi_clients.end())
 		return false;
 	it->second->events |= POLLOUT;
-	std::cout << std::endl;
-	std::cout << "[INFO] CGI is ready to write: fd = " << it->second->fd << " event = " << it->second->events << " Address of socket: " << it->second <<  std::endl;
+	std::cout << "[INFO] CGI is ready to write" << std::endl;
 	_cgi_clients.erase(fd);
-	std::cout << "[INFO] FD is cgi" << "size of map:" << _cgi_clients.size() << std::endl;
 	return true;
 }
 
