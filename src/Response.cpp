@@ -180,9 +180,9 @@ const std::string Response::get()
 
 const std::string Response::post()
 {
-    _code = 201;
-    _message = "Created";
-    if (!_req.get("content-type").compare(0, 19, "multipart/form-data"))
+    if (!_req.get("content-type").compare(0, 19, "multipart/form-data")) {
+        _code = 201;
+        _message = "Created";
 		try
         {
             saveFile();
@@ -193,6 +193,11 @@ const std::string Response::post()
             _file = -1;
             return getErrorPage(500);
         }
+    }
+    else {
+        _code = 204;
+        _message = "No Content";
+    }
     return get();
 }
 
