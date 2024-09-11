@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:36 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/10 13:34:43 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/11 14:07:09 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,6 +40,7 @@ class Client
         std::unique_ptr<Response> _res;
         bool _responseSent;
 		bool _isCGI;
+		void clean_socket_fd();
 
         Client();
         Client(const Client &copy);

@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/06 13:41:04 by apimikov          #+#    #+#             */
-/*   Updated: 2024/09/11 10:59:15 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/11 14:16:34 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -207,7 +207,7 @@ std::string Cgi::readFromPipe()
     if (size < 0) {
         throw std::runtime_error("readFromFd: read error occured!");
     }
-    return buffer;
+    return std::string(buffer, size);
 }
 
 int Cgi::get_pipefd()

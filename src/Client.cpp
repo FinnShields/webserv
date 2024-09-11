@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/11 12:33:18 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/11 14:13:56 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,12 +73,17 @@ bool Client::responseReady()
     return !_response.empty();
 }
 
+#include <sys/ioctl.h> // For ioctl
+
 int Client::send_response()
 {
     ssize_t bytesSent;
 	_res->display();
 	if (_isCGI)
+	{
 		_response.append(_res->readfromCGI());
+		std::cout << "[RESPONSE]\n" << _response << std::endl;
+	}
     if ((bytesSent = send(_fd, _response.c_str(), std::min((size_t) 100000, _response.size()), 0)) < 0)
     {
         perror("Send error");
