@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/11 11:23:14 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/11 12:27:19 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -226,6 +226,7 @@ const std::string Response::runCGI()
 		}
 		_cgi = std::make_unique<Cgi>(_req, _srv, _index_virt);
 		_cgi->start();
+		_code = _cgi->getStatus() == 0 ? 200 : _cgi->getStatus();
 		std::cout << "CGI status =" << _cgi->getStatus() << "\n";
 		std::cout << "------- END ----------" << std::endl;
 		if (_req.getStatus() == 0 || !_req.getBodyRawBytes().empty())

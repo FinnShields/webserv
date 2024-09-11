@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/11 09:51:33 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/11 12:33:18 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,8 +61,11 @@ int Client::handle_request()
     if (!_res)
         _res = std::make_unique<Response>(_fd, *_request, *_server);
     _response = _res->run();
-    if (_res->getcode() == 413)
-        ret = 0;
+    if (_res->getcode() == 413 || (_isCGI && _res->getcode() != 200))
+	{
+        _isCGI = false;
+		ret = 0;
+	}
     return ret;
 }
 bool Client::responseReady()

@@ -17,7 +17,8 @@ text_content = form.getvalue('textcontent')
 current_directory = os.getcwd()
 
 # HTTP header
-print("Content-Type: text/html\n")
+print("Content-Type: text/html\r\n")
+print()
 
 # HTML content
 print(f"""
@@ -32,5 +33,5 @@ print(f"""
   <h2>Current Directory</h2>
   <p>{current_directory}</p>
 </body>
-</html>
+</html>\r\n\r\n\r\n
 """)
