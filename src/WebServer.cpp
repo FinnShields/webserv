@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/11 10:45:46 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/11 11:22:38 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -93,7 +93,7 @@ int WebServer::fd_is_client(pollfd &pfd)
 		{
             if (pfd.revents & POLLOUT)
             {
-                std::cout << " pollout" << std::endl;
+                // std::cout << " pollout" << std::endl;
                 if (!client->send_response())
                     return 0;
                 client->close_connection();
@@ -101,20 +101,15 @@ int WebServer::fd_is_client(pollfd &pfd)
             }
             if (pfd.revents & POLLIN)
             {
-                std::cout << " pollin" << std::endl;
+                // std::cout << " pollin" << std::endl;
 			    int ret = client->handle_request();
                 if (ret == 0)
                     pfd.events |= POLLOUT;
 				if (ret == 2)
 				{
 					std::cout << "[INFO] CGI is running" << std::endl;
-					pollfd cgipfd;
-					cgipfd.events = POLLIN;
-					cgipfd.fd = client->get_cgi_fd();
-					_fds.push_back(cgipfd);
-					std::cout << "1. Address of pfd" << &pfd << std::endl;
-					_cgi_clients.emplace(cgipfd.fd, &pfd);
-					std::cout << "[INFO] CGI is added to pollfd, fd=" << client->get_cgi_fd() << " size of map:" << _cgi_clients.size() << std::endl;
+					_fds.push_back({client->get_cgi_fd(), POLLIN, 0});
+					_cgi_clients.emplace(client->get_cgi_fd(), &pfd);
 					return 2;
 				}
                 if (ret == -1)
@@ -148,8 +143,8 @@ void WebServer::run()
 	while (1)
 	{
 		std::cout << "Waiting for action... - size of pollfd vector: " << _fds.size() << std::endl;
-		for (pollfd &pfd : _fds)
-			std::cout << "fd: " << pfd.fd << " events: " << pfd.events << " revents: " << pfd.revents << " Address of object: " << &pfd << std::endl;
+		// for (pollfd &pfd : _fds)
+		// 	std::cout << "fd: " << pfd.fd << " events: " << pfd.events << " revents: " << pfd.revents << " Address of object: " << &pfd << std::endl;
 		int poll_result = poll(_fds.data(), _fds.size(), -1);
 		if (poll_result == -1)
 			return (perror("poll"));

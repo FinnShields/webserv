@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/11 11:02:06 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/11 11:23:14 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -232,7 +232,7 @@ const std::string Response::runCGI()
 			_cgi->writeToPipe(_req.getBodyRawBytes().data(), _req.getBodyRawBytes().size());
 	}
 	else
-		int status = _cgi->writeToPipe(_req.getBodyRawBytes().data(), _req.getBodyRawBytes().size());
+		_cgi->writeToPipe(_req.getBodyRawBytes().data(), _req.getBodyRawBytes().size());
 	return _cgi->getStatus() == 0 ? STATUS_LINE_200 :
 				getErrorPage(_cgi->getStatus());
 }
