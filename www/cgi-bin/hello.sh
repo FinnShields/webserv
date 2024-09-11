@@ -1,19 +1,19 @@
 #!/bin/bash
 
 # Function to parse query string
-# parse_query_string() {
-#     local query_string="$1"
-#     local -n params=$2
-#     IFS='&' read -r -a pairs <<< "$query_string"
-#     for pair in "${pairs[@]}"; do
-#         IFS='=' read -r key value <<< "$pair"
-#         params["$key"]="$value"
-#     done
-# }
+parse_query_string() {
+    local query_string="$1"
+    local -n params=$2
+    IFS='&' read -r -a pairs <<< "$query_string"
+    for pair in "${pairs[@]}"; do
+        IFS='=' read -r key value <<< "$pair"
+        params["$key"]="$value"
+    done
+}
 
 # # Parse query string
-# declare -A QUERY_PARAMS
-# parse_query_string "$QUERY_STRING" QUERY_PARAMS
+declare -A QUERY_PARAMS
+parse_query_string "$QUERY_STRING" QUERY_PARAMS
 
 # Output the CGI headers
 printf "Content-Type: text/html\r\n\r\n"
@@ -35,7 +35,7 @@ echo "<h2>Request Body</h2>"
 if [[ "$REQUEST_METHOD" == "POST" ]]; then
     echo "<pre>"
     read POST_DATA
-    echo "$POST_DATA"
+    echo $POST_DATA
     echo "</pre>"
 else
     echo "<p>No POST data received.</p>"

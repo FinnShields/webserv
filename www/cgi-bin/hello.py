@@ -11,13 +11,14 @@ cgitb.enable()
 form = cgi.FieldStorage()
 
 # Get data from fields
+print("Content-Type: text/html\r\n")
+
 text_content = form.getvalue('textcontent')
 
 # Get the current working directory
 current_directory = os.getcwd()
 
 # HTTP header
-print("Content-Type: text/html\r\n")
 print()
 
 # HTML content
