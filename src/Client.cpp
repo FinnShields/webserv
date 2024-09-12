@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/12 13:10:58 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/12 13:39:33 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,7 +43,6 @@ int Client::get_cgi_fd()
 int Client::readFromCGI()
 {
 	_response = _res->readfromCGI();
-	std::cout << "[INFO] Client::readFromCgi(): " << _response << std::endl;
 	return (_response.size());
 }
 

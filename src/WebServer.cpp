@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/12 13:32:54 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/12 13:38:47 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -149,7 +149,7 @@ void WebServer::run()
 	_fds.reserve(100);
 	while (true)
 	{
-		// std::cout << "Waiting for action... - size of pollfd vector: " << _fds.size() << std::endl;
+		std::cout << "Waiting for action... - size of pollfd vector: " << _fds.size() << std::endl;
 		// for (pollfd &pfd : _fds)
 		// 	std::cout << "fd: " << pfd.fd << " events: " << pfd.events << " revents: " << pfd.revents << " Address of object: " << &pfd << std::endl;
 		int poll_result = poll(_fds.data(), _fds.size(), -1);

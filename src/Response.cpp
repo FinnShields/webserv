@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/12 13:31:18 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/12 13:40:15 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -263,7 +263,6 @@ const std::string Response::readfromCGI()
 	if (tmp.compare("HTTP/1.1 500\n") == 0)
 		return getErrorPage(500);
 	_response += tmp;
-	std::cout << "Res::cgi_getStatus: " << _cgi->getStatus() << std::endl;
 	if (_cgi->getStatus() == 200)
 		return STATUS_LINE_200 + _response;
 	return "";
