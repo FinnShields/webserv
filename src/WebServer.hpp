@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:19 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/10 16:09:54 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/12 03:52:26 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,10 +32,12 @@
 class WebServer
 {
 	private:
+		static int running;
 		std::vector<pollfd> _fds;
-		std::vector<Server> _servers;
+		std::vector<std::unique_ptr<Server>> _servers;
 		std::map<size_t, std::vector<size_t>> _real_to_virt;
 		std::map<int, pollfd *> _cgi_clients;
+
 
 		void setServers();
 		static void closeAllThenExit(int signal);
@@ -46,6 +48,9 @@ class WebServer
 		//std::vector<size_t>  virtualHostIndices;
 		void setRealToVirt();
 		std::vector<size_t>  extractVirtualHostsIndices();
+		void setCgiToPoll(pollfd &, Client *);
+		std::vector<pollfd>::iterator shutdown(std::vector<pollfd>::iterator &it);
+		void removeAllSocketsAndCGI();
 		
 		WebServer();
 		WebServer(const WebServer &copy);

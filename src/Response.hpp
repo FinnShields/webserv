@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:06:10 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/10 13:31:32 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/12 02:29:12 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,6 +51,7 @@ class Response
 		Server &_srv;
         int _file;
 		int	_code;
+		std::unique_ptr<Cgi> _cgi;
 		std::string _message;
         std::ofstream _filestream;
         std::ifstream _filestream_read;
@@ -61,7 +62,6 @@ class Response
 		std::string _target;
 		size_t _index_virt;
         std::string _response;
-		std::unique_ptr<Cgi> _cgi;
 
 		const std::string redirect();
 		const std::string runCGI();

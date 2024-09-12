@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:10 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/28 11:48:53 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/12 03:49:06 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,8 +61,8 @@ class Server
         
         Server();
         Server &operator=(const Server &copy);
-    public:
         Server (const Server &copy);
+    public:
         Server(std::vector<t_server>&, size_t);
         ~Server();
   

@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/06 13:41:04 by apimikov          #+#    #+#             */
-/*   Updated: 2024/09/11 18:05:46 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/12 04:17:30 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -67,6 +67,7 @@ Cgi::Cgi(Request& r, const Server& s, const size_t virt_index):
     _target(_request.get("target")),
     _index_virt(virt_index)
 {
+	std::cerr << "[INFO] Cgi constructor call\n";
     _argv = new char*[4] {nullptr};
     _envp = nullptr;
 
@@ -94,7 +95,8 @@ Cgi::~Cgi(){
 };
 */
 
-Cgi::~Cgi(){
+Cgi::~Cgi()
+{
     std::cerr << "[INFO] Cgi destructor call\n";
     cleanEnv();
     for (int i = 0; _argv[i] != nullptr; i++)
@@ -105,8 +107,12 @@ Cgi::~Cgi(){
 		// std::cerr << "[CGI Destructor] Failure close cgi topipe\n";
 	if (close(_fd_from_cgi[0]) == -1)
         std::cerr << "[CGI Destructor] Failure close cgi frompipe\n";
+	auto waitResult = waitpid(_pid, &_status, WNOHANG);
+	std::cout << "[CGI Destructor] waitresult = " << waitResult << " _pid = " << _pid << std::endl;
+	if (waitResult == 0)
+		kill(_pid, SIGKILL);
 }
-
+	
 void Cgi::cleanEnv(){
     if (!_envp)
         return ;
@@ -206,22 +212,20 @@ std::string Cgi::readFromPipe()
 	fd_set read_fds;
     struct timeval timeout;
 
-    // Initialize the set
     FD_ZERO(&read_fds);
     FD_SET(_fd_from_cgi[0], &read_fds);
-
-    // Set timeout (e.g., 5 seconds)
     timeout.tv_sec = 5;
     timeout.tv_usec = 0;
 
-    // Wait for data to be available
     int retval = select(_fd_from_cgi[0] + 1, &read_fds, NULL, NULL, &timeout);
-    if (retval == -1) {
+    if (retval == -1) 
         throw std::runtime_error("select error occurred!");
-    } else if (retval == 0) {
+    if (retval == 0)
+	{
+		kill(_pid, SIGKILL);
         std::cerr << "[CGI] Read timeout\n";
         return "";
-    }
+	}
     char buffer[MAX_BUFFER_SIZE];
     ssize_t size = read(_fd_from_cgi[0], buffer, sizeof(buffer));
 	std::cout << "[CGI] Read from pipe " << size << " bytes\n";
@@ -418,7 +422,8 @@ void Cgi::_runChildCgi(){
     //execve(argv0.c_str(), _argv, _envp);
     close(0);
     close(1);
-    throw std::runtime_error("CGI: execve error occurred!");
+    std::cerr << "CGI: execve error occurred!" << std::endl;
+	exit(0);
 }
 
 bool Cgi::_wait(){

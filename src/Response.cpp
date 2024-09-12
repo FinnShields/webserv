@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/11 15:48:54 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/12 02:44:00 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,7 @@ const std::string Response::setAbsolutePath()
     return exePath.parent_path().string() + '/';
 }
 
-Response::Response(int fd, Request &req, Server &srv) : _fd(fd), _req(req), _srv(srv), _file(0), _code(0){}
+Response::Response(int fd, Request &req, Server &srv) : _fd(fd), _req(req), _srv(srv), _file(0), _code(0), _cgi(nullptr) {}
 Response::~Response() 
 {
     // std::cout << "[INFO] Response destructor" << std::endl;
@@ -216,9 +216,9 @@ const std::string Response::deleteResp()
 
 const std::string Response::runCGI()
 {
+	std::cout << "------- CGI ----------" << std::endl;
 	if (_cgi.get() == nullptr)
 	{
-		std::cout << "------- CGI ----------\n";
 		if (_srv.config.selectLocation(_target) != "/cgi-bin")
 		{
 			std::cout << "CGI is not configured.\n";

@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/11 15:51:26 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/12 04:39:05 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,8 +15,14 @@
 #include "WebServer.hpp"
 
 static std::vector<pollfd> *_fds_ptr;
+int WebServer::running = 1;
 
-WebServer::~WebServer() {}
+WebServer::~WebServer() 
+{
+	// removeAllSocketsAndCGI();
+	_servers.clear();
+	_fds.clear();
+}
 
 WebServer::WebServer(std::vector<t_server>& data):config(Config(data, 0)) {}
 
@@ -37,13 +43,14 @@ std::vector<size_t> WebServer::extractVirtualHostsIndices()
 
 void WebServer::closeAllThenExit(int signal)
 {
-    std::vector<pollfd> _fds;
-    _fds = *_fds_ptr;
+    // std::vector<pollfd> _fds;
+    // _fds = *_fds_ptr;
     if (signal == SIGINT)
         std::cout << " -- Closing due to SIGINT (ctl-c) " << std::endl;
-    for (size_t i = 0; i < _fds.size(); i ++)
-        close(_fds[i].fd);
-    exit(130);
+    WebServer::running = 0;
+    // for (size_t i = 0; i < _fds.size(); i ++)
+    //     close(_fds[i].fd);
+	// exit(130);
 }
 
 void WebServer::setup()
@@ -60,36 +67,43 @@ void WebServer::setup()
         auto it = std::find(indices.begin(), indices.end(), i);
         if (it != indices.end())
             continue;
-        _servers.emplace_back(config.getAll(), i);
+        _servers.emplace_back(std::make_unique<Server>(config.getAll(), i));
         std::cout << "[INFO] Server " << i << " is created.\n";
-        _servers.back().setVirthostList(_real_to_virt[i]);
-        _servers.back().setVirthostMap();
+        _servers.back()->setVirthostList(_real_to_virt[i]);
+        _servers.back()->setVirthostMap();
     }
-    for (Server &srv : _servers)
+    for (auto &srv : _servers)
     {
-        srv.start(_fds);
+        srv->start(_fds);
         _fds_ptr = &_fds;
-        std::cout << "[INFO] Server " << srv.index << " is started with port " << srv.get_port() << "\n";
+        std::cout << "[INFO] Server " << srv->index << " is started with port " << srv->get_port() << "\n";
     }
 }
 
 bool WebServer::fd_is_server(int fd)
 {
-	for (Server &srv : _servers)
-		if (fd == srv.get_fd())
+	for (auto &srv : _servers)
+		if (fd == srv->get_fd())
 		{
-			srv.accept_new_connection(_fds);
+			srv->accept_new_connection(_fds);
 			return (true);
 		}
 	return (false);
+}
+
+void WebServer::setCgiToPoll(pollfd &pfd, Client *client)
+{
+	std::cout << "[INFO] CGI is done reading" << std::endl;
+	_fds.push_back({client->get_cgi_fd(), POLLIN, 0});
+	_cgi_clients.emplace(client->get_cgi_fd(), &pfd);
 }
 
 int WebServer::fd_is_client(pollfd &pfd)
 {
 	Client *client = nullptr;
     
-	for (Server &srv : _servers)
-		if ((client = srv.get_client(pfd.fd)))
+	for (auto &srv : _servers)
+		if ((client = srv->get_client(pfd.fd)))
 		{
             if (pfd.revents & POLLOUT)
             {
@@ -106,18 +120,10 @@ int WebServer::fd_is_client(pollfd &pfd)
                 if (ret == 0)
                     pfd.events |= POLLOUT;
 				if (ret == 2)
-				{
-					std::cout << "[INFO] CGI is done reading" << std::endl;
-					_fds.push_back({client->get_cgi_fd(), POLLIN, 0});
-					_cgi_clients.emplace(client->get_cgi_fd(), &pfd);
-					return 2;
-				}
+					setCgiToPoll(pfd, client);
                 if (ret == -1)
-                {
                     client->close_connection();
-                    return 1;
-                }
-                return 0;
+                return ret == 1 ? 0 : ret == -1 ? 1 : ret;
             }
 		}
 	return -1;
@@ -134,20 +140,61 @@ bool WebServer::fd_is_cgi(int fd)
 	return true;
 }
 
+std::vector<pollfd>::iterator WebServer::shutdown(std::vector<pollfd>::iterator &it)
+{
+	for (auto &srv : _servers)
+		if (it->fd == srv->get_fd())
+			return (++it);
+	if (_cgi_clients.find(it->fd) != _cgi_clients.end())
+	{
+		_cgi_clients.erase(it->fd);
+		return (_fds.erase(it));
+	}
+	for (auto &srv : _servers)
+		if (Client *client = srv->get_client(it->fd))
+		{
+				client->close_connection();
+				return (_fds.erase(it));
+		}
+	return (_fds.erase(it));
+}
+
+void WebServer::removeAllSocketsAndCGI()
+{
+	std::cout << "[INFO] Poll timeout" << std::endl;
+	for (std::vector<pollfd>::iterator it = _fds.begin(); it != _fds.end();)
+	{
+		if (it->revents == 0)
+			it = shutdown(it);
+		else
+			it++;
+	}
+}
 void WebServer::run()
 {
 	int status;
 	_fds.reserve(100);
-	while (1)
+	while (WebServer::running)
 	{
 		std::cout << "Waiting for action... - size of pollfd vector: " << _fds.size() << std::endl;
-		// for (pollfd &pfd : _fds)
-		// 	std::cout << "fd: " << pfd.fd << " events: " << pfd.events << " revents: " << pfd.revents << " Address of object: " << &pfd << std::endl;
-		int poll_result = poll(_fds.data(), _fds.size(), -1);
+		int poll_result = poll(_fds.data(), _fds.size(), 15000);
+		std::cout << "poll result: " << poll_result << std::endl;
+		for (pollfd &pfd : _fds)
+			std::cout << "fd: " << pfd.fd << " events: " << pfd.events << " revents: " << pfd.revents << " Address of object: " << &pfd << std::endl;
 		if (poll_result == -1)
 			return (perror("poll"));
+		if (poll_result == 0)
+		{
+			removeAllSocketsAndCGI();
+			continue;
+		}
 		for (std::vector<pollfd>::iterator it = _fds.begin(); it != _fds.end();)
 		{
+			if (it->revents & POLLHUP)
+			{
+				it = shutdown(it);
+				continue;
+			}
 			if (it->revents & (POLLIN|POLLOUT))
 			{
 				if (fd_is_server(it->fd))
@@ -174,11 +221,9 @@ void WebServer::run()
 				}
 				catch (std::exception *e)
 				{
-					for (Server &srv : _servers)
-						if (Client *client = srv.get_client(it->fd))
-								client->close_connection();
-					it = _fds.erase(it);
+					it = shutdown(it);
 					std::cerr << "[ERROR] Exception caught: " << e->what() << " - is deleted from poll" << std::endl;
+					continue;
 				}
 			}
             it++;

@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:06 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/29 14:27:03 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/12 04:00:09 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,14 @@
 
 //Server::Server(): index(0) {}
 
-Server::~Server() {}
+Server::~Server() 
+{
+	close(_server_fd);
+	std::cout << "Closed server " << index << std::endl;
+	for (std::unique_ptr<Client> &client : _clients)
+		client->close_connection();
+	_server_fd = -1;
+}
 
 Server::Server(const Server &copy):
 	_port(copy._port), _ip(copy._ip), _name(copy._name),
