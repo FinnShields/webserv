@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/06 13:41:04 by apimikov          #+#    #+#             */
-/*   Updated: 2024/09/11 18:05:46 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/12 04:45:26 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -418,7 +418,8 @@ void Cgi::_runChildCgi(){
     //execve(argv0.c_str(), _argv, _envp);
     close(0);
     close(1);
-    throw std::runtime_error("CGI: execve error occurred!");
+    std::cerr << ("CGI: execve error occurred!") << std::endl;
+	exit(0);
 }
 
 bool Cgi::_wait(){
