@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/12 13:38:47 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/12 15:13:44 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -142,6 +142,24 @@ int WebServer::fd_is_cgi(int fd)
 		}
 	return 0;
 }
+void WebServer::checkTimer()
+{
+	Client *client;
+	int timelimitinseconds = 5000;
+	
+	std::cout << "[INFO] Check timers" << std::endl;
+	for (std::vector<pollfd>::iterator it = _fds.begin(); it != _fds.end(); it++)
+		for (Server &srv : _servers)
+			if ((client = srv.get_client(it->fd)))
+			{
+				if (client->timeout(timelimitinseconds))
+				{
+					it->events = POLLOUT;
+					std::cout << "[INFO] Client set to POLLOUT" << std::endl;
+				}
+				break;
+			}
+}
 
 void WebServer::run()
 {
@@ -152,9 +170,15 @@ void WebServer::run()
 		std::cout << "Waiting for action... - size of pollfd vector: " << _fds.size() << std::endl;
 		// for (pollfd &pfd : _fds)
 		// 	std::cout << "fd: " << pfd.fd << " events: " << pfd.events << " revents: " << pfd.revents << " Address of object: " << &pfd << std::endl;
-		int poll_result = poll(_fds.data(), _fds.size(), -1);
+		int poll_result = poll(_fds.data(), _fds.size(), 10000);
 		if (poll_result == -1)
 			return (perror("poll"));
+
+		if (poll_result == 0 || _fds.size() > 95)
+		{
+			checkTimer();
+			continue;
+		}
 		for (std::vector<pollfd>::iterator it = _fds.begin(); it != _fds.end();)
 		{
 			if (it->revents & (POLLIN|POLLOUT|POLLHUP))

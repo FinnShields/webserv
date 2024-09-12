@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:36 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/12 12:44:29 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/12 14:14:27 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@
 #include <fstream>
 #include <sstream> 
 #include <unistd.h>
+#include <ctime>
 #include "Server.hpp"
 #include "Response.hpp"
 #include "Request.hpp"
@@ -40,6 +41,8 @@ class Client
         bool _responseSent;
 		bool _isCGI;
 		void clean_socket_fd();
+		time_t starttime;
+		
 
         Client();
         Client(const Client &copy);
@@ -55,6 +58,7 @@ class Client
         bool responseReady();
 		int get_cgi_fd();
 		int readFromCGI();
+		bool timeout(unsigned int seconds);
 };
 
 #endif

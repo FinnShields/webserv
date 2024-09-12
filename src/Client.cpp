@@ -6,14 +6,18 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/12 13:39:33 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/12 15:01:17 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Client.hpp"
 
 
-Client::Client(int fd, Server *server) : _fd(fd), _server(server), _request(nullptr), _res(nullptr), _responseSent(false), _isCGI(false) {}
+Client::Client(int fd, Server *server) : _fd(fd), _server(server), _request(nullptr), _res(nullptr), _responseSent(false), _isCGI(false) 
+{
+	// std::cout << "[INFO] Client constructor" << std::endl;
+	starttime = std::time(NULL);
+}
 // Client::Client(const Client &copy) : _fd(copy._fd), _request(copy._request), _res(copy._res), _responseSent(copy._responseSent){}
 Client::~Client() 
 {
@@ -30,6 +34,20 @@ Client::~Client()
 // 	return (*this);
 // }
 
+
+bool Client::timeout(unsigned int seconds)
+{
+	std::cout << "Start time: " << starttime << std::endl;
+	std::cout << "Current time: " << std::time(NULL) << std::endl;
+	if (difftime(std::time(NULL), starttime) > seconds)
+	{
+		std::cout << "[INFO] Client timed out" << std::endl;
+		_response = _res->getTimeOutErrorPage();
+		std::cout << "[INFO] Response set\n" << _response << std::endl;
+		return true;
+	}
+	return false;
+}
 int Client::get_socket_fd()
 {
     return (_fd);
