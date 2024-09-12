@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/12 12:01:17 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/12 13:32:54 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -121,15 +121,26 @@ int WebServer::fd_is_client(pollfd &pfd)
 	return -1;
 }
 
-bool WebServer::fd_is_cgi(int fd)
+int WebServer::fd_is_cgi(int fd)
 {
 	auto it = _cgi_clients.find(fd);
 	if (it == _cgi_clients.end())
-		return false;
-	it->second->events |= POLLOUT;
-	std::cout << "[INFO] CGI is ready to write" << std::endl;
-	_cgi_clients.erase(fd);
-	return true;
+		return -1;
+	Client *client = nullptr;
+    
+	for (Server &srv : _servers)
+		if ((client = srv.get_client(it->second->fd)))
+		{
+			std::cout << "[INFO] Reads from CGI" << std::endl;
+			if (client->readFromCGI())
+			{
+				std::cout << "[INFO] CGI has finished" << std::endl;
+				it->second->events |= POLLOUT;
+				_cgi_clients.erase(fd);
+				return 1;
+			}
+		}
+	return 0;
 }
 
 void WebServer::run()
@@ -138,7 +149,7 @@ void WebServer::run()
 	_fds.reserve(100);
 	while (true)
 	{
-		std::cout << "Waiting for action... - size of pollfd vector: " << _fds.size() << std::endl;
+		// std::cout << "Waiting for action... - size of pollfd vector: " << _fds.size() << std::endl;
 		// for (pollfd &pfd : _fds)
 		// 	std::cout << "fd: " << pfd.fd << " events: " << pfd.events << " revents: " << pfd.revents << " Address of object: " << &pfd << std::endl;
 		int poll_result = poll(_fds.data(), _fds.size(), -1);
@@ -146,15 +157,18 @@ void WebServer::run()
 			return (perror("poll"));
 		for (std::vector<pollfd>::iterator it = _fds.begin(); it != _fds.end();)
 		{
-			if (it->revents & (POLLIN|POLLOUT))
+			if (it->revents & (POLLIN|POLLOUT|POLLHUP))
 			{
 				if (fd_is_server(it->fd))
 					break;
-				if (fd_is_cgi(it->fd))
+				if ((status = fd_is_cgi(it->fd)) >= 0)
 				{
-					std::cout << "[INFO] erasing cgi from pollfd fd: " << it->fd << std::endl;
-					it = _fds.erase(it);
-					continue;
+					if (status == 1)
+					{
+						std::cout << "[INFO] erasing cgi from pollfd fd: " << it->fd << std::endl;
+						it = _fds.erase(it);
+						continue;
+					}
 				}
 				try
 				{

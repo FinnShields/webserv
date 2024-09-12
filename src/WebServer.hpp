@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:19 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/10 16:09:54 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/12 12:51:28 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,7 +42,7 @@ class WebServer
 		//void parse_file(std::string filename);
 		bool fd_is_server(int fd);
 		int fd_is_client(pollfd &pfd);
-		bool fd_is_cgi(int fd);
+		int fd_is_cgi(int fd);
 		//std::vector<size_t>  virtualHostIndices;
 		void setRealToVirt();
 		std::vector<size_t>  extractVirtualHostsIndices();

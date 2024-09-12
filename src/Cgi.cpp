@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/06 13:41:04 by apimikov          #+#    #+#             */
-/*   Updated: 2024/09/12 12:03:31 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/12 13:32:21 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -203,28 +203,35 @@ ssize_t Cgi::writeToPipe(const void *buf, size_t count)
 
 std::string Cgi::readFromPipe()
 {
-	fd_set read_fds;
-    struct timeval timeout;
+	// fd_set read_fds;
+    // struct timeval timeout;
 
-    FD_ZERO(&read_fds);
-    FD_SET(_fd_from_cgi[0], &read_fds);
+    // FD_ZERO(&read_fds);
+    // FD_SET(_fd_from_cgi[0], &read_fds);
 
-    timeout.tv_sec = 5;
-    timeout.tv_usec = 0;
+    // timeout.tv_sec = 5;
+    // timeout.tv_usec = 0;
 
-    int retval = select(_fd_from_cgi[0] + 1, &read_fds, NULL, NULL, &timeout);
-    if (retval == -1) {
-        throw std::runtime_error("select error occurred!");
-    } else if (retval == 0) {
-        std::cerr << "[CGI] Read timeout\n";
-		kill(_pid, SIGKILL);
-        return "";
-    }
+    // int retval = select(_fd_from_cgi[0] + 1, &read_fds, NULL, NULL, &timeout);
+    // if (retval == -1) {
+    //     throw std::runtime_error("select error occurred!");
+    // } else if (retval == 0) {
+    //     std::cerr << "[CGI] Read timeout\n";
+	// 	kill(_pid, SIGKILL);
+    //     return "";
+    // }
     char buffer[MAX_BUFFER_SIZE];
-    ssize_t size = read(_fd_from_cgi[0], buffer, sizeof(buffer));
+    if (waitpid(_pid, &_status, WNOHANG) != 0)
+	{
+		_status = 200;
+		return "";
+	}
+	ssize_t size = read(_fd_from_cgi[0], buffer, sizeof(buffer));
 	std::cout << "[CGI] Read from pipe " << size << " bytes\n";
     if (size < 0) 
-        throw std::runtime_error("readFromFd: read error occured!");
+		throw std::runtime_error("readFromFd: read error occured!");
+	if (waitpid(_pid, &_status, WNOHANG) != 0)
+		_status = 200;
     return std::string(buffer, size);
 }
 
@@ -414,7 +421,7 @@ void Cgi::_runChildCgi(){
     //std::cout << "CGI: step 2 <-\n";
     //std::cout << "CGI: execve for ->" << argv0.c_str() << "<-\n";
     //execve(argv0.c_str(), _argv, _envp);
-    std::cout << "CGI: execve error occurred!" << std::endl;
+	std::cout << "HTTP/1.1 500" << std::endl;
 	close(0);
     close(1);
     std::cerr << ("CGI: execve error occurred!") << std::endl;

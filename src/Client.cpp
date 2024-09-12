@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/12 12:04:58 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/12 13:10:58 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,6 +40,13 @@ int Client::get_cgi_fd()
 	return _res->getCGIfd();
 }
 
+int Client::readFromCGI()
+{
+	_response = _res->readfromCGI();
+	std::cout << "[INFO] Client::readFromCgi(): " << _response << std::endl;
+	return (_response.size());
+}
+
 //return -1 = empty request
 //Return 0 == Request fully read
 //Return 1 == Body is not fully read
@@ -68,6 +75,9 @@ int Client::handle_request()
 	}
     return ret;
 }
+
+
+
 bool Client::responseReady()
 {
     return !_response.empty();
@@ -95,12 +105,6 @@ int Client::send_response()
         _response = _res->getNextChunk();
         return 0;
     }
-	if (_isCGI)
-	{
-		_response = _res->readfromCGI();
-		if (!_response.empty())
-			return 0;
-	}
     return 1;
 }
 

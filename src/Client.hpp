@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:36 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/11 14:07:09 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/12 12:44:29 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,6 +54,7 @@ class Client
         int get_socket_fd();
         bool responseReady();
 		int get_cgi_fd();
+		int readFromCGI();
 };
 
 #endif
