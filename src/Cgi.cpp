@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/06 13:41:04 by apimikov          #+#    #+#             */
-/*   Updated: 2024/09/12 04:54:16 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/12 05:13:49 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -206,20 +206,18 @@ std::string Cgi::readFromPipe()
 	fd_set read_fds;
     struct timeval timeout;
 
-    // Initialize the set
     FD_ZERO(&read_fds);
     FD_SET(_fd_from_cgi[0], &read_fds);
 
-    // Set timeout (e.g., 5 seconds)
     timeout.tv_sec = 5;
     timeout.tv_usec = 0;
 
-    // Wait for data to be available
     int retval = select(_fd_from_cgi[0] + 1, &read_fds, NULL, NULL, &timeout);
     if (retval == -1) {
         throw std::runtime_error("select error occurred!");
     } else if (retval == 0) {
         std::cerr << "[CGI] Read timeout\n";
+		kill(_pid, SIGKILL);
         return "";
     }
     char buffer[MAX_BUFFER_SIZE];

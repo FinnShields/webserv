@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/11 15:51:26 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/12 05:11:59 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -177,8 +177,9 @@ void WebServer::run()
 					for (Server &srv : _servers)
 						if (Client *client = srv.get_client(it->fd))
 								client->close_connection();
-					it = _fds.erase(it);
 					std::cerr << "[ERROR] Exception caught: " << e->what() << " - is deleted from poll" << std::endl;
+					it = _fds.erase(it);
+					continue;
 				}
 			}
             it++;
