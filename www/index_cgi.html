@@ -14,25 +14,25 @@
       <button id="deleteButton">Delete some files?</button>
     </div>
       <script>
-        document.getElementById("uploadForm").addEventListener("submit", function(event) {
-            event.preventDefault();
-            var formData = new FormData(this);
+		document.getElementById("uploadForm").addEventListener("submit", function(event) {
+			event.preventDefault();
+			var formData = new FormData(this);
 
-            fetch('/uploads', {
-            method: 'POST',
-            body: formData
-            })
-            .then(response => response.text())
-            .then(data => {
-            console.log('Success:', data);
-            alert('File uploaded successfully!');
-            })
-            .catch((error) => {
-            console.error('Error:', error);
-            alert('File upload failed.');
-            });
-        
-        });
+			fetch('/uploads', {
+			method: 'POST',
+			body: formData
+			})
+			.then(response => response.text())
+			.then(data => {
+			console.log('Success:', data);
+			alert('File uploaded successfully!');
+			})
+			.catch((error) => {
+			console.error('Error:', error);
+			alert('File upload failed.');
+			});
+		
+		});
         document.getElementById("deleteButton").addEventListener("click", function() {
             event.preventDefault();
           window.location.href = "/uploads"

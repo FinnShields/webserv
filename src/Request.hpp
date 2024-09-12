@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:41 by fshields          #+#    #+#             */
-/*   Updated: 2024/09/04 14:59:38 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/10 14:32:42 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,6 +60,7 @@ class Request
 		std::vector<char> getBodyRawBytes();
         ssize_t getBodyTotalSize();
 		void display();
+		int getStatus();
 };
 
 #endif

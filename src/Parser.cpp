@@ -433,7 +433,7 @@ bool Parser::isValidReturn(t_group& group_data)
 		if (!isdigit(c))
 			return false;
 	}
-	if (vec[0] == "301" | vec[0] == "302" | vec[0] == "303" | vec[0] == "307" )
+	if (vec[0] == "301" || vec[0] == "302" || vec[0] == "303" || vec[0] == "307" )
 		return true;
 	return false;
 }

@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:36 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/28 10:29:58 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/11 14:07:09 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,6 +38,8 @@ class Client
         std::string _response;
         std::unique_ptr<Response> _res;
         bool _responseSent;
+		bool _isCGI;
+		void clean_socket_fd();
 
         Client();
         Client(const Client &copy);
@@ -51,6 +53,7 @@ class Client
         void close_connection();
         int get_socket_fd();
         bool responseReady();
+		int get_cgi_fd();
 };
 
 #endif

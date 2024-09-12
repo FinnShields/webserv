@@ -24,19 +24,16 @@ int main(int argc, char** argv, char** envp) {
     (void)argv;
 
     //std::cerr << "-------argc: " << argc << std::endl;
-    std::string request_body = readFromFd(0);
+
+    std::string request_body;
+	request_body.append(readFromFd(0));
     //oss << "HTTP/1.1 200 OK\r\n";
     std::cout << "Content-Type: text/html\r\n";
 
     std::ostringstream oss;
 
     oss << "<html><head><title>Hello, World!  I am CGI script</title></head><body>";
-    oss << "<h1>Hello, World! I am CGI script</h1><br><br>\n";
-    if (request_body.empty())
-        oss << "<h1>You send me http request, with empty body.<br>\n";
-    else
-        oss << "<h1>You send me http request, with the body:<br>" 
-            << request_body << "<br><br>\n";
+    oss << "<h1>Hello, World! I am CGI script<br><br>\n";
     oss << "My enviroment variables:<br>\n";
     int i = 0;
     while (envp[i]){
@@ -44,12 +41,23 @@ int main(int argc, char** argv, char** envp) {
         ++i;
     }
     oss << "</h1>";
+    if (request_body.empty())
+        oss << "<h1>You send me http request, with empty body.<br>\n";
+    else
+    {
+		oss << "<h1>You send me http request, with the body of " << request_body.size() << " bytes<br>";
+        for (int i = 0; i < request_body.size(); i++)
+			if (request_body[i] != 0)
+				oss << request_body[i];
+		oss << "<br><br>\n";
+	}
     oss << "</body></html>";
     std::string body = oss.str();
-    //close(0);
+    // close(0);
    // std::cout << "Content-Length: " << body.size() << "\r\n\r\n";
     std::cout << "\r\n";
 
     std::cout << body;
+	// close(1);
     return 0;
 }

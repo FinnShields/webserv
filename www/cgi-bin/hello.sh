@@ -11,13 +11,12 @@ parse_query_string() {
     done
 }
 
-# Parse query string
+# # Parse query string
 declare -A QUERY_PARAMS
 parse_query_string "$QUERY_STRING" QUERY_PARAMS
 
 # Output the CGI headers
-echo "Content-type: text/html"
-echo ""
+printf "Content-Type: text/html\r\n\r\n"
 
 # Output HTML content
 echo "<html>"
@@ -36,7 +35,7 @@ echo "<h2>Request Body</h2>"
 if [[ "$REQUEST_METHOD" == "POST" ]]; then
     echo "<pre>"
     read POST_DATA
-    echo "$POST_DATA"
+    echo $POST_DATA
     echo "</pre>"
 else
     echo "<p>No POST data received.</p>"

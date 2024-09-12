@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/09 14:02:05 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/09/12 12:07:03 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,7 +45,7 @@ Response& Response::operator=(const Response &assign)
 
 Response::~Response() 
 {
-    std::cout << "[INFO] Response destructor" << std::endl;
+    // std::cout << "[INFO] Response destructor" << std::endl;
     if (_filestream.is_open())
     {
         _filestream.close();
@@ -106,7 +106,7 @@ const std::string Response::getNextChunk()
         std::cerr << "[ERROR] File read error" << std::endl;
         return getErrorPage(500);
     }
-    std::cout << "[INFO] Chunk size = " << bytesRead << std::endl;
+    // std::cout << "[INFO] Chunk size = " << bytesRead << std::endl;
     std::stringstream hexStream;
     hexStream << std::hex << bytesRead;
     std::string chunk = hexStream.str() + "\r\n" + std::string(buffer, bytesRead) + "\r\n";
@@ -125,7 +125,7 @@ const std::string Response::run()
     std::string method = _req.get("method");
 	_target = _req.get("target");
 	_index_virt = _srv.getVirtHostIndex(_req.get("host"));
-	std::cout << "[INFO] Request is addressed to server " << _srv.index << "\n";
+	// std::cout << "[INFO] Request is addressed to server " << _srv.index << "\n";
 	if (_srv.index != _index_virt)
 		std::cout << "[INFO] Request is readdressed to virtual server " << _index_virt << "\n";
     if(!check_body_size()) 
@@ -235,25 +235,36 @@ const std::string Response::deleteResp()
 
 const std::string Response::runCGI()
 {
-	std::cerr << "------- CGI ----------\n";
-	if (_srv.config.selectLocation(_target) != "/cgi-bin")
+	if (_cgi.get() == nullptr)
 	{
-		std::cerr << "CGI is not configured.\n";
-		return (getErrorPage(500));
+		std::cerr << "------- CGI ----------\n";
+		if (_srv.config.selectLocation(_target) != "/cgi-bin")
+		{
+			std::cerr << "CGI is not configured.\n";
+			return (getErrorPage(500));
+		}
+		_cgi = std::make_unique<Cgi>(_req, _srv, _index_virt);
+		_cgi->start();
+		_code = _cgi->getStatus() == 0 ? 200 : _cgi->getStatus();
+		std::cerr << "CGI status = " << _code << "\n";
+		std::cout << "------- END ----------" << std::endl;
+		if (_req.getStatus() == 0 || !_req.getBodyRawBytes().empty())
+			_cgi->writeToPipe(_req.getBodyRawBytes().data(), _req.getBodyRawBytes().size());
 	}
-	Cgi cgi(_req, _srv, _index_virt);
-	cgi.start();
-	int status = cgi.getStatus();
-	std::cerr << "CGI status =" << status << "\n";
-	std::cout << "------- END ----------" << std::endl;
-	return status == 0 ? STATUS_LINE_200 + cgi.getResponse() :
-			status == 403 ?  getErrorPage(403) :
-			status == 404 ?  getErrorPage(404) :
-			status == 500 ?  getErrorPage(500) :
-			status == 501 ?  getErrorPage(501) : // cgi's ext is not implemented. 
-			status == 502 ?  getErrorPage(502) : //Bad Gateway
-			status == 504 ?  getErrorPage(504) : // time out
-			getErrorPage(500);
+	else
+		_cgi->writeToPipe(_req.getBodyRawBytes().data(), _req.getBodyRawBytes().size());
+	return _cgi->getStatus() == 0 ? STATUS_LINE_200 :
+				getErrorPage(_cgi->getStatus());
+}
+
+const std::string Response::readfromCGI()
+{
+	return _cgi->readFromPipe();
+}
+
+int Response::getCGIfd()
+{
+	return _cgi->get_pipefd();
 }
 
 const std::string Response::load_file(std::string filepath)
