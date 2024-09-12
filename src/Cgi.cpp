@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Cgi.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/06 13:41:04 by apimikov          #+#    #+#             */
-/*   Updated: 2024/09/06 13:42:36 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/09/12 13:32:21 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,7 +45,7 @@ not implemented
 "TEAPOT", 418   
 
 */
-
+#define DEBUG 0
 
 Cgi::Cgi(const Cgi& other):
     _request(other._request),
@@ -95,11 +95,16 @@ Cgi::~Cgi(){
 */
 
 Cgi::~Cgi(){
-    //std::cerr << "Cgi destructor call\n";
+    std::cerr << "[INFO] Cgi destructor call\n";
     cleanEnv();
     for (int i = 0; _argv[i] != nullptr; i++)
         delete[] _argv[i];
     delete[](_argv);
+	close(_fd_to_cgi[1]);
+	// if (close(_fd_to_cgi[1]) == -1)
+		// std::cerr << "[CGI Destructor] Failure close cgi topipe\n";
+	if (close(_fd_from_cgi[0]) == -1)
+        std::cerr << "[CGI Destructor] Failure close cgi frompipe\n";
 }
 
 void Cgi::cleanEnv(){
@@ -119,9 +124,12 @@ int Cgi::getStatus(){
 }
 
 void Cgi::start(){
-    std::cout << "__________This is Cgi request._____________\n";
-    std::cout << "Method =>" << _request.get("method") << "<=\n";
-    std::cout << "Target =>" << _target << "<=\n";
+    if (DEBUG)
+	{
+		std::cout << "__________This is Cgi request._____________\n";
+		std::cout << "Method =>" << _request.get("method") << "<=\n";
+		std::cout << "Target =>" << _target << "<=\n";
+	}
     setExtension();
     if (!isImplemented())
     {
@@ -145,11 +153,92 @@ void Cgi::start(){
         _response = "";
         _status = 500;
     }
-    if (!_status && _response.empty())
-        _status = 502;
+    // if (!_status && _response.empty())
+    //     _status = 502;
     // Add other validation of CGI if needed;
 }
 
+void Cgi::runCmd(){
+    if (_access() != 0)
+        return ;
+    if (pipe(_fd_to_cgi) == -1)
+        throw std::runtime_error("pipe error occurred!");
+    if (pipe(_fd_from_cgi) == -1){
+        close(_fd_to_cgi[0]);
+        close(_fd_to_cgi[1]);
+        throw std::runtime_error("pipe error occurred!");
+    }
+    _pid = fork();
+    if (_pid == -1){
+        throw std::runtime_error("fork error occurred!");
+    }
+    else if (_pid == 0)
+        _runChildCgi();
+    //std::cout << "This is parent CGI part \n";
+    if (close(_fd_to_cgi[0]) == -1 || close(_fd_from_cgi[1]) == -1)
+        throw std::runtime_error("close error occurred!");
+    // write(_fd_to_cgi[1], _request.getBodyRawBytes().data(), _request.getBodyRawBytes().size());
+    if (!_wait())
+        _status = 504;
+    // else if ((_status & 0xff00) >> 8 != 0)
+    //     _status = 502;
+    else
+        _status = 0;
+}
+
+ssize_t Cgi::writeToPipe(const void *buf, size_t count)
+{
+	int bytesWritten = write(_fd_to_cgi[1], buf, count);
+	std::cout << "[CGI] Wrote to pipe " << bytesWritten << " bytes\n";
+	if (bytesWritten == 0 || (_request.getStatus() == 1 && std::stol(_request.getHeader("content-length")) == _request.getBodyTotalSize()))
+	{
+		if (close(_fd_to_cgi[1]) == -1)
+			std::cerr << "[CGI] Failure close cgi topipe\n";
+		else
+			std::cerr << "[CGI] closed CGI Pipe\n";
+	}
+	return bytesWritten;
+	
+}
+
+std::string Cgi::readFromPipe()
+{
+	// fd_set read_fds;
+    // struct timeval timeout;
+
+    // FD_ZERO(&read_fds);
+    // FD_SET(_fd_from_cgi[0], &read_fds);
+
+    // timeout.tv_sec = 5;
+    // timeout.tv_usec = 0;
+
+    // int retval = select(_fd_from_cgi[0] + 1, &read_fds, NULL, NULL, &timeout);
+    // if (retval == -1) {
+    //     throw std::runtime_error("select error occurred!");
+    // } else if (retval == 0) {
+    //     std::cerr << "[CGI] Read timeout\n";
+	// 	kill(_pid, SIGKILL);
+    //     return "";
+    // }
+    char buffer[MAX_BUFFER_SIZE];
+    if (waitpid(_pid, &_status, WNOHANG) != 0)
+	{
+		_status = 200;
+		return "";
+	}
+	ssize_t size = read(_fd_from_cgi[0], buffer, sizeof(buffer));
+	std::cout << "[CGI] Read from pipe " << size << " bytes\n";
+    if (size < 0) 
+		throw std::runtime_error("readFromFd: read error occured!");
+	if (waitpid(_pid, &_status, WNOHANG) != 0)
+		_status = 200;
+    return std::string(buffer, size);
+}
+
+int Cgi::get_pipefd()
+{
+	return _fd_from_cgi[0];
+}
 void Cgi::setExtension()
 {
     _pos_cgi = 9;
@@ -169,44 +258,52 @@ void Cgi::analizeTarget()
 {
     if (_pos_info == std::string::npos && _pos_query == std::string::npos)
     {
-        std::cout << "analizeTarget: no info_path, no query\n";
+        if (DEBUG)
+			std::cout << "analizeTarget: no info_path, no query\n";
         _target_file_path = _target.substr(_pos_cgi);
         _target_query = "";
         _target_path_info = "";
     }
     else if (_pos_info == std::string::npos && _pos_query != std::string::npos)
     {
-        std::cout << "analizeTarget: no info_path\n";
+        if (DEBUG)
+			std::cout << "analizeTarget: no info_path\n";
         _target_file_path = _target.substr(_pos_cgi, _pos_query - _pos_cgi);
         _target_path_info = "";
         _target_query = _target.substr(_pos_query + 1);
     }
     else if (_pos_info != std::string::npos && _pos_query == std::string::npos)
     {
-        std::cout << "analizeTarget: no query\n";
+        if (DEBUG)
+			std::cout << "analizeTarget: no query\n";
         _target_file_path = _target.substr(_pos_cgi, _pos_info - _pos_cgi);
         _target_path_info = _target.substr(_pos_info);
         _target_query = "";
     }
     else if (_pos_info < _pos_query)
     {
-        std::cout << "analizeTarget: info and query\n";
+        if (DEBUG)
+			std::cout << "analizeTarget: info and query\n";
         _target_file_path = _target.substr(_pos_cgi, _pos_info - _pos_cgi);
         _target_path_info = _target.substr(_pos_info, _pos_query - _pos_info);
         _target_query = _target.substr(_pos_query + 1);
     }
     else
     {
-        std::cout << "analizeTarget: ? in query\n";
+        if (DEBUG)
+			std::cout << "analizeTarget: ? in query\n";
         _target_file_path = _target.substr(_pos_cgi, _pos_query - _pos_cgi);
         _target_path_info = "";
         _target_query = _target.substr(_pos_query + 1);
     }
-    std::cout << " _ext=" << _ext << "\n";
-    std::cout << " _target_file_path=" << _target_file_path << "\n";
-    std::cout << " _target_path_info=" <<_target_path_info << "\n";
-    std::cout << " _target_query=" << _target_query << "\n";
-    size_t pos_file = _target_file_path.rfind('/');
+    if (DEBUG)
+	{
+		std::cout << " _ext=" << _ext << "\n";
+		std::cout << " _target_file_path=" << _target_file_path << "\n";
+		std::cout << " _target_path_info=" <<_target_path_info << "\n";
+		std::cout << " _target_query=" << _target_query << "\n";
+	}
+	size_t pos_file = _target_file_path.rfind('/');
     if (pos_file == std::string::npos)
     {
         _target_file_name = _target_file_path;
@@ -217,8 +314,11 @@ void Cgi::analizeTarget()
         _target_file_name = _target_file_path.substr(pos_file + 1);
         _target_foldername = _target_file_path.substr(0, pos_file);
     }
-    std::cout << " _target_foldername="<< _target_foldername << "\n";
-    std::cout << " _target_file_name=" << _target_file_name << "\n";
+    if (DEBUG)
+	{	
+		std::cout << " _target_foldername="<< _target_foldername << "\n";
+    	std::cout << " _target_file_name=" << _target_file_name << "\n";
+	}
 }
 
 bool Cgi::isImplemented()
@@ -266,15 +366,17 @@ std::string Cgi::readFromFd(int fd) {
 
 int Cgi::_access(){
     const char* file_path = _env_map["SCRIPT_FILENAME"].c_str();
-    std::cout << "CGI: access for ->" << file_path << "<-\n";
+    if (DEBUG)
+			std::cout << "CGI: access for ->" << file_path << "<-\n";
     if (access(file_path, F_OK) != 0)
     {
+
         _status = 404; //"PATH NOT FOUND"
         return -1;
     }
     if (access(file_path, X_OK) != 0)
     {
-        _status = 403; //"PERMISSION DENIED"
+        _status = 403;    //"PERMISSION DENIED"
         return -1;
     }
     return 0;
@@ -301,24 +403,29 @@ void Cgi::_runChildCgi(){
             throw std::runtime_error("strdup/strcpy error occurred!");
     }
     _argv[2] = nullptr;
-    std::cout << "CGI: cgi_path=" << _cgi_path << "<-\n";
-    std::cout << "CGI: execve for ->" << _argv[0] << "<- ->" << _argv[1] << "<- \n";
+    if (DEBUG)
+			std::cout << "CGI: cgi_path=" << _cgi_path << "<-\n";
+    if (DEBUG)
+			std::cout << "CGI: execve for ->" << _argv[0] << "<- ->" << _argv[1] << "<- \n";
     if (close(_fd_to_cgi[1]) == -1 || close(_fd_from_cgi[0]) == -1)
-        throw std::runtime_error("close error occurred!");
+        throw std::runtime_error("close 	 error occurred!");
     if (dup2(_fd_to_cgi[0], 0) == -1 || dup2(_fd_from_cgi[1], 1) == -1)
         throw std::runtime_error("dub2 error occurred!");
     if (close(_fd_to_cgi[0]) == -1 || close(_fd_from_cgi[1]) == -1)
             throw std::runtime_error("close error occurred!");
     std::string path = _env_map["DOCUMENT_ROOT"] + "/" + _target_foldername;
-    std::cerr << "CGI: chdir to " << path << "\n";
+	if (DEBUG)
+			 std::cerr << "CGI: chdir to " << path << "\n";
     chdir(path.c_str());
     execve(_argv[0], _argv, _envp);
     //std::cout << "CGI: step 2 <-\n";
     //std::cout << "CGI: execve for ->" << argv0.c_str() << "<-\n";
     //execve(argv0.c_str(), _argv, _envp);
-    close(0);
+	std::cout << "HTTP/1.1 500" << std::endl;
+	close(0);
     close(1);
-    throw std::runtime_error("CGI: execve error occurred!");
+    std::cerr << ("CGI: execve error occurred!") << std::endl;
+	exit(0);
 }
 
 bool Cgi::_wait(){
@@ -329,54 +436,18 @@ bool Cgi::_wait(){
 	while (difftime(std::time(NULL), start) <= CGI_TIMEOUT)
 	{
 		waitResult = waitpid(_pid, &_status, WNOHANG);
-		if (waitResult > 0)
+		if (waitResult >= 0)
 			return true;
 	}
-	kill(_pid, SIGKILL);
-	waitpid(_pid, &_status, 0);
+	// kill(_pid, SIGKILL);
+	// waitpid(_pid, &_status, 0);
 	return false;
-}
-
-void Cgi::runCmd(){
-    if (_access() != 0)
-        return ;
-    if (pipe(_fd_to_cgi) == -1)
-        throw std::runtime_error("pipe error occurred!");
-    if (pipe(_fd_from_cgi) == -1){
-        close(_fd_to_cgi[0]);
-        close(_fd_to_cgi[1]);
-        throw std::runtime_error("pipe error occurred!");
-    }
-    _pid = fork();
-    if (_pid == -1){
-        throw std::runtime_error("fork error occurred!");
-    }
-    else if (_pid == 0)
-        _runChildCgi();
-    //std::cout << "This is parent CGI part \n";
-    if (close(_fd_to_cgi[0]) == -1 || close(_fd_from_cgi[1]) == -1)
-        throw std::runtime_error("close error occurred!");
-    //std::cout << "parent body: " << _body_old.c_str() << std::endl;
-    //write(_fd_to_cgi[1], _body_old.c_str(), _body_old.size());
-    write(_fd_to_cgi[1], _request.getBodyRawBytes().data(), _request.getBodyRawBytes().size());
-    if (close(_fd_to_cgi[1]) == -1)
-        throw std::runtime_error("close error occurred!");
-    if (!_wait())
-        _status = 504;
-    else if ((_status & 0xff00) >> 8 != 0)
-        _status = 502;
-    else
-    {
-        _response = readFromFd(_fd_from_cgi[0]);
-        _status = 0;
-    }
-    if (close(_fd_from_cgi[0]) == -1)
-        throw std::runtime_error("close error occurred!");
 }
 
 void Cgi::setEnv(){
     _envp = new char*[_env_map.size() + 1] {0};
-    std::cout << "_env_map.size() + 1" << _env_map.size() << "\n";
+    if (DEBUG)
+		std::cout << "_env_map.size() + 1" << _env_map.size() << "\n";
     char* line_pnt;
     std::string line;
     int i = 0;

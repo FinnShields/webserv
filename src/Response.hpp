@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:06:10 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/06 13:55:41 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/10 13:31:32 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,7 @@
 #include <filesystem>
 #include "Request.hpp"
 #include "Server.hpp"
+#include "Cgi.hpp"
 
 #define STATUS_LINE_200 "HTTP/1.1 200 OK\r\n"
 #define STATUS_LINE_201 "HTTP/1.1 201 Created\r\n"
@@ -60,6 +61,7 @@ class Response
 		std::string _target;
 		size_t _index_virt;
         std::string _response;
+		std::unique_ptr<Cgi> _cgi;
 
 		const std::string redirect();
 		const std::string runCGI();
@@ -103,5 +105,7 @@ class Response
         bool hasMoreChunks() const;
 		void display() const;
         int getcode() const;
+		int getCGIfd();
+		const std::string readfromCGI();
 };
 #endif
