@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/06 13:41:04 by apimikov          #+#    #+#             */
-/*   Updated: 2024/09/13 02:57:57 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/13 13:30:31 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,8 +50,6 @@ not implemented
 Cgi::Cgi(const Cgi& other):
     _request(other._request),
     _server(other._server),
-   // _body_old(other._body_old),
-   // _body(other._body),
     _target(other._target),
     _index_virt(other._index_virt)
 {
@@ -62,37 +60,16 @@ Cgi::Cgi(const Cgi& other):
 Cgi::Cgi(Request& r, const Server& s, const size_t virt_index):
     _request(r),
     _server(s),
-   // _body_old(_request.getRef("body")),
-   // _body(nullptr), //_request.getBodyRawBytes().data()),
     _target(_request.get("target")),
     _index_virt(virt_index)
 {
     _argv = new char*[4] {nullptr};
     _envp = nullptr;
-
- //   std::cout << "[REMOVE ME] depricated body in constructor of CGI is \n->" << _body_old << "<-\n";
- //   std::cout << "[REMOVE ME] body in constructor of CGI is \n->" << _request.getBodyRawBytes().data() << "<-\n";
 }
 
 Cgi& Cgi::operator=(const Cgi&){
     return *this;
 }
-
-/*
-Cgi::~Cgi(){
-    std::cerr << "Cgi destructor call\n";
-    cleanEnv();
-    int i = 0;
-    if (_argv){
-        while (_argv[i]){
-            delete[] _argv[i];
-            i++;
-        }
-        delete[] _argv;
-        _argv = nullptr;
-    }
-};
-*/
 
 Cgi::~Cgi(){
     std::cerr << "[INFO] Cgi destructor call\n";
@@ -140,7 +117,6 @@ void Cgi::start(){
     setExtension();
     if (!isImplemented())
     {
-        _response = "";
         _status = 501;
         return ;
     }
@@ -152,17 +128,12 @@ void Cgi::start(){
     }
     catch (const std::runtime_error& e){
         std::cerr << e.what() << "\n";
-        _response = "";
         _status = 500;
     }
     catch (...) {
         std::cerr << "Caught unknown exception." << std::endl;
-        _response = "";
         _status = 500;
     }
-    // if (!_status && _response.empty())
-    //     _status = 502;
-    // Add other validation of CGI if needed;
 }
 
 void Cgi::runCmd(){
@@ -176,17 +147,12 @@ void Cgi::runCmd(){
         throw std::runtime_error("pipe error occurred!");
     }
     _pid = fork();
-    if (_pid == -1){
+    if (_pid == -1)
         throw std::runtime_error("fork error occurred!");
-    }
-    else if (_pid == 0)
+    if (_pid == 0)
         _runChildCgi();
-    //std::cout << "This is parent CGI part \n";
     if (close(_fd_to_cgi[0]) == -1 || close(_fd_from_cgi[1]) == -1)
         throw std::runtime_error("close error occurred!");
-    // write(_fd_to_cgi[1], _request.getBodyRawBytes().data(), _request.getBodyRawBytes().size());
-    if (!_wait())
-        _status = 504;
     // else if ((_status & 0xff00) >> 8 != 0)
     //     _status = 502;
     else
@@ -210,23 +176,6 @@ ssize_t Cgi::writeToPipe(const void *buf, size_t count)
 
 std::string Cgi::readFromPipe()
 {
-	// fd_set read_fds;
-    // struct timeval timeout;
-
-    // FD_ZERO(&read_fds);
-    // FD_SET(_fd_from_cgi[0], &read_fds);
-
-    // timeout.tv_sec = 5;
-    // timeout.tv_usec = 0;
-
-    // int retval = select(_fd_from_cgi[0] + 1, &read_fds, NULL, NULL, &timeout);
-    // if (retval == -1) {
-    //     throw std::runtime_error("select error occurred!");
-    // } else if (retval == 0) {
-    //     std::cerr << "[CGI] Read timeout\n";
-	// 	kill(_pid, SIGKILL);
-    //     return "";
-    // }
     char buffer[MAX_BUFFER_SIZE];
     if (waitpid(_pid, &_status, WNOHANG) != 0)
 	{
@@ -353,21 +302,14 @@ bool Cgi::isImplemented()
     return true;
 }
 
-std::string Cgi::getResponse() {
-    return _response;
-}
-
 std::string Cgi::readFromFd(int fd) {
     std::string result;
     char buffer[MAX_BUFFER_SIZE];
     ssize_t size;
-    while ((size = read(fd, buffer, sizeof(buffer))) > 0) {
-        //std::cout << "size=" << size <<"\n";
+    while ((size = read(fd, buffer, sizeof(buffer))) > 0)
         result.append(buffer, size);
-    }
-    if (size < 0) {
+    if (size < 0) 
         throw std::runtime_error("readFromFd: read error occured!");
-    }
     return result;
 }
 
@@ -377,7 +319,6 @@ int Cgi::_access(){
 			std::cout << "CGI: access for ->" << file_path << "<-\n";
     if (access(file_path, F_OK) != 0)
     {
-
         _status = 404; //"PATH NOT FOUND"
         return -1;
     }
@@ -420,35 +361,24 @@ void Cgi::_runChildCgi(){
         throw std::runtime_error("dub2 error occurred!");
     if (close(_fd_to_cgi[0]) == -1 || close(_fd_from_cgi[1]) == -1)
             throw std::runtime_error("close error occurred!");
+	int max_fd = 1024;
+	for (int i = 3; i < max_fd; i++)
+		close(i);
+	if (DEBUG)
+	{
+		std::cout << "CGI: chdir to " << _env_map["DOCUMENT_ROOT"] + "/" + _target_foldername << "\n";
+		std::cout << "CGI: execve for ->" << _argv[0] << "<- ->" << _argv[1] << "<- \n";
+	}
     std::string path = _env_map["DOCUMENT_ROOT"] + "/" + _target_foldername;
 	if (DEBUG)
 			 std::cerr << "CGI: chdir to " << path << "\n";
     chdir(path.c_str());
-    execve(_argv[0], _argv, _envp);
-    //std::cout << "CGI: step 2 <-\n";
-    //std::cout << "CGI: execve for ->" << argv0.c_str() << "<-\n";
-    //execve(argv0.c_str(), _argv, _envp);
+    execve(_argv[0], _argv, _envp);;
 	std::cout << "HTTP/1.1 500" << std::endl;
 	close(0);
     close(1);
     std::cerr << ("CGI: execve error occurred!") << std::endl;
 	exit(0);
-}
-
-bool Cgi::_wait(){
-    time_t	start;
-	int		waitResult;
-
-	start = std::time(NULL);
-	while (difftime(std::time(NULL), start) <= CGI_TIMEOUT)
-	{
-		waitResult = waitpid(_pid, &_status, WNOHANG);
-		if (waitResult >= 0)
-			return true;
-	}
-	// kill(_pid, SIGKILL);
-	// waitpid(_pid, &_status, 0);
-	return false;
 }
 
 void Cgi::setEnv(){

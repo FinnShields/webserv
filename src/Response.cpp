@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/13 11:42:50 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/13 12:49:01 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -239,14 +239,14 @@ const std::string Response::deleteResp()
 
 const std::string Response::runCGI()
 {
+	if (_srv.config.selectLocation(_target) != "/cgi-bin")
+	{
+		std::cerr << "CGI is not configured.\n";
+		return (getErrorPage(500));
+	}
 	if (_cgi.get() == nullptr)
 	{
 		std::cerr << "------- CGI ----------\n";
-		if (_srv.config.selectLocation(_target) != "/cgi-bin")
-		{
-			std::cerr << "CGI is not configured.\n";
-			return (getErrorPage(500));
-		}
 		_cgi = std::make_unique<Cgi>(_req, _srv, _index_virt);
 		_cgi->start();
 		_code = _cgi->getStatus() == 0 ? 200 : _cgi->getStatus();
@@ -257,8 +257,7 @@ const std::string Response::runCGI()
 	}
 	else
 		_cgi->writeToPipe(_req.getBodyRawBytes().data(), _req.getBodyRawBytes().size());
-	return _cgi->getStatus() == 0 ? "" :
-				getErrorPage(_cgi->getStatus());
+	return _cgi->getStatus() == 0 ? "" : getErrorPage(_cgi->getStatus());
 }
 
 const std::string Response::readfromCGI()
@@ -267,7 +266,6 @@ const std::string Response::readfromCGI()
 	if (tmp.compare("HTTP/1.1 500\n") == 0)
 		return getErrorPage(500);
 	_response += tmp;
-	std::cout << "CGI Response size: " << _response.size() << std::endl;
 	if (_cgi->getStatus() == 200)
 		return STATUS_LINE_200 + _response;
 	return "";
