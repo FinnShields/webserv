@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/12 15:13:44 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/13 03:19:30 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -139,26 +139,37 @@ int WebServer::fd_is_cgi(int fd)
 				_cgi_clients.erase(fd);
 				return 1;
 			}
+			break;
 		}
+	if (client == NULL)
+	{
+		_cgi_clients.erase(fd);
+		return 1;
+	}
 	return 0;
 }
-void WebServer::checkTimer()
+bool WebServer::checkTimer()
 {
 	Client *client;
-	int timelimitinseconds = 5000;
+	int timelimitinseconds = 30;
+	bool timedout = false;
 	
 	std::cout << "[INFO] Check timers" << std::endl;
 	for (std::vector<pollfd>::iterator it = _fds.begin(); it != _fds.end(); it++)
-		for (Server &srv : _servers)
-			if ((client = srv.get_client(it->fd)))
-			{
-				if (client->timeout(timelimitinseconds))
+		if (it->revents == 0)
+			for (Server &srv : _servers)
+				if ((client = srv.get_client(it->fd)))
 				{
-					it->events = POLLOUT;
-					std::cout << "[INFO] Client set to POLLOUT" << std::endl;
+					if (client->timeout(timelimitinseconds))
+					{
+						timedout = true;
+						it->events = POLLOUT;
+						it->revents = POLLOUT;
+						std::cout << "[INFO] Client set to POLLOUT" << std::endl;
+					}
+					break;
 				}
-				break;
-			}
+	return timedout;
 }
 
 void WebServer::run()
@@ -168,20 +179,17 @@ void WebServer::run()
 	while (true)
 	{
 		std::cout << "Waiting for action... - size of pollfd vector: " << _fds.size() << std::endl;
-		// for (pollfd &pfd : _fds)
-		// 	std::cout << "fd: " << pfd.fd << " events: " << pfd.events << " revents: " << pfd.revents << " Address of object: " << &pfd << std::endl;
+		for (pollfd &pfd : _fds)
+			std::cout << "fd: " << pfd.fd << " events: " << pfd.events << " revents: " << pfd.revents << " Address of object: " << &pfd << std::endl;
 		int poll_result = poll(_fds.data(), _fds.size(), 10000);
 		if (poll_result == -1)
 			return (perror("poll"));
-
-		if (poll_result == 0 || _fds.size() > 95)
-		{
-			checkTimer();
+		
+		if (!checkTimer() && poll_result == 0)
 			continue;
-		}
 		for (std::vector<pollfd>::iterator it = _fds.begin(); it != _fds.end();)
 		{
-			if (it->revents & (POLLIN|POLLOUT|POLLHUP))
+			if (it->revents & (POLLIN|POLLOUT|POLLHUP|POLLNVAL))
 			{
 				if (fd_is_server(it->fd))
 					break;

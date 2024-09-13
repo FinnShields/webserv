@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/12 15:01:17 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/13 03:16:08 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,15 +35,15 @@ Client::~Client()
 // }
 
 
-bool Client::timeout(unsigned int seconds)
+bool Client::timeout(unsigned int timeout)
 {
-	std::cout << "Start time: " << starttime << std::endl;
-	std::cout << "Current time: " << std::time(NULL) << std::endl;
-	if (difftime(std::time(NULL), starttime) > seconds)
+	// std::cout << "Uptime: " << difftime(std::time(NULL), starttime) << std::endl;
+	if (difftime(std::time(NULL), starttime) > timeout)
 	{
 		std::cout << "[INFO] Client timed out" << std::endl;
+		if (!_res)
+			_res = std::make_unique<Response>(_fd, *_request, *_server);
 		_response = _res->getTimeOutErrorPage();
-		std::cout << "[INFO] Response set\n" << _response << std::endl;
 		return true;
 	}
 	return false;
