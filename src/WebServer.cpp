@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/13 03:30:40 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/13 09:16:39 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -163,7 +163,6 @@ bool WebServer::checkTimer()
 					{
 						timedout = true;
 						it->events = POLLOUT;
-						it->revents = POLLOUT;
 						std::cout << "[INFO] Client set to POLLOUT" << std::endl;
 					}
 					break;
@@ -178,9 +177,9 @@ void WebServer::run()
 	while (true)
 	{
 		std::cout << "Waiting for action... - size of pollfd vector: " << _fds.size() << std::endl;
+		int poll_result = poll(_fds.data(), _fds.size(), POLLTIMEOUT);
 		for (pollfd &pfd : _fds)
 			std::cout << "fd: " << pfd.fd << " events: " << pfd.events << " revents: " << pfd.revents << " Address of object: " << &pfd << std::endl;
-		int poll_result = poll(_fds.data(), _fds.size(), POLLTIMEOUT);
 		if (poll_result == -1)
 			return (perror("poll"));
 		

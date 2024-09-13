@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/09/12 12:05:14 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/13 09:45:12 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -76,7 +76,7 @@ int Request::getStatus()
 {
 	return _status;
 }
-//Return -1: Empty request
+//Return -1: Error or peer disconnected
 //Return 0: No content-length or fully read
 //Return 1: Body is not fully read
 //Return 2: Body is fully read, but wait for CGI
@@ -84,17 +84,18 @@ int Request::getStatus()
 //Status 0: No content-length or transfer-encoding
 //Status 1: Content-length (Webkitforms)
 //Status 2: Transfer-encoding (chunked)
+
 int	Request::read(int _fd)
 {
 	char buffer[MAX_BUFFER_SIZE] = {0};
     ssize_t recvReturn = recv(_fd, &buffer, MAX_BUFFER_SIZE, 0);
-    if (recvReturn < 0)
-        perror("Recv error");
+    if (recvReturn <= 0)
+	{
+		std::cerr << (recvReturn == 0 ? "[INFO] Client disconnected" : "[ERROR] Recv error: ") << (recvReturn == -1 ? strerror(errno) : "") << std::endl;
+        return -1;
+	}
     for (size_t i = 0; i < (size_t) recvReturn; i++)
         _reqRaw.push_back(buffer[i]);
-    _recvReturnTotal += recvReturn;
-    if (_recvReturnTotal <= 0)
-        return -1;
     _status == 1 ? resetBody() : _status == 2 ? moreChunks() : parse();
     if (_status == 0 && !isWholeHeader())
         return 3;
