@@ -6,14 +6,18 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/12 13:39:33 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/13 10:04:19 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Client.hpp"
 
 
-Client::Client(int fd, Server *server) : _fd(fd), _server(server), _request(nullptr), _res(nullptr), _responseSent(false), _isCGI(false) {}
+Client::Client(int fd, Server *server) : _fd(fd), _server(server), _request(nullptr), _res(nullptr), _responseSent(false), _isCGI(false) 
+{
+	// std::cout << "[INFO] Client constructor" << std::endl;
+	starttime = std::time(NULL);
+}
 // Client::Client(const Client &copy) : _fd(copy._fd), _request(copy._request), _res(copy._res), _responseSent(copy._responseSent){}
 Client::~Client() 
 {
@@ -30,6 +34,20 @@ Client::~Client()
 // 	return (*this);
 // }
 
+
+bool Client::timeout(unsigned int timeout)
+{
+	// std::cout << "Uptime: " << difftime(std::time(NULL), starttime) << std::endl;
+	if (difftime(std::time(NULL), starttime) > timeout)
+	{
+		std::cout << "[INFO] Client timed out" << std::endl;
+		if (!_res)
+			_res = std::make_unique<Response>(_fd, *_request, *_server);
+		_response = _res->getTimeOutErrorPage();
+		return true;
+	}
+	return false;
+}
 int Client::get_socket_fd()
 {
     return (_fd);
@@ -59,7 +77,7 @@ int Client::handle_request()
     // std::cout << "[INFO] request->read() returns: " << ret << std::endl;
     if (ret == 3 || ret == -1)
     {
-        std::cout << "[INFO] Request " << ((ret == 3) ? "has unread headers" : "is empty") << std::endl;
+        // std::cout << "[INFO] Request " << ((ret == 3) ? "has unread headers" : "is empty") << std::endl;
         return ret;
     }
 	if (ret == 2)

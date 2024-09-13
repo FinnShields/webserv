@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/12 13:40:15 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/13 11:42:50 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -81,6 +81,10 @@ not implemented
 3 = has more chunks to upload
 */
 
+const std::string Response::getTimeOutErrorPage()
+{
+	return getErrorPage(504);
+}
 const std::string Response::getNextChunk()
 {
     char buffer[MAX_BUFFER_SIZE] = {0};
@@ -263,6 +267,7 @@ const std::string Response::readfromCGI()
 	if (tmp.compare("HTTP/1.1 500\n") == 0)
 		return getErrorPage(500);
 	_response += tmp;
+	std::cout << "CGI Response size: " << _response.size() << std::endl;
 	if (_cgi->getStatus() == 200)
 		return STATUS_LINE_200 + _response;
 	return "";
