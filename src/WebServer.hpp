@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:19 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/13 02:34:17 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/13 03:30:16 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,9 @@
 #include "Parser.hpp"
 #include "Config.hpp"
 #include "Response.hpp"
+
+#define SOCKETTIMEOUT 30
+#define POLLTIMEOUT 10000
 
 
 class WebServer

@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/13 03:19:30 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/13 03:30:40 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -151,7 +151,6 @@ int WebServer::fd_is_cgi(int fd)
 bool WebServer::checkTimer()
 {
 	Client *client;
-	int timelimitinseconds = 30;
 	bool timedout = false;
 	
 	std::cout << "[INFO] Check timers" << std::endl;
@@ -160,7 +159,7 @@ bool WebServer::checkTimer()
 			for (Server &srv : _servers)
 				if ((client = srv.get_client(it->fd)))
 				{
-					if (client->timeout(timelimitinseconds))
+					if (client->timeout(SOCKETTIMEOUT))
 					{
 						timedout = true;
 						it->events = POLLOUT;
@@ -181,7 +180,7 @@ void WebServer::run()
 		std::cout << "Waiting for action... - size of pollfd vector: " << _fds.size() << std::endl;
 		for (pollfd &pfd : _fds)
 			std::cout << "fd: " << pfd.fd << " events: " << pfd.events << " revents: " << pfd.revents << " Address of object: " << &pfd << std::endl;
-		int poll_result = poll(_fds.data(), _fds.size(), 10000);
+		int poll_result = poll(_fds.data(), _fds.size(), POLLTIMEOUT);
 		if (poll_result == -1)
 			return (perror("poll"));
 		
