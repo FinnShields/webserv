@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/13 09:16:39 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/13 11:53:36 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,6 +51,7 @@ void WebServer::setup()
     signal(SIGINT, WebServer::closeAllThenExit);
     signal(SIGPIPE, SIG_IGN);
     setRealToVirt();
+	_fds.reserve(100);
 	std::vector<size_t> indices = extractVirtualHostsIndices();
     std::cout << "[INFO] Total number of servers: " << config.size()
         << " . Total number of virtual hosts " << indices.size()
@@ -117,13 +118,15 @@ int WebServer::fd_is_client(pollfd &pfd)
                 }
                 return 0;
             }
+			client->close_connection();
+			return 1;
 		}
 	return -1;
 }
 
-int WebServer::fd_is_cgi(int fd)
+int WebServer::fd_is_cgi(pollfd pfd)
 {
-	auto it = _cgi_clients.find(fd);
+	auto it = _cgi_clients.find(pfd.fd);
 	if (it == _cgi_clients.end())
 		return -1;
 	Client *client = nullptr;
@@ -132,18 +135,18 @@ int WebServer::fd_is_cgi(int fd)
 		if ((client = srv.get_client(it->second->fd)))
 		{
 			std::cout << "[INFO] Reads from CGI" << std::endl;
-			if (client->readFromCGI())
+			if (pfd.revents & (POLLNVAL) || client->readFromCGI())
 			{
 				std::cout << "[INFO] CGI has finished" << std::endl;
 				it->second->events |= POLLOUT;
-				_cgi_clients.erase(fd);
+				_cgi_clients.erase(pfd.fd);
 				return 1;
 			}
-			break;
+			return 0;
 		}
 	if (client == NULL)
 	{
-		_cgi_clients.erase(fd);
+		_cgi_clients.erase(pfd.fd);
 		return 1;
 	}
 	return 0;
@@ -170,10 +173,48 @@ bool WebServer::checkTimer()
 	return timedout;
 }
 
-void WebServer::run()
+
+bool WebServer::eraseAndContinue(std::vector<pollfd>::iterator &it, std::string what)
+{
+	std::cout << "[INFO] erasing " << what << " from pollfd fd: " << it->fd << std::endl;
+	it = _fds.erase(it);
+	return true;
+}
+
+void WebServer::iterateAndRunActiveFD()
 {
 	int status;
-	_fds.reserve(100);
+	for (std::vector<pollfd>::iterator it = _fds.begin(); it != _fds.end();)
+	{
+		try
+		{
+			if (it->revents & (POLLIN|POLLOUT|POLLHUP|POLLNVAL))
+			{
+				if (fd_is_server(it->fd))
+					return;
+				if ((status = fd_is_client(*it)) >=0)
+				{
+					if (status == 2)
+						return;
+					if (status == 1 && eraseAndContinue(it, "client"))
+						continue;
+				}
+				else if ((status = fd_is_cgi(*it)) >= 0)
+					if (status == 1 && eraseAndContinue(it, "cgi"))
+						continue;
+			}
+		}
+		catch (std::exception *e)
+		{
+			std::cerr << "[ERROR] Exception caught: " << e->what() << std::endl;
+			throw it;
+		}
+		it++;
+	}
+}
+
+void WebServer::run()
+{
 	while (true)
 	{
 		std::cout << "Waiting for action... - size of pollfd vector: " << _fds.size() << std::endl;
@@ -182,49 +223,18 @@ void WebServer::run()
 			std::cout << "fd: " << pfd.fd << " events: " << pfd.events << " revents: " << pfd.revents << " Address of object: " << &pfd << std::endl;
 		if (poll_result == -1)
 			return (perror("poll"));
-		
 		if (!checkTimer() && poll_result == 0)
 			continue;
-		for (std::vector<pollfd>::iterator it = _fds.begin(); it != _fds.end();)
+		try
 		{
-			if (it->revents & (POLLIN|POLLOUT|POLLHUP|POLLNVAL))
-			{
-				if (fd_is_server(it->fd))
-					break;
-				if ((status = fd_is_cgi(it->fd)) >= 0)
-				{
-					if (status == 1)
-					{
-						std::cout << "[INFO] erasing cgi from pollfd fd: " << it->fd << std::endl;
-						it = _fds.erase(it);
-						continue;
-					}
-				}
-				try
-				{
-					if ((status = fd_is_client(*it)) >=0)
-					{
-						if (status == 2)
-							break;
-						if (status == 1)
-						{
-							std::cout << "[INFO] erasing client from pollfd" << std::endl;
-							it = _fds.erase(it);
-							continue;
-						}
-					}
-				}
-				catch (std::exception *e)
-				{
-					for (Server &srv : _servers)
-						if (Client *client = srv.get_client(it->fd))
-								client->close_connection();
-					std::cerr << "[ERROR] Exception caught: " << e->what() << " - is deleted from poll" << std::endl;
-					it = _fds.erase(it);
-					continue;
-				}
-			}
-            it++;
+			iterateAndRunActiveFD();
+		}
+		catch (std::vector<pollfd>::iterator it)
+		{
+			for (Server &srv : _servers)
+				if (Client *client = srv.get_client(it->fd))
+					client->close_connection();
+			_fds.erase(it);
 		}
     }
 }

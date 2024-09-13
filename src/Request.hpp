@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:41 by fshields          #+#    #+#             */
-/*   Updated: 2024/09/10 14:32:42 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/13 10:11:10 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,6 +48,7 @@ class Request
         int readContentLength(int);
         int isCGI();
         bool    isWholeHeader();
+		bool IsBodyIncomplete();
 	public:
 		Request();
 		Request(const Request&);
