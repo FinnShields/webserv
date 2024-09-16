@@ -296,7 +296,7 @@ const std::string Response::load_file(std::string filepath)
 		buffer << _filestream_read.rdbuf();
         _filestream_read.close();
         response += "Content-Type: text/html\r\n";
-        response += "Content-Length: " + std::to_string(buffer.str().size()) + "\r\n";
+        response += "Content-Length: " + std::to_string(buffer.str().size() - 2) + "\r\n";
         if (_req.get("method").compare("HEAD"))
             response += buffer.str();
     }
