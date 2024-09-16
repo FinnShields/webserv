@@ -31,7 +31,7 @@
 #define DEFAULT_PORT 8080
 #define DEFAULT_IP "0.0.0.0"
 #define DEFAULT_SRV_NAME "srv-"
-#define DEFAULT_METHOD {"GET", "POST", "DELETE", "PUT"}
+#define DEFAULT_METHOD {"GET", "POST", "DELETE", "HEAD", "PUT"}
 #define DEFAULT_ALLOWED_METHOD {}
 
 class Client; 
