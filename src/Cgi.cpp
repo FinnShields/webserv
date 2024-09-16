@@ -45,7 +45,7 @@ not implemented
 "TEAPOT", 418   
 
 */
-#define DEBUG 0
+#define DEBUG 1
 
 Cgi::Cgi(const Cgi& other):
     _request(other._request),
@@ -197,7 +197,8 @@ int Cgi::get_pipefd()
 }
 void Cgi::setExtension()
 {
-    _pos_cgi = 9;
+    //_pos_cgi = 9;   //  /cgi-bin/
+    _pos_cgi = 1;   //  /
     _pos_dot = _target.find('.', _pos_cgi);
     if (_pos_dot == std::string::npos)
         return ;

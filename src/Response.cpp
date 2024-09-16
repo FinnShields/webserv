@@ -149,8 +149,10 @@ const std::string Response::run()
 
 bool Response::isCGI()
 {
-    if (_target.size() > 9 && _target.substr(0, 9).compare("/cgi-bin/") == 0)
-        return true;
+    if (_srv.config.getBestValues(_index_virt, _target, "cgi_ext", {""})[0] != "")
+         return true;
+    //if (_target.size() > 9 && _target.substr(0, 9).compare("/cgi-bin/") == 0)
+    //    return true;
     return false;
 }
 
@@ -270,11 +272,11 @@ const std::string Response::deleteResp()
 
 const std::string Response::runCGI()
 {
-	if (_srv.config.selectLocation(_target) != "/cgi-bin")
-	{
-		std::cerr << "CGI is not configured.\n";
-		return (getErrorPage(500));
-	}
+	// if (_srv.config.selectLocation(_target) != "/cgi-bin")
+	// {
+	// 	std::cerr << "CGI is not configured.\n";
+	// 	return (getErrorPage(500));
+	// }
 	if (_cgi.get() == nullptr)
 	{
 		std::cerr << "------- CGI ----------\n";
