@@ -55,6 +55,7 @@ void Request::extractTarget(std::string& input)
 	size_t end;
 
 	start = input.find_first_of(' ') + 1;
+	std::cout << "START= " << start << std::endl;
 	end = 0;
 	while (input.at(start + end) != ' ')
 		end++;
@@ -65,7 +66,10 @@ void Request::extractVersion(std::string& input)
 {
 	size_t start = input.find("HTTP");
 	if (start == std::string::npos)
-		perror("No http version");
+	{
+		std::cerr << "[INFO] No http version" << std::endl;
+		return ;
+	}
 	size_t end = 0;
 	while (input.at(start + end) != '\r')
 		end++;
@@ -95,7 +99,8 @@ int	Request::read(int _fd)
         return -1;
 	}
     for (size_t i = 0; i < (size_t) recvReturn; i++)
-        _reqRaw.push_back(buffer[i]);
+		_reqRaw.push_back(buffer[i]);
+	std::cout << "reqraw pushed succesful" << std::endl;
     _status == 1 ? resetBody() : _status == 2 ? moreChunks() : parse();
     if (_status == 0 && !isWholeHeader())
         return 3;
@@ -128,20 +133,27 @@ void	Request::extractHeaders(std::string& input)
 	std::string second;
 	size_t	len;
 
+	if(input.find('\n') == std::string::npos)
+		return ;
 	for (size_t i = input.find('\n') + 1; i < input.size(); i++)
 	{
 		len = 0;
-		while (input.at(i + len) != ':')
+		while (input.size() > (i + len) && input.at(i + len) != ':')
 			if (i + (++len) == input.size() || input.at(i + len) == '\n')
 				return ;
+		// std::cout << "extract header 1 OK" << std::endl;
 		first = input.substr(i, len);
 		for (size_t i = 0; i < first.size(); i++)
 			first[i] = std::tolower(first[i]);
+		// std::cout << "extract header 2 OK" << std::endl;
 		i += len + 2;
 		len = 0;
-		while (input.at(i + len) != '\r' && i + len < input.size())
+		while (input.size() > (i + len) && input.at(i + len) != '\r')
 			len ++;
-		second = input.substr(i, len);
+		// std::cout << "extract header 3 OK" << input.size() << "---" << len << "---" << i << std::endl;
+		second = input.substr(std::min((size_t) i, input.size()), len);
+		//second[i+len+1] = 0;
+		// std::cout << "extract header 4 OK" << std::endl;
 		_headers[first] = second;
 		i += len + 1;
 	}
@@ -218,9 +230,10 @@ void	Request::extractBody()
 	char *ch;
 	char *reqArray = &_reqRaw[0];
 
-	ch = strstr(reqArray, "\r\n\r\n") + 4;
+	ch = strstr(reqArray, "\r\n\r\n");
 	if (!ch)
 		return ;
+	ch += 4;
 	size_t start = ch - reqArray;
 	if (!get("transfer-encoding").compare("chunked"))
 		return handleChunks(reqArray, start);
@@ -240,15 +253,21 @@ void    Request::resetBody()
 
 void	Request::parse()
 {
+	// int i = 0;
 	std::string	input = "";
 	for (size_t i = 0; i < _reqRaw.size(); i++)
 		input.append(1, _reqRaw[i]);
 	if (!extractMethod(input))
 		return ;
+	// std::cout << "Extract " << i++ << " OK" << std::endl;
 	extractTarget(input);
+	// std::cout << "Extract " << i++ << " OK" << std::endl;
 	extractVersion(input);
+	// std::cout << "Extract " << i++ << " OK" << std::endl;
 	extractHeaders(input);
+	// std::cout << "Extract " << i++ << " OK" << std::endl;
 	extractBody();
+	// std::cout << "Extract " << i++ << " OK" << std::endl;
     display();
 }
 

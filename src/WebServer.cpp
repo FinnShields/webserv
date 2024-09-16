@@ -212,9 +212,9 @@ void WebServer::iterateAndRunActiveFD()
 						continue;
 			}
 		}
-		catch (std::exception *e)
+		catch (const std::exception& e)
 		{
-			std::cerr << "[ERROR] Exception caught: " << e->what() << std::endl;
+			std::cerr << "[ERROR] Exception caught: " << e.what() << std::endl;
 			throw it;
 		}
 		it++;
@@ -233,6 +233,7 @@ void WebServer::run()
 			return (perror("poll"));
 		if (!checkTimer(SOCKETTIMEOUT) && poll_result == 0)
 			continue;
+		std::cerr << "No timed out" << std::endl;
 		try
 		{
 			iterateAndRunActiveFD();

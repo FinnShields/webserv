@@ -67,16 +67,19 @@ class Response
 		const std::string runCGI();
         const std::string get();
 		const std::string post();
+		const std::string put();
 		const std::string deleteResp();
 		const std::string load_file(std::string filename);
 		const std::string load_directory_listing(std::string directoryPath);
 		const std::string getErrorPage(int code);
 		const std::string appendfile();
 
-        int saveFile();        
+        int saveFile();
+		int createFile();      
         int deleteFile(const std::string &);
 		std::string createCookie();
 		bool isMethodValid(std::string &method);
+		bool isCGI();
 
         //Helper functions
         bool check_body_size();

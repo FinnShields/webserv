@@ -138,12 +138,20 @@ const std::string Response::run()
     }
 	if(isMethodValid(method))
         _response = _srv.config.getBestValues(_index_virt, _target, "return", {""})[0] != "" ? redirect() :
-                    (_target.size() > 9 && _target.substr(0, 9).compare("/cgi-bin/") == 0) ? runCGI() :
+                    isCGI() ? runCGI() :
                     (method == "GET") ? get() : 
                     (method == "POST") ? post() :
+                    (method == "PUT") ? put() :
                     (method == "DELETE") ? deleteResp() : 
                     getErrorPage(501);
     return _response;
+}
+
+bool Response::isCGI()
+{
+    if (_target.size() > 9 && _target.substr(0, 9).compare("/cgi-bin/") == 0)
+        return true;
+    return false;
 }
 
 const std::string Response::redirect()
@@ -189,7 +197,30 @@ const std::string Response::post()
         _message = "Created";
 		try
         {
-            saveFile();
+            createFile();
+        }
+        catch(const std::exception& e)
+        {
+            std::cerr << "[ERROR] " << e.what() << '\n';
+            _file = -1;
+            return getErrorPage(500);
+        }
+    }
+    else {
+        _code = 204;
+        _message = "No Content";
+    }
+    return get();
+}
+
+const std::string Response::put()
+{
+    if (!_req.get("content-type").compare(0, 19, "multipart/form-data")) {
+        _code = 201;
+        _message = "Created";
+		try
+        {
+            createFile();
         }
         catch(const std::exception& e)
         {
@@ -445,7 +476,7 @@ int Response::checkBodySize(std::vector<char> &bodyRaw)
     return 0;
 }
 
-int Response::saveFile()
+int Response::createFile()
 {
     std::vector<char> bodyRaw = _req.getBodyRawBytes();
 	if (bodyRaw.empty())
