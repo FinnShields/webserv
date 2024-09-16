@@ -19,8 +19,10 @@
 # include <vector>
 # include "Client.hpp"
 # include "Cgi.hpp"
+# include "Server.hpp"
 
 class Cgi;
+class Server;
 
 class Request
 {

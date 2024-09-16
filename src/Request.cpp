@@ -119,12 +119,13 @@ bool Request::IsBodyIncomplete()
 }
 int Request::isCGI()
 {
-    return (_target.size() > 9 && !_target.substr(0, 9).compare("/cgi-bin/"));
+    //return (_target.size() > 9 && !_target.substr(0, 9).compare("/cgi-bin/"));
 	//if (_target.size() > 9 && _target.substr(0, 9).compare("/cgi-bin/") == 0)
     //    return true;
-	//if (_srv.config.getBestValues(_index_virt, _target, "cgi_ext", {""})[0] != "")
-    //     return true;
-    //return false;
+	size_t index_virt = _srv->getVirtHostIndex(get("host"));
+	if (_srv->config.getBestValues(index_virt, _target, "cgi_ext", {""})[0] != "")
+         return true;
+    return false;
 }
 
 bool Request::isWholeHeader()
