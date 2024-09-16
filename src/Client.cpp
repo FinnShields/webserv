@@ -77,11 +77,17 @@ int Client::handle_request()
         _request = std::make_unique<Request>();
     int ret = _request->read(_fd);
     if (ret == 3 || ret == -1)
+    {
         return ret;
+    }
 	if (ret == 2)
+    {
 		_isCGI = true;
+    }
     if (!_res)
+    {
         _res = std::make_unique<Response>(_fd, *_request, *_server);
+    }
     _response = _res->run();
     if (_res->getcode() == 413 || (_isCGI && _res->getcode() != 200))
 	{
