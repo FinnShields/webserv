@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:19 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/13 11:34:13 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/13 12:40:48 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,16 +32,19 @@
 #define POLLTIMEOUT 10000
 
 
+
 class WebServer
 {
 	private:
+		static int running;
+		static void setExit(int signal);
+		
 		std::vector<pollfd> _fds;
 		std::vector<Server> _servers;
 		std::map<size_t, std::vector<size_t>> _real_to_virt;
 		std::map<int, pollfd *> _cgi_clients;
 
 		void setServers();
-		static void closeAllThenExit(int signal);
 		//void parse_file(std::string filename);
 		bool fd_is_server(int fd);
 		int fd_is_client(pollfd &pfd);
@@ -49,9 +52,10 @@ class WebServer
 		//std::vector<size_t>  virtualHostIndices;
 		void setRealToVirt();
 		std::vector<size_t>  extractVirtualHostsIndices();
-		bool checkTimer();
+		bool checkTimer(int timeout_seconds);
 		bool eraseAndContinue(std::vector<pollfd>::iterator &it, std::string from);
 		void iterateAndRunActiveFD();
+		void cleanexit();
 		
 		WebServer();
 		WebServer(const WebServer &copy);

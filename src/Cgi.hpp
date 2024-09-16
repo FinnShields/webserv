@@ -8,6 +8,7 @@
 #include <ctime>
 #include <algorithm>
 #include <sys/wait.h>
+#include <fcntl.h>
 
 
 #include "Server.hpp"

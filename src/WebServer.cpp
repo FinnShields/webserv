@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/13 11:53:36 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/13 12:40:57 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 #include "WebServer.hpp"
 
 static std::vector<pollfd> *_fds_ptr;
+int WebServer::running = 1;
 
 WebServer::~WebServer() {}
 
@@ -35,20 +36,27 @@ std::vector<size_t> WebServer::extractVirtualHostsIndices()
 	return indices;
 }
 
-void WebServer::closeAllThenExit(int signal)
+// void WebServer::closeAllThenExit(int signal)
+// {
+//     std::vector<pollfd> _fds;
+//     _fds = *_fds_ptr;
+//     if (signal == SIGINT)
+//         std::cout << " -- Closing due to SIGINT (ctl-c) " << std::endl;
+//     for (size_t i = 0; i < _fds.size(); i ++)
+//         close(_fds[i].fd);
+//     exit(130);
+// }
+
+void WebServer::setExit(int signal)
 {
-    std::vector<pollfd> _fds;
-    _fds = *_fds_ptr;
-    if (signal == SIGINT)
-        std::cout << " -- Closing due to SIGINT (ctl-c) " << std::endl;
-    for (size_t i = 0; i < _fds.size(); i ++)
-        close(_fds[i].fd);
-    exit(130);
+	if (signal == SIGINT)
+		std::cout << " -- Closing due to SIGINT (ctl-c) " << std::endl;
+	WebServer::running = 0;	
 }
 
 void WebServer::setup()
 {
-    signal(SIGINT, WebServer::closeAllThenExit);
+    signal(SIGINT, WebServer::setExit);
     signal(SIGPIPE, SIG_IGN);
     setRealToVirt();
 	_fds.reserve(100);
@@ -151,7 +159,7 @@ int WebServer::fd_is_cgi(pollfd pfd)
 	}
 	return 0;
 }
-bool WebServer::checkTimer()
+bool WebServer::checkTimer(int timeout_seconds)
 {
 	Client *client;
 	bool timedout = false;
@@ -162,7 +170,7 @@ bool WebServer::checkTimer()
 			for (Server &srv : _servers)
 				if ((client = srv.get_client(it->fd)))
 				{
-					if (client->timeout(SOCKETTIMEOUT))
+					if (client->timeout(timeout_seconds))
 					{
 						timedout = true;
 						it->events = POLLOUT;
@@ -215,7 +223,7 @@ void WebServer::iterateAndRunActiveFD()
 
 void WebServer::run()
 {
-	while (true)
+	while (running)
 	{
 		std::cout << "Waiting for action... - size of pollfd vector: " << _fds.size() << std::endl;
 		int poll_result = poll(_fds.data(), _fds.size(), POLLTIMEOUT);
@@ -223,7 +231,7 @@ void WebServer::run()
 			std::cout << "fd: " << pfd.fd << " events: " << pfd.events << " revents: " << pfd.revents << " Address of object: " << &pfd << std::endl;
 		if (poll_result == -1)
 			return (perror("poll"));
-		if (!checkTimer() && poll_result == 0)
+		if (!checkTimer(SOCKETTIMEOUT) && poll_result == 0)
 			continue;
 		try
 		{
@@ -237,4 +245,20 @@ void WebServer::run()
 			_fds.erase(it);
 		}
     }
+	cleanexit();
+}
+
+void WebServer::cleanexit()
+{
+	for (std::vector<pollfd>::iterator it = _fds.begin(); it != _fds.end();)
+	{
+		for (Server &srv : _servers)
+			if (srv.get_client(it->fd))
+			{
+				srv.remove_client(it->fd);
+				break;
+			}
+		close(it->fd);
+		it = _fds.erase(it);
+	}
 }
