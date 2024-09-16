@@ -190,7 +190,7 @@ void	Request::handleChunks(char *reqArray, size_t start)
 
 void	Request::moreChunks()
 {
-	// if (!get("content-type").compare("multipart/form-data"))
+	if (!get("content-type").compare("multipart/form-data"))
 		_bodyRawBytes.clear();
 	if (_incompleteChunk)
 	{
@@ -231,8 +231,8 @@ void	Request::extractBody()
 
 void    Request::resetBody()
 {
-	// if ((!get("content-type").compare(0, 19, "multipart/form-data")) && (!isCGI()))
-	_bodyRawBytes.clear();
+	if ((!get("content-type").compare(0, 19, "multipart/form-data")) && (!isCGI()))
+		_bodyRawBytes.clear();
     for (size_t i = 0; i < _reqRaw.size(); i++)
 		_bodyRawBytes.push_back(_reqRaw[i]);
 	_bodyTotalSize += _reqRaw.size();
