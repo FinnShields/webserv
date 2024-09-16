@@ -139,7 +139,7 @@ const std::string Response::run()
 	if(isMethodValid(method))
         _response = _srv.config.getBestValues(_index_virt, _target, "return", {""})[0] != "" ? redirect() :
                     (_target.size() > 9 && _target.substr(0, 9).compare("/cgi-bin/") == 0) ? runCGI() :
-                    (method == "GET") ? get() : 
+                    (method == "GET" || method == "HEAD") ? get() : 
                     (method == "POST") ? post() :
                     (method == "DELETE") ? deleteResp() : 
                     getErrorPage(501);
@@ -296,13 +296,16 @@ const std::string Response::load_file(std::string filepath)
 		buffer << _filestream_read.rdbuf();
         _filestream_read.close();
         response += "Content-Type: text/html\r\n";
-	    response += buffer.str();
+        response += "Content-Length: " + std::to_string(buffer.str().size()) + "\r\n";
+        if (_req.get("method").compare("HEAD"))
+            response += buffer.str();
     }
 	else
 	{
         response += "Transfer-Encoding: chunked\r\n";
         response += "Content-Type: application/octet-stream\r\n\r\n";
-        _file = 3;
+        if (_req.get("method").compare("HEAD"))
+            _file = 3;
 	}
 	return response;
 }
@@ -339,7 +342,10 @@ const std::string Response::load_directory_listing(std::string directoryPath)
         res = STATUS_LINE_201;
     else
         res = STATUS_LINE_200 ;
-    return (res + "Content-Type: text/html\r\n\r\n" + buffer.str());
+    res += "Content-Type: text/html\r\nContent-Length: " + std::to_string(buffer.str().size()) + "\r\n\r\n";
+    if (_req.get("method").compare("HEAD"))
+        res += buffer.str();
+    return (res);
 }
 
 bool Response::check_body_size()
