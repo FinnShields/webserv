@@ -149,7 +149,7 @@ void	Request::extractHeaders(std::string& input)
 
 void	Request::handleChunks(char *reqArray, size_t start)
 {
-	size_t chunkLength = strtol(&reqArray[start], nullptr, 16);
+	size_t chunkLength = std::strtol(&reqArray[start], nullptr, 16);
 	std::vector<char> contentRawBytes;
 
 	size_t i = start;
