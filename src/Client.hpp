@@ -40,7 +40,7 @@ class Client
         std::unique_ptr<Response> _res;
         bool _responseSent;
 		bool _isCGI;
-		void clean_socket_fd();
+		//void clean_socket_fd();
 		time_t starttime;
 		
 

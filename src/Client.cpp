@@ -15,25 +15,27 @@
 
 Client::Client(int fd, Server *server) : _fd(fd), _server(server), _request(nullptr), _res(nullptr), _responseSent(false), _isCGI(false) 
 {
-	// std::cout << "[INFO] Client constructor" << std::endl;
 	starttime = std::time(NULL);
 }
-// Client::Client(const Client &copy) : _fd(copy._fd), _request(copy._request), _res(copy._res), _responseSent(copy._responseSent){}
-Client::~Client() 
+Client::Client(const Client &copy)
 {
-    // std::cout << "[INFO] Client destructor" << std::endl;
-    // close_connection();
+    *this = copy;
 }
 
-// Client &Client::operator=(const Client &assign)
-// {
-// 	this->_fd = assign._fd;
-//     this->_request = assign._request;
-//     _res = assign._res;
-//     _responseSent = assign._responseSent;
-// 	return (*this);
-// }
+Client& Client::operator=(const Client &assign)
+{
+    _request = std::make_unique<Request>(*assign._request);
+    _res = std::make_unique<Response>(*assign._res);
 
+    *_request = *(assign._request);
+    *_res = *(assign._res);
+    _fd = assign._fd;
+    _server = assign._server;
+    _response = assign._response;
+    _responseSent = assign._responseSent;
+    return (*this);
+}
+Client::~Client() {}
 
 bool Client::timeout(unsigned int timeout)
 {
@@ -74,12 +76,8 @@ int Client::handle_request()
     if (!_request)
         _request = std::make_unique<Request>();
     int ret = _request->read(_fd);
-    // std::cout << "[INFO] request->read() returns: " << ret << std::endl;
     if (ret == 3 || ret == -1)
-    {
-        // std::cout << "[INFO] Request " << ((ret == 3) ? "has unread headers" : "is empty") << std::endl;
         return ret;
-    }
 	if (ret == 2)
 		_isCGI = true;
     if (!_res)
@@ -92,7 +90,6 @@ int Client::handle_request()
 	}
     return ret;
 }
-
 
 
 bool Client::responseReady()
