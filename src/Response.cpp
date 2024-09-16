@@ -192,8 +192,6 @@ const std::string Response::get()
 
 const std::string Response::post()
 {
-    _code = 201;
-    _message = "Created";
     try
     {
         _code = createFile(0);
@@ -212,8 +210,6 @@ const std::string Response::post()
 
 const std::string Response::put()
 {
-    _code = 201;
-    _message = "Created";
     try
     {
         _code = createFile(1);
