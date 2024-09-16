@@ -29,6 +29,7 @@ class Cgi
         const Server& _server;
         std::string _target;
         const size_t _index_virt;
+        std::string _path;
         size_t _pos_cgi;
         size_t _pos_dot;
         size_t _pos_query;
@@ -64,7 +65,7 @@ class Cgi
         void _runChildCgi();
         bool _wait();
     public:
-        Cgi(Request&, const Server&, const size_t);
+        Cgi(Request&, const Server&, const size_t, std::string path);
         Cgi(const Cgi&);
         Cgi &operator=(const Cgi&);
         ~Cgi();

@@ -110,15 +110,23 @@ int WebServer::fd_is_client(pollfd &pfd)
             if (pfd.revents & POLLIN)
             {
 			    int ret = client->handle_request();
-                if (ret == 0)
-                    pfd.events |= POLLOUT;
 				if (ret == 2)
 				{
 					std::cout << "[INFO] CGI is done reading" << std::endl;
-					_fds.push_back({client->get_cgi_fd(), POLLIN, 0});
-					_cgi_clients.emplace(client->get_cgi_fd(), &pfd);
-					return 2;
+					if (client->get_cgi_fd() == -1)
+					{
+						std::cout << "CGI Pipe fd is invalid" << std::endl;
+						ret = 0;
+					}
+					else
+					{
+						_fds.push_back({client->get_cgi_fd(), POLLIN, 0});
+						_cgi_clients.emplace(client->get_cgi_fd(), &pfd);
+						return 2;
+					}
 				}
+                if (ret == 0)
+                    pfd.events |= POLLOUT;
                 if (ret == -1)
                 {
                     client->close_connection();
@@ -143,7 +151,7 @@ int WebServer::fd_is_cgi(pollfd pfd)
 		if ((client = srv.get_client(it->second->fd)))
 		{
 			std::cout << "[INFO] Reads from CGI" << std::endl;
-			if (pfd.revents & (POLLNVAL) || client->readFromCGI())
+			if ((pfd.revents & (POLLIN | POLLHUP) && client->readFromCGI()) || pfd.revents & POLLNVAL)
 			{
 				std::cout << "[INFO] CGI has finished" << std::endl;
 				it->second->events |= POLLOUT;

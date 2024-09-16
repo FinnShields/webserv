@@ -17,7 +17,7 @@ const std::string Response::ABSOLUTE_PATH = Response::setAbsolutePath();
 const std::string Response::setAbsolutePath()
 {
     std::filesystem::path exePath = std::filesystem::read_symlink("/proc/self/exe");
-    return exePath.parent_path().string() + '/';
+    return "/" + exePath.parent_path().string() + '/';
 }
 
 Response::Response(int fd, Request &req, Server &srv) : _fd(fd), _req(req), _srv(srv), _file(0), _code(0){}
@@ -271,9 +271,9 @@ const std::string Response::runCGI()
 	if (_cgi.get() == nullptr)
 	{
 		std::cerr << "------- CGI ----------\n";
-		_cgi = std::make_unique<Cgi>(_req, _srv, _index_virt);
+        _cgi = std::make_unique<Cgi>(_req, _srv, _index_virt, getPath());
 		_cgi->start();
-		_code = _cgi->getStatus() == 0 ? 200 : _cgi->getStatus();
+		_code = _cgi->getStatus();
 		std::cerr << "CGI status = " << _code << "\n";
 		std::cout << "------- END ----------" << std::endl;
 		if (_req.getStatus() == 0 || !_req.getBodyRawBytes().empty())
@@ -281,6 +281,7 @@ const std::string Response::runCGI()
 	}
 	else
 		_cgi->writeToPipe(_req.getBodyRawBytes().data(), _req.getBodyRawBytes().size());
+    
 	return _cgi->getStatus() == 0 ? "" : getErrorPage(_cgi->getStatus());
 }
 
@@ -290,6 +291,7 @@ const std::string Response::readfromCGI()
 	if (tmp.compare("HTTP/1.1 500\n") == 0)
 		return getErrorPage(500);
 	_response += tmp;
+    std::cout << "CGI STATUS: " << _cgi->getStatus() << std::endl;
 	if (_cgi->getStatus() == 200)
 		return STATUS_LINE_200 + _response;
 	return "";
@@ -685,7 +687,7 @@ void Response::display() const
     std::cout << "---------------------------" << std::endl;
 }
 
-int Response::getcode() const
+int Response::  getcode() const
 {
     return _code;
 }

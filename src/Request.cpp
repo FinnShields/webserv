@@ -119,8 +119,10 @@ bool Request::IsBodyIncomplete()
 }
 int Request::isCGI()
 {
-    if ((_target.size() > 9 && !_target.substr(0, 9).compare("/cgi-bin/")))
+    if ((_target.size() > 9 && !_target.substr(0, 9).compare("/cgi-bin/"))){
+		_cgi_flag = true;
 		return true;
+	}
 	size_t index_virt = _srv->getVirtHostIndex(get("host"));
 	auto value = _srv->config.getBestValues(index_virt, _target, "cgi_ext", {""});
 	if (value[0] == "")
