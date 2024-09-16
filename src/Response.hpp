@@ -74,8 +74,7 @@ class Response
 		const std::string getErrorPage(int code);
 		const std::string appendfile();
 
-        int saveFile();
-		int createFile();      
+		int createFile(int);      
         int deleteFile(const std::string &);
 		std::string createCookie();
 		bool isMethodValid(std::string &method);
@@ -87,7 +86,7 @@ class Response
         bool isHtml(const std::string fileName);
         bool load_directory_entries(const std::string directoryPath, t_vector_str &directories, t_vector_str &files);
         std::string getFileName(const std::string filepath);
-        int setFileName(std::vector<char> &bodyRaw);
+        int setFileName(std::vector<char> &bodyRaw, int);
         void setDirectoryToFileName();
         void RenameIfFileExists();
         void checkOtherBoundary(std::vector<char> &bodyRaw, size_t &end, size_t offset);

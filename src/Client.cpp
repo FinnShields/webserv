@@ -72,7 +72,7 @@ int Client::readFromCGI()
 int Client::handle_request()
 {
     if (!_request)
-        _request = std::make_unique<Request>();
+        _request = std::make_unique<Request>(_server);
     int ret = _request->read(_fd);
     // std::cout << "[INFO] request->read() returns: " << ret << std::endl;
     if (ret == 3 || ret == -1)

@@ -233,7 +233,6 @@ void WebServer::run()
 			return (perror("poll"));
 		if (!checkTimer(SOCKETTIMEOUT) && poll_result == 0)
 			continue;
-		std::cerr << "No timed out" << std::endl;
 		try
 		{
 			iterateAndRunActiveFD();
