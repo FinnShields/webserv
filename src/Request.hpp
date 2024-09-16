@@ -19,6 +19,7 @@
 # include <vector>
 # include "Client.hpp"
 # include "Cgi.hpp"
+# include "Server.hpp"
 
 class Cgi;
 class Server;
@@ -38,6 +39,7 @@ class Request
         int _status;
 		bool _chunkedReqComplete;
 		bool _incompleteChunk;
+		bool _cgi_flag = false;
 		void parse();
 		bool extractMethod(std::string& input);
 		void extractTarget(std::string& input);
@@ -64,6 +66,7 @@ class Request
         ssize_t getBodyTotalSize();
 		void display();
 		int getStatus();
+		bool isCGIflag();
 };
 
 #endif

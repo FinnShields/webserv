@@ -33,6 +33,7 @@ Request& Request::operator=(const Request& r)
 	_target = r._target;
     _recvReturnTotal = r._recvReturnTotal;
 	_chunkedReqComplete = r._chunkedReqComplete;
+	_cgi_flag = r._cgi_flag;
 	return (*this);
 }
 
@@ -118,8 +119,30 @@ bool Request::IsBodyIncomplete()
 }
 int Request::isCGI()
 {
-     return (_target.size() > 9 && !_target.substr(0, 9).compare("/cgi-bin/"));
+    if ((_target.size() > 9 && !_target.substr(0, 9).compare("/cgi-bin/")))
+		return true;
+	size_t index_virt = _srv->getVirtHostIndex(get("host"));
+	auto value = _srv->config.getBestValues(index_virt, _target, "cgi_ext", {""});
+	if (value[0] == "")
+         return false;
+    size_t pos_cgi = 1;   //  start from /
+    size_t pos_dot = _target.find('.', pos_cgi);
+    if (pos_dot == std::string::npos || pos_dot == _target.size() - 1)
+        return false;
+    size_t pos_query = _target.find('?', pos_dot);
+    size_t pos_info = _target.find('/', pos_dot);
+    size_t ext_len = std::min(_target.size(), std::min(pos_query,pos_info)) - pos_dot;
+    std::string _ext = _target.substr(pos_dot, ext_len);
+	if (find(value.begin(), value.end(), _ext) == value.end())
+         return false;
+	_cgi_flag = true;
+    return true;
 }
+
+bool Request::isCGIflag(){
+	return _cgi_flag;
+}
+
 bool Request::isWholeHeader()
 {
     char *ch = strstr(_reqRaw.data(), "\r\n\r\n");
