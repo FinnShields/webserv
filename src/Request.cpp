@@ -12,7 +12,7 @@
 
 #include "Request.hpp"		
 
-Request::Request()
+Request::Request(Server *srv) : _srv(srv)
 {
 	_recvReturnTotal = 0;
     _bodyTotalSize = 0;
@@ -24,8 +24,9 @@ Request::Request()
 Request::~Request()
 {}
 
-Request& Request::operator=(const Request& r)
+Request& Request::operator=(const Request& r) 
 {
+	_srv = r._srv;
 	_headers = r._headers;
 	_method = r._method;
 	_version = r._version;
@@ -100,7 +101,7 @@ int	Request::read(int _fd)
 	}
     for (size_t i = 0; i < (size_t) recvReturn; i++)
 		_reqRaw.push_back(buffer[i]);
-	std::cout << "reqraw pushed succesful" << std::endl;
+	// std::cout << "reqraw pushed succesful" << std::endl;
     _status == 1 ? resetBody() : _status == 2 ? moreChunks() : parse();
     if (_status == 0 && !isWholeHeader())
         return 3;

@@ -194,47 +194,41 @@ const std::string Response::get()
 
 const std::string Response::post()
 {
-    if (!_req.get("content-type").compare(0, 19, "multipart/form-data")) {
-        _code = 201;
-        _message = "Created";
-		try
-        {
-            createFile();
-        }
-        catch(const std::exception& e)
-        {
-            std::cerr << "[ERROR] " << e.what() << '\n';
-            _file = -1;
-            return getErrorPage(500);
-        }
+    _code = 201;
+    _message = "Created";
+    try
+    {
+        _code = createFile(0);
     }
-    else {
-        _code = 204;
-        _message = "No Content";
+    catch(const std::exception& e)
+    {
+        std::cerr << "[ERROR] " << e.what() << '\n';
+        _file = -1;
+        return getErrorPage(500);
     }
+    _message = _code == 201 ? "Created" :
+            _code == 204 ? "No Content" :
+            "Unknown error";
     return get();
 }
 
 const std::string Response::put()
 {
-    if (!_req.get("content-type").compare(0, 19, "multipart/form-data")) {
-        _code = 201;
-        _message = "Created";
-		try
-        {
-            createFile();
-        }
-        catch(const std::exception& e)
-        {
-            std::cerr << "[ERROR] " << e.what() << '\n';
-            _file = -1;
-            return getErrorPage(500);
-        }
+    _code = 201;
+    _message = "Created";
+    try
+    {
+        _code = createFile(1);
     }
-    else {
-        _code = 204;
-        _message = "No Content";
+    catch(const std::exception& e)
+    {
+        std::cerr << "[ERROR] " << e.what() << '\n';
+        _file = -1;
+        return getErrorPage(500);
     }
+    _message = _code == 201 ? "Created" :
+            _code == 204 ? "No Content" :
+            "Unknown error";
     return get();
 }
 
@@ -407,7 +401,7 @@ char Response::decodeChar(const char *ch)
     return (rtn);
 }
 
-int Response::setFileName(std::vector<char> &bodyRaw)
+int Response::setFileName(std::vector<char> &bodyRaw, int type)
 {
     std::vector<char>::iterator it = bodyRaw.begin();
     it += findString(bodyRaw, "filename", 0) + 10;
@@ -416,7 +410,8 @@ int Response::setFileName(std::vector<char> &bodyRaw)
     if (_fileName.empty())
         throw std::invalid_argument("No filename");
     setDirectoryToFileName();
-    RenameIfFileExists();
+    if (type == 0)
+        RenameIfFileExists();
     return 1;
 }
 
@@ -478,15 +473,15 @@ int Response::checkBodySize(std::vector<char> &bodyRaw)
     return 0;
 }
 
-int Response::createFile()
+int Response::createFile(int type)
 {
     std::vector<char> bodyRaw = _req.getBodyRawBytes();
 	if (bodyRaw.empty())
     {
 		std::cout << "[INFO] No Body" << std::endl;
-        return 400;
+        return 204;
     }
-    setFileName(bodyRaw);
+    setFileName(bodyRaw, type);
     _boundary = _req.get("Content-Type").substr(31);
     size_t start = findString(bodyRaw, "\r\n\r\n", 0) + 4;
     size_t end = findString(bodyRaw, _boundary+"--", 0);
@@ -510,7 +505,7 @@ const std::string Response::appendfile()
 {
     if (_file == 1)
     {
-        _filestream.open(_fileName, std::ios::binary | std::ios::app);
+        _filestream.open(_fileName, std::ios::binary);
         _file = 2;
     }
     std::vector<char> bodyRaw = _req.getBodyRawBytes();
@@ -521,6 +516,7 @@ const std::string Response::appendfile()
     end = end == std::string::npos ? bodyRaw.size() : end - 5;
 	if (_filestream.is_open())
     {
+        _filestream.seekp(_fileCurrentSize);
         _filestream.write(bodyRaw.data(), end);
         _fileCurrentSize += end;
         std::cout << "[INFO] File appended " << _req.getBodyTotalSize() << "/" << _req.getHeader("content-length") << std::endl;

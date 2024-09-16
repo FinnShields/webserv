@@ -25,6 +25,7 @@ class Cgi;
 class Request
 {
 	private:
+		Server *_srv;
 		std::string _method;
 		std::string _target;
 		std::string _version;
@@ -50,7 +51,7 @@ class Request
         bool    isWholeHeader();
 		bool IsBodyIncomplete();
 	public:
-		Request();
+		Request(Server *srv);
 		Request(const Request&);
 		Request& operator=(const Request&);
 		~Request();
