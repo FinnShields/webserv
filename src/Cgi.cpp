@@ -406,7 +406,7 @@ void Cgi::setEnvMap(){
 	_env_map["SERVER_SOFTWARE"] = "Webserv_FAB/1.0";
     _env_map["DOCUMENT_ROOT"] = _server.config.getValues(_index_virt, _target, "root", {""})[0];
     if (_env_map["DOCUMENT_ROOT"].empty())
-        _env_map["DOCUMENT_ROOT"] = _server.config.getFirst("main","root","") + "/cgi-bin";
+        _env_map["DOCUMENT_ROOT"] = _server.config.getFirst("main","root",""); // + "/cgi-bin";
 
     _env_map["CONTENT_LENGTH"] = _request.getHeader("content-length");
 	_env_map["CONTENT_TYPE"] = _request.getHeader("content-type");
@@ -416,6 +416,7 @@ void Cgi::setEnvMap(){
     _env_map["REQUEST_METHOD"] = _request.get("method");
     _env_map["SCRIPT_FILENAME"] = _env_map["DOCUMENT_ROOT"] + "/" + _target_file_path;
     _env_map["PATH_INFO"] = _target_path_info;
+    //_env_map["PATH_INFO"] = _env_map["DOCUMENT_ROOT"];
     _env_map["QUERY_STRING"] = _target_query;
 
     _env_map["PATH_TRANSLATED"] = _env_map["DOCUMENT_ROOT"] + _env_map["PATH_INFO"];

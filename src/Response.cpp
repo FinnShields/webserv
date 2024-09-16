@@ -149,8 +149,9 @@ const std::string Response::run()
 
 bool Response::isCGI()
 {
-    if (_srv.config.getBestValues(_index_virt, _target, "cgi_ext", {""})[0] != "")
-         return true;
+    return _req.isCGIflag();
+    //if (_srv.config.getBestValues(_index_virt, _target, "cgi_ext", {""})[0] != "")
+    //     return true;
     //if (_target.size() > 9 && _target.substr(0, 9).compare("/cgi-bin/") == 0)
     //    return true;
     return false;
