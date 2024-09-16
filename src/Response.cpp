@@ -1,5 +1,5 @@
-/* ************************************************************************** */
 /*                                                                            */
+/* ************************************************************************** */
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
@@ -304,11 +304,10 @@ const std::string Response::load_file(std::string filepath)
 		return (getErrorPage(404));
 	
 	std::stringstream buffer;
-	if (_req.get("cookie").empty())
-		buffer << createCookie();
-	else
-		_srv.saveCookieInfo(_req.getRef("cookie"));
-	buffer << "\r\n";
+	// if (_req.get("cookie").empty())
+	// 	buffer << createCookie();
+	// else
+	// 	_srv.saveCookieInfo(_req.getRef("cookie"));
 	
     std::string response = (!_req.get("Method").compare("POST")) ? STATUS_LINE_201 + ("Location: " + _fileName + "\r\n") : 
                             STATUS_LINE_200;
@@ -317,7 +316,7 @@ const std::string Response::load_file(std::string filepath)
 		buffer << _filestream_read.rdbuf();
         _filestream_read.close();
         response += "Content-Type: text/html\r\n";
-        response += "Content-Length: " + std::to_string(buffer.str().size()) + "\r\n";
+        response += "Content-Length: " + std::to_string(buffer.str().size()) + "\r\n\r\n";
         if (_req.get("method").compare("HEAD"))
             response += buffer.str();
     }
@@ -327,6 +326,8 @@ const std::string Response::load_file(std::string filepath)
         response += "Content-Type: application/octet-stream\r\n\r\n";
         if (_req.get("method").compare("HEAD"))
             _file = 3;
+        else
+            _filestream_read.close();
 	}
 	return response;
 }
@@ -581,9 +582,9 @@ std::string Response::createCookie()
 	return ("Set-Cookie: session-id=" + std::to_string(newSessionId) + "\r\n");
 }
 
-bool Response::isMethodValid(std::string &method)
+bool Response::isMethodValid(std::string method)
 {
-	t_vector_str mtd_default = DEFAULT_METHOD;
+    t_vector_str mtd_default = DEFAULT_METHOD;
 	if (find(mtd_default.begin(), mtd_default.end(), method) == mtd_default.end())
 	{
 		std::cout << "no supported method="  << method << "\n";
@@ -594,7 +595,7 @@ bool Response::isMethodValid(std::string &method)
 	if (find(mtd_allowed.begin(), mtd_allowed.end(), method) == mtd_allowed.end())
 	{
 		_response = getErrorPage(405);
-		return false;
+        return false;
 	}
 	return true;
 }

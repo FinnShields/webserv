@@ -103,7 +103,8 @@ bool Client::responseReady()
 int Client::send_response()
 {
     ssize_t bytesSent;
-	_res->display();
+	// _res->display();
+    std::cout << _response << std::endl;
     if ((bytesSent = send(_fd, _response.c_str(), std::min((size_t) 100000, _response.size()), 0)) < 0)
     {
         perror("Send error");

@@ -21,6 +21,7 @@
 # include "Cgi.hpp"
 
 class Cgi;
+class Server;
 
 class Request
 {

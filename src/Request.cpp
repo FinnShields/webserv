@@ -56,9 +56,8 @@ void Request::extractTarget(std::string& input)
 	size_t end;
 
 	start = input.find_first_of(' ') + 1;
-	std::cout << "START= " << start << std::endl;
 	end = 0;
-	while (input.at(start + end) != ' ')
+	while ((start + end) < input.size() && input.at(start + end) != ' ')
 		end++;
 	_target = input.substr(start, end);
 }
@@ -72,7 +71,7 @@ void Request::extractVersion(std::string& input)
 		return ;
 	}
 	size_t end = 0;
-	while (input.at(start + end) != '\r')
+	while (start + end < input.size() && input.at(start + end) != '\r')
 		end++;
 	_version = input.substr(start, end);
 }

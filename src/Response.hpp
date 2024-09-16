@@ -77,7 +77,7 @@ class Response
 		int createFile(int);      
         int deleteFile(const std::string &);
 		std::string createCookie();
-		bool isMethodValid(std::string &method);
+		bool isMethodValid(std::string method);
 		bool isCGI();
 
         //Helper functions
