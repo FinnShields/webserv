@@ -46,7 +46,7 @@ class Request
 		void extractVersion(std::string& input);
 		void extractHeaders(std::string& input);
 		void extractBody();
-		void handleChunks(char *reqArray, size_t i);
+		void handleChunks(char *reqArray, size_t i, size_t max_size);
 		void moreChunks();
         void resetBody();
         int readContentLength(int);
