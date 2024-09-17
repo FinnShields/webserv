@@ -201,6 +201,8 @@ void	Request::extractHeaders(std::string& input)
 
 void	Request::handleChunks(char *reqArray, size_t start, size_t max_size)
 {
+	if (start == max_size)
+		return ;
 	size_t chunkLength = std::strtol(&reqArray[start], nullptr, 16);
 	std::vector<char> contentRawBytes;
 
@@ -252,14 +254,16 @@ void	Request::moreChunks()
 			if (i < _reqRaw.size() - 1 && _reqRaw[i] != '\r' && _reqRaw[i + 1] != '\n')
 				_bodyRawBytes.push_back(_reqRaw[i]);
 			else if (i < _reqRaw.size()-1 && _reqRaw[i] == '\r' && _reqRaw[i + 1] == '\n')
+			{
+				_incompleteChunk = false;
 				break ;
+			}
+			else
+				_bodyRawBytes.push_back(_reqRaw[i]);
 			i ++;
 		}
-		if (i + 2 <= _reqRaw.size())
-		{
-			_incompleteChunk = false;
-			handleChunks(&_reqRaw[0], i + 2, _reqRaw.size());
-		}	
+		if (!_incompleteChunk)
+			handleChunks(&_reqRaw[0], i + 2, _reqRaw.size());	
 	}
 	else
 		handleChunks(&_reqRaw[0], 0, _reqRaw.size());
@@ -369,6 +373,11 @@ void	Request::display()
 	if (!get("content-type").compare(0, 19, "multipart/form-data"))
 	{
 		std::cout << "_Body: <file data>" << std::endl << "---------------------" << std::endl;
+		return ;
+	}
+	if (!get("transfer-encoding").compare("chunked"))
+	{
+		std::cout << "_Body: <chunked data>" << std::endl << "---------------------" << std::endl;
 		return ;
 	}
 	if (!_bodyRawBytes.empty())
