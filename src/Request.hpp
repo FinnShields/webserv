@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:41 by fshields          #+#    #+#             */
-/*   Updated: 2024/09/13 10:11:10 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/17 14:18:29 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,7 +62,7 @@ class Request
 		const std::string get(std::string toGet);
 		const std::string getHeader(std::string toGet);
 		std::string& getRef(std::string toGet);
-		std::vector<char> getBodyRawBytes();
+		std::vector<char> &getBodyRawBytes();
         ssize_t getBodyTotalSize();
 		void display();
 		int getStatus();

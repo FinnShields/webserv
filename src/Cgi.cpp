@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/06 13:41:04 by apimikov          #+#    #+#             */
-/*   Updated: 2024/09/13 13:30:31 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/17 14:25:53 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -366,8 +366,8 @@ void Cgi::_runChildCgi(){
 		close(i);
 	if (DEBUG)
 	{
-		std::cout << "CGI: chdir to " << _target_foldername << "\n";
-		std::cout << "CGI: execve for ->" << _argv[0] << "<- ->" << _argv[1] << "<- \n";
+		std::cerr << "CGI: chdir to " << _target_foldername << "\n";
+		std::cerr << "CGI: execve for ->" << _argv[0] << "<- ->" << _argv[1] << "<- \n";
 	}
     std::string path = _target_foldername;
 	if (DEBUG)
