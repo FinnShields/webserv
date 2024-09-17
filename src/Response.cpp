@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/17 12:00:31 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/17 13:41:53 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -94,7 +94,7 @@ const std::string Response::getNextChunk()
         std::cerr << "[ERROR] File is not open" << std::endl;
         return getErrorPage(500);
     }
-    if (_filestream_read.eof())
+    if (_filestream_read.eof() || _filestream_read.peek() == std::ifstream::traits_type::eof())
     {
         std::cout << "[INFO] EOF reached" << std::endl;
         _file = 0;
