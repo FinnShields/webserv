@@ -411,7 +411,10 @@ char Response::decodeChar(const char *ch)
 int Response::setFileName(std::vector<char> &bodyRaw, int type)
 {
     std::vector<char>::iterator it = bodyRaw.begin();
-    it += findString(bodyRaw, "filename", 0) + 10;
+    size_t fileNamePos = findString(bodyRaw, "filename", 0);
+    if (fileNamePos == std::string::npos)
+        throw std::invalid_argument("No filename");
+    it += fileNamePos + 10;
     while (*it != '\"')
         _fileName.append(1, *(it++));
     if (_fileName.empty())
