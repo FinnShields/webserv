@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/17 11:51:03 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/17 12:00:31 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -309,11 +309,11 @@ const std::string Response::load_file(std::string filepath)
 		return (getErrorPage(404));
 	
 	std::stringstream buffer;
-	if (_req.get("cookie").empty())
-		buffer << createCookie();
-	else
-		_srv.saveCookieInfo(_req.getRef("cookie"));
-	buffer << "\r\n";
+	// if (_req.get("cookie").empty())
+	// 	buffer << createCookie();
+	// else
+	// 	_srv.saveCookieInfo(_req.getRef("cookie"));
+	// buffer << "\r\n";
 	
     std::string response = (!_req.get("Method").compare("POST")) ? STATUS_LINE_201 + ("Location: " + _fileName + "\r\n") : 
                             STATUS_LINE_200;
@@ -322,7 +322,7 @@ const std::string Response::load_file(std::string filepath)
 		buffer << _filestream_read.rdbuf();
         _filestream_read.close();
         response += "Content-Type: text/html\r\n";
-        response += "Content-Length: " + std::to_string(buffer.str().size() - 2) + "\r\n";
+        response += "Content-Length: " + std::to_string(buffer.str().size()) + "\r\n\r\n";
         if (_req.get("method").compare("HEAD"))
             response += buffer.str();
     }
@@ -585,7 +585,7 @@ std::string Response::createCookie()
 		newSessionId = (size_t) rand();
 	}
 	_srv.setNewCookie(newSessionId);
-	return ("Set-Cookie: session-id=" + std::to_string(newSessionId) + "\r\n");
+	return ("Set-Cookie: SID=" + std::to_string(newSessionId) + "\r\n");
 }
 
 bool Response::isMethodValid(std::string method)

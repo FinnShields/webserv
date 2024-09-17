@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/09/13 10:13:48 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/17 13:34:54 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -100,11 +100,19 @@ int	Request::read(int _fd)
         return -1;
 	}
     for (size_t i = 0; i < (size_t) recvReturn; i++)
+	{
 		_reqRaw.push_back(buffer[i]);
-	// std::cout << "reqraw pushed succesful" << std::endl;
-    _status == 1 ? resetBody() : _status == 2 ? moreChunks() : parse();
+		// if (buffer[i] == '\r')
+		// 	std::cout << "\\r";
+		// else if (buffer[i] == '\n')
+		// 	std::cout << "\\n";
+		// else 
+		// 	std::cout << buffer[i];
+	}
+	std::cout << std::endl;
     if (_status == 0 && !isWholeHeader())
-        return 3;
+		return 3;
+    _status == 1 ? resetBody() : _status == 2 ? moreChunks() : parse();
     _reqRaw.clear();
     _status = !_headers["transfer-encoding"].empty() ? 2 :
         !_headers["content-length"].empty() ? 1 : 0; 
@@ -147,10 +155,14 @@ bool Request::isCGIflag(){
 
 bool Request::isWholeHeader()
 {
-    char *ch = strstr(_reqRaw.data(), "\r\n\r\n");
-    if (!ch)
-        return false;
-    return true;
+	if (_reqRaw.size() < 4)
+		return false;
+	for (auto it = _reqRaw.begin(); it + 3 != _reqRaw.end(); it++)
+	{
+		if (*it == '\r' && *(it + 1) == '\n' && *(it + 2) == '\r' && *(it + 3) == '\n')
+			return true;
+	}
+	return false;
 }
 void	Request::extractHeaders(std::string& input)
 {

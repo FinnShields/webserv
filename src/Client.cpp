@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/13 10:04:19 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/17 12:27:04 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -78,6 +78,7 @@ int Client::handle_request()
     int ret = _request->read(_fd);
     if (ret == 3 || ret == -1)
     {
+		std::cout << "[INFO] Request " << ((ret == 3) ? "has unread headers" : "failed/is empty") << std::endl;
         return ret;
     }
 	if (ret == 2)
@@ -107,7 +108,7 @@ int Client::send_response()
 {
     ssize_t bytesSent;
 	// _res->display();
-    std::cout << _response << std::endl;
+    std::cout << "---response----\n" << _response << "\n----END----" << std::endl;
     if ((bytesSent = send(_fd, _response.c_str(), std::min((size_t) 100000, _response.size()), 0)) < 0)
     {
         perror("Send error");
