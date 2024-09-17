@@ -3,7 +3,6 @@
   <head>
     <title>FAB WebServer</title>
     <script>
-      function beforeSubmit()
       {
         var fileName =  document.getElementById('fileInput').value.toLowerCase();
         if (!fileName.endsWith('.txt'))
@@ -17,7 +16,7 @@
   </head>
   <body>
     <p>Welcome to FAB WebServer.</p>
-    <form method="post" enctype="multipart/form-data" onsubmit="return beforeSubmit()">
+    <form method="post" enctype="multipart/form-data">
       <label for="fileInput">Upload a .txt file!</label>
       <input id="fileInput" name="fileInput" type="file" placeholder="Upload a .txt file"/>
       <button id="uploadButton">Upload</button>

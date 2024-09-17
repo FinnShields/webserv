@@ -1,12 +1,12 @@
-/*                                                                            */
 /* ************************************************************************** */
+/*                                                                            */
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/13 12:49:01 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/17 11:51:03 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -110,7 +110,6 @@ const std::string Response::getNextChunk()
         std::cerr << "[ERROR] File read error" << std::endl;
         return getErrorPage(500);
     }
-    // std::cout << "[INFO] Chunk size = " << bytesRead << std::endl;
     std::stringstream hexStream;
     hexStream << std::hex << bytesRead;
     std::string chunk = hexStream.str() + "\r\n" + std::string(buffer, bytesRead) + "\r\n";
@@ -129,7 +128,6 @@ const std::string Response::run()
     std::string method = _req.get("method");
 	_target = _req.get("target");
 	_index_virt = _srv.getVirtHostIndex(_req.get("host"));
-	// std::cout << "[INFO] Request is addressed to server " << _srv.index << "\n";
 	if (_srv.index != _index_virt)
 		std::cout << "[INFO] Request is readdressed to virtual server " << _index_virt << "\n";
     if(!check_body_size()) 
@@ -246,8 +244,10 @@ const std::string Response::getErrorPage(int code)
 	std::stringstream buffer;
 	buffer << errorPage.rdbuf();
 	errorPage.close();
-    std::string responseString = "HTTP/1.1 " + std::to_string(code) + " " + _message + "\r\nContent-Type: text/html\r\n\r\n";
-	responseString += buffer.str();
+    std::string responseString = "HTTP/1.1 " + std::to_string(code) + " " + _message + "\r\nContent-Type: text/html\r\n";
+    responseString += "Content-Length: " + std::to_string(buffer.str().size()) + "\r\n\r\n";
+    if (_req.get("method").compare("HEAD"))
+	    responseString += buffer.str();
 	return (responseString);
 }
 
@@ -309,10 +309,11 @@ const std::string Response::load_file(std::string filepath)
 		return (getErrorPage(404));
 	
 	std::stringstream buffer;
-	// if (_req.get("cookie").empty())
-	// 	buffer << createCookie();
-	// else
-	// 	_srv.saveCookieInfo(_req.getRef("cookie"));
+	if (_req.get("cookie").empty())
+		buffer << createCookie();
+	else
+		_srv.saveCookieInfo(_req.getRef("cookie"));
+	buffer << "\r\n";
 	
     std::string response = (!_req.get("Method").compare("POST")) ? STATUS_LINE_201 + ("Location: " + _fileName + "\r\n") : 
                             STATUS_LINE_200;
@@ -321,7 +322,7 @@ const std::string Response::load_file(std::string filepath)
 		buffer << _filestream_read.rdbuf();
         _filestream_read.close();
         response += "Content-Type: text/html\r\n";
-        response += "Content-Length: " + std::to_string(buffer.str().size()) + "\r\n\r\n";
+        response += "Content-Length: " + std::to_string(buffer.str().size() - 2) + "\r\n";
         if (_req.get("method").compare("HEAD"))
             response += buffer.str();
     }
