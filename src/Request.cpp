@@ -196,33 +196,33 @@ void	Request::extractHeaders(std::string& input)
 	}
 }
 
-void	Request::handleChunks(char *reqArray, size_t start)
+void	Request::handleChunks(char *reqArray, size_t start, size_t max_size)
 {
 	size_t chunkLength = std::strtol(&reqArray[start], nullptr, 16);
 	std::vector<char> contentRawBytes;
 
 	size_t i = start;
-	while (chunkLength != 0 && i < MAX_BUFFER_SIZE)
+	while (chunkLength != 0 && i < max_size)
 	{
 		_bodyTotalSize += chunkLength;
-		while (i < MAX_BUFFER_SIZE && (isdigit(reqArray[i]) || (reqArray[i] >= 'A' && reqArray[i] <= 'E') ||
+		while (i < max_size && (isdigit(reqArray[i]) || (reqArray[i] >= 'A' && reqArray[i] <= 'E') ||
 		reqArray[i] == '\r' || reqArray[i] == '\n'))
 			i ++;
-		if (i == MAX_BUFFER_SIZE)
+		if (i == max_size)
 		{
 			_incompleteChunk = true;
 			break ;
 		}
-		while (i < MAX_BUFFER_SIZE && reqArray[i] != '\r')
+		while (i < max_size && reqArray[i] != '\r')
 			contentRawBytes.push_back(reqArray[i++]);
-		if (i == MAX_BUFFER_SIZE)
+		if (i == max_size)
 		{
 			_incompleteChunk = true;
 			break ;
 		}
-		while (i < MAX_BUFFER_SIZE && !isdigit(reqArray[i]) && !(reqArray[i] >= 'A' && reqArray[i] <= 'E'))
+		while (i < max_size && !isdigit(reqArray[i]) && !(reqArray[i] >= 'A' && reqArray[i] <= 'E'))
 			i ++;
-		if (i == MAX_BUFFER_SIZE)
+		if (i == max_size)
 		{
 			_incompleteChunk = true;
 			break ;
@@ -252,14 +252,14 @@ void	Request::moreChunks()
 				break ;
 			i ++;
 		}
-		if (i != _reqRaw.size())
+		if (i + 2 <= _reqRaw.size())
 		{
 			_incompleteChunk = false;
-			handleChunks(&_reqRaw[0], i + 2);
+			handleChunks(&_reqRaw[0], i + 2, _reqRaw.size());
 		}	
 	}
 	else
-		handleChunks(&_reqRaw[0], 0);
+		handleChunks(&_reqRaw[0], 0, _reqRaw.size());
 }
 
 void	Request::extractBody()
@@ -273,7 +273,7 @@ void	Request::extractBody()
 	ch += 4;
 	size_t start = ch - reqArray;
 	if (!get("transfer-encoding").compare("chunked"))
-		return handleChunks(reqArray, start);
+		return handleChunks(reqArray, start, _reqRaw.size());
 	for (size_t i = 0; start + i < (size_t) _reqRaw.size(); i++)
 		_bodyRawBytes.push_back(_reqRaw[start + i]);
     _bodyTotalSize += _bodyRawBytes.size();
