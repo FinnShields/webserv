@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/06 13:41:04 by apimikov          #+#    #+#             */
-/*   Updated: 2024/09/17 15:13:34 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/17 17:20:55 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -165,9 +165,9 @@ ssize_t Cgi::writeToPipe(const void *buf, size_t count)
 	std::cout << "[CGI] Writing to pipe " << count << " bytes\n";
 	int bytesWritten = write(_fd_to_cgi[1], buf, count);
 	std::cout << "[CGI] Wrote to pipe " << bytesWritten << " bytes\n";
-	if (bytesWritten == -1)
-		_status = 500;
-	else if (bytesWritten == 0 || (_request.getStatus() == 1 && std::stol(_request.getHeader("content-length")) == _request.getBodyTotalSize()))
+	// if (bytesWritten == -1)
+	// 	_status = 500;
+	if (bytesWritten <= 0 || (_request.getStatus() == 1 && std::stol(_request.getHeader("content-length")) == _request.getBodyTotalSize()))
 	{
 		if (close(_fd_to_cgi[1]) == -1)
 			std::cerr << "[CGI] Failure close cgi topipe\n";
