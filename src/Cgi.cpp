@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/06 13:41:04 by apimikov          #+#    #+#             */
-/*   Updated: 2024/09/17 14:25:53 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/17 15:13:34 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -128,7 +128,7 @@ void Cgi::start(){
         runCmd();
     }
     catch (const std::runtime_error& e){
-        std::cerr << e.what() << "\n";
+        std::cerr << "Caught Exception: " << e.what() << "\n";
         _status = 500;
     }
     catch (...) {
@@ -162,9 +162,12 @@ void Cgi::runCmd(){
 
 ssize_t Cgi::writeToPipe(const void *buf, size_t count)
 {
+	std::cout << "[CGI] Writing to pipe " << count << " bytes\n";
 	int bytesWritten = write(_fd_to_cgi[1], buf, count);
 	std::cout << "[CGI] Wrote to pipe " << bytesWritten << " bytes\n";
-	if (bytesWritten == 0 || (_request.getStatus() == 1 && std::stol(_request.getHeader("content-length")) == _request.getBodyTotalSize()))
+	if (bytesWritten == -1)
+		_status = 500;
+	else if (bytesWritten == 0 || (_request.getStatus() == 1 && std::stol(_request.getHeader("content-length")) == _request.getBodyTotalSize()))
 	{
 		if (close(_fd_to_cgi[1]) == -1)
 			std::cerr << "[CGI] Failure close cgi topipe\n";
@@ -361,9 +364,9 @@ void Cgi::_runChildCgi(){
         throw std::runtime_error("dub2 error occurred!");
     if (close(_fd_to_cgi[0]) == -1 || close(_fd_from_cgi[1]) == -1)
             throw std::runtime_error("close error occurred!");
-	int max_fd = 1024;
-	for (int i = 3; i < max_fd; i++)
-		close(i);
+	// int max_fd = 1024;
+	// for (int i = 3; i < max_fd; i++)
+	// 	close(i);
 	if (DEBUG)
 	{
 		std::cerr << "CGI: chdir to " << _target_foldername << "\n";
@@ -372,8 +375,8 @@ void Cgi::_runChildCgi(){
     std::string path = _target_foldername;
 	if (DEBUG)
 			 std::cerr << "CGI: chdir to " << path << "\n";
-    chdir(path.c_str());
-    execve(_argv[0], _argv, _envp);;
+    std::cerr << "chdir returns: " << chdir(path.c_str()) << std::endl;
+    execve(_argv[0], _argv, _envp);
 	std::cout << "HTTP/1.1 500" << std::endl;
 	close(0);
     close(1);
