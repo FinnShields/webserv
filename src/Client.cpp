@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/18 13:43:59 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/18 14:50:28 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -104,7 +104,7 @@ int Client::send_response()
 {
     ssize_t bytesSent;
 	// _res->display();
-    std::cout << "---response----\n" << _response << "\n----END----" << std::endl;
+    std::cout << "---response----\n" << _response.size() << "\n----END----" << std::endl;
     if ((bytesSent = send(_fd, _response.c_str(), std::min((size_t) 10000, _response.size()), 0)) < 0)
     {
         perror("Send error");
@@ -123,6 +123,11 @@ int Client::send_response()
         _response = _res->getNextChunk();
         return 0;
     }
+	if (_request->IsBodyIncomplete())
+	{
+		std::cout << "[INFO] Request body is incomplete\n";
+		return 0;
+	}
     return 1;
 }
 

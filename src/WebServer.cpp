@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/18 13:17:52 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/18 14:48:57 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -100,13 +100,6 @@ int WebServer::fd_is_client(pollfd &pfd)
 	for (Server &srv : _servers)
 		if ((client = srv.get_client(pfd.fd)))
 		{
-            if (pfd.revents & POLLOUT)
-            {
-                if (!client->send_response())
-                    return 0;
-                client->close_connection();
-                return 1;
-            }
             if (pfd.revents & POLLIN)
             {
 			    int ret = client->handle_request();
@@ -136,6 +129,9 @@ int WebServer::fd_is_client(pollfd &pfd)
                 }
                 return 0;
             }
+            if (pfd.revents & POLLOUT)
+                if (!client->send_response())
+                    return 0;
 			client->close_connection();
 			return 1;
 		}
