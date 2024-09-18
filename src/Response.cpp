@@ -288,7 +288,7 @@ const std::string Response::runCGI()
 const std::string Response::readfromCGI()
 {
 	std::string tmp = _cgi->readFromPipe();
-	std::cout << "tmp from cgi: " << tmp.size() << "\n" << tmp << std::endl;
+	//std::cout << "tmp from cgi: " << tmp.size() << "\n" << tmp << std::endl;
 	if (tmp.find("Status: 500 Internal Server Error") != std::string::npos)
 		return STATUS_LINE_200 + tmp;
 	_response += tmp;

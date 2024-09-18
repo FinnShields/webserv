@@ -104,12 +104,12 @@ int	Request::read(int _fd)
     for (size_t i = 0; i < (size_t) recvReturn; i++)
 	{
 		_reqRaw.push_back(buffer[i]);
-		if (buffer[i] == '\r')
-			std::cout << "\\r";
-		else if (buffer[i] == '\n')
-			std::cout << "\\n";
-		else 
-			std::cout << buffer[i];
+		// if (buffer[i] == '\r')
+		// 	std::cout << "\\r";
+		// else if (buffer[i] == '\n')
+		// 	std::cout << "\\n";
+		// else 
+		// 	std::cout << buffer[i];
 	}
 	std::cout << std::endl;
     if (_status == 0 && !isWholeHeader())
