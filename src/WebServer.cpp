@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/18 11:46:47 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/18 13:17:52 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -123,8 +123,8 @@ int WebServer::fd_is_client(pollfd &pfd)
 						{
 							_fds.push_back({client->get_cgi_fd(), POLLIN, 0});
 							_cgi_clients.emplace(client->get_cgi_fd(), &pfd);
+							return 2;
 						}
-						return 2;
 					}
 				}
                 if (ret == 0)
@@ -147,6 +147,7 @@ int WebServer::fd_is_cgi(pollfd pfd)
 	auto it = _cgi_clients.find(pfd.fd);
 	if (it == _cgi_clients.end())
 		return -1;
+	std::cout << "[INFO] CGI fd: " << pfd.fd << std::endl;
 	Client *client = nullptr;
     
 	for (Server &srv : _servers)

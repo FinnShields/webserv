@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/18 13:04:35 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/18 13:13:15 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -276,12 +276,11 @@ const std::string Response::runCGI()
 		_code = _cgi->getStatus();
 		std::cerr << "CGI status = " << _code << "\n";
 		std::cout << "------- END ----------" << std::endl;
-		if (_req.getStatus() == 0)
-			_cgi->closeWritePipe();
 	}
-	else
-		_cgi->writeToPipe(_req.getBodyRawBytes().data(), _req.getBodyRawBytes().size());
-	_req.getBodyRawBytes().clear();
+	if (_req.getStatus() == 0)
+			_cgi->closeWritePipe();
+	else if (_cgi->writeToPipe(_req.getBodyRawBytes().data(), _req.getBodyRawBytes().size()))
+		_req.getBodyRawBytes().clear();
 	return _cgi->getStatus() == 0 ? "" : getErrorPage(_cgi->getStatus());
 }
 
