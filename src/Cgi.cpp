@@ -417,8 +417,8 @@ void Cgi::setEnvMap(){
     _env_map["SERVER_NAME"] = _request.getHeader("Host");
     _env_map["REQUEST_METHOD"] = _request.get("method");
     _env_map["SCRIPT_FILENAME"] = _target_file_path;
-    _env_map["PATH_INFO"] = _target_path_info;
-    //_env_map["PATH_INFO"] = _env_map["DOCUMENT_ROOT"];
+    //_env_map["PATH_INFO"] = _target_path_info;
+    _env_map["PATH_INFO"] = _target_file_path;
     _env_map["QUERY_STRING"] = _target_query;
 
     _env_map["PATH_TRANSLATED"] = _env_map["DOCUMENT_ROOT"] + _env_map["PATH_INFO"];
