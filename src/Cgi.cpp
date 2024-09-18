@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/06 13:41:04 by apimikov          #+#    #+#             */
-/*   Updated: 2024/09/18 10:18:14 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/18 12:57:36 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -163,6 +163,11 @@ void Cgi::runCmd(){
 ssize_t Cgi::writeToPipe(const void *buf, size_t count)
 {
 	std::cout << "[CGI] Writing to pipe " << count << " bytes\n";
+	if (count == 0)
+	{
+		std::cout << "CGI: No data to write\n";
+		return 0;
+	}
 	int bytesWritten = write(_fd_to_cgi[1], buf, count);
 	std::cout << "[CGI] Wrote to pipe " << bytesWritten << " bytes\n";
 	// if (bytesWritten == -1)

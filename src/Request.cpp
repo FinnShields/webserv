@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/09/18 11:41:17 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/18 12:48:23 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -243,8 +243,8 @@ void	Request::handleChunks(char *reqArray, size_t start, size_t max_size)
 
 void	Request::moreChunks()
 {
-	if (!get("content-type").compare("multipart/form-data") || _cgi_flag)
-		_bodyRawBytes.clear();
+	// if (!get("content-type").compare("multipart/form-data") || _cgi_flag)
+	// 	_bodyRawBytes.clear();
 	if (_incompleteChunk)
 	{
 		size_t i = 0;
@@ -287,8 +287,8 @@ void	Request::extractBody()
 
 void    Request::resetBody()
 {
-	if ((!get("content-type").compare(0, 19, "multipart/form-data")) || (_cgi_flag))
-		_bodyRawBytes.clear();
+	// if ((!get("content-type").compare(0, 19, "multipart/form-data")) || (_cgi_flag))
+	// 	_bodyRawBytes.clear();
     for (size_t i = 0; i < _reqRaw.size(); i++)
 		_bodyRawBytes.push_back(_reqRaw[i]);
 	_bodyTotalSize += _reqRaw.size();

@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/18 11:49:06 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/18 12:51:54 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -281,6 +281,7 @@ const std::string Response::runCGI()
 	}
 	else
 		_cgi->writeToPipe(_req.getBodyRawBytes().data(), _req.getBodyRawBytes().size());
+	_req.getBodyRawBytes().clear();
     
 	return _cgi->getStatus() == 0 ? "" : getErrorPage(_cgi->getStatus());
 }
@@ -486,7 +487,7 @@ int Response::checkBodySize(std::vector<char> &bodyRaw)
 
 int Response::createFile(int type)
 {
-    std::vector<char> bodyRaw = _req.getBodyRawBytes();
+    std::vector<char> &bodyRaw = _req.getBodyRawBytes();
 	if (bodyRaw.empty())
     {
 		std::cout << "[INFO] No Body" << std::endl;
@@ -506,6 +507,7 @@ int Response::createFile(int type)
     }
     newFile.write(bodyRaw.data() + start, end - start);
     newFile.close();
+	bodyRaw.clear();
     _fileCurrentSize = end - start;
     _file = 1;
     std::cout << "[INFO] File created  " << _req.getBodyTotalSize() << "/" << _req.getHeader("content-length") << std::endl;
@@ -516,20 +518,21 @@ const std::string Response::appendfile()
 {
     if (_file == 1)
     {
-        _filestream.open(_fileName, std::ios::binary);
+        _filestream.open(_fileName, std::ios::binary | std::ios::in | std::ios::out);
+		_filestream.seekp(_fileCurrentSize );
         _file = 2;
     }
-    std::vector<char> bodyRaw = _req.getBodyRawBytes();
+    std::vector<char> &bodyRaw = _req.getBodyRawBytes();
     if (int status = checkBodySize(bodyRaw) != 0)
         return getErrorPage(status);
     size_t end = findString(bodyRaw, _boundary + "--", 0);
     checkOtherBoundary(bodyRaw, end, 0);
     end = end == std::string::npos ? bodyRaw.size() : end - 5;
 	if (_filestream.is_open())
-    {
-        _filestream.seekp(_fileCurrentSize);
+    {   
         _filestream.write(bodyRaw.data(), end);
         _fileCurrentSize += end;
+		bodyRaw.clear();
         std::cout << "[INFO] File appended " << _req.getBodyTotalSize() << "/" << _req.getHeader("content-length") << std::endl;
         return get(); 
     }
