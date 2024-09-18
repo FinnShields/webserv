@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/06 13:41:04 by apimikov          #+#    #+#             */
-/*   Updated: 2024/09/18 12:57:36 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/18 13:03:24 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -179,8 +179,12 @@ ssize_t Cgi::writeToPipe(const void *buf, size_t count)
 		else
 			std::cerr << "[CGI] closed CGI Pipe\n";
 	}
-	return bytesWritten;
-	
+	return bytesWritten;	
+}
+
+void Cgi::closeWritePipe()
+{
+	close(_fd_to_cgi[1]);
 }
 
 std::string Cgi::readFromPipe()

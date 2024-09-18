@@ -77,6 +77,7 @@ class Cgi
 		ssize_t writeToPipe(const void *buf, size_t count);
 		std::string readFromPipe();
 		int get_pipefd();
+		void closeWritePipe();
         
 };
 
