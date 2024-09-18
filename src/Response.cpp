@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/18 13:13:15 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/18 13:41:01 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -287,13 +287,14 @@ const std::string Response::runCGI()
 const std::string Response::readfromCGI()
 {
 	std::string tmp = _cgi->readFromPipe();
-	//std::cout << "tmp from cgi: " << tmp.size() << "\n" << tmp << std::endl;
+	// std::cout << "tmp from cgi: " << tmp.size() << "\n" << tmp << std::endl;
 	if (tmp.find("Status: 500 Internal Server Error") != std::string::npos)
 		return STATUS_LINE_200 + tmp;
-	_response += tmp;
+	_cgi_response.append(tmp);
+	std::cout << "_response size: " << _cgi_response.size() << std::endl;
     std::cout << "CGI STATUS: " << _cgi->getStatus() << std::endl;
 	if (_cgi->getStatus() == 200)
-		return STATUS_LINE_200 + _response;
+		return STATUS_LINE_200 + _cgi_response;
 	return "";
 }
 

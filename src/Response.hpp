@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:06:10 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/12 14:16:39 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/18 13:42:20 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,6 +62,7 @@ class Response
 		size_t _index_virt;
         std::string _response;
 		std::unique_ptr<Cgi> _cgi;
+		std::string _cgi_response = "";
 
 		const std::string redirect();
 		const std::string runCGI();
