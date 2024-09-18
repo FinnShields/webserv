@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/13 12:40:57 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/18 11:46:47 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -112,7 +112,6 @@ int WebServer::fd_is_client(pollfd &pfd)
 			    int ret = client->handle_request();
 				if (ret == 2)
 				{
-					std::cout << "[INFO] CGI is done reading" << std::endl;
 					if (client->get_cgi_fd() == -1)
 					{
 						std::cout << "CGI Pipe fd is invalid" << std::endl;
@@ -120,8 +119,11 @@ int WebServer::fd_is_client(pollfd &pfd)
 					}
 					else
 					{
-						_fds.push_back({client->get_cgi_fd(), POLLIN, 0});
-						_cgi_clients.emplace(client->get_cgi_fd(), &pfd);
+						if (_cgi_clients.find(client->get_cgi_fd()) == _cgi_clients.end())
+						{
+							_fds.push_back({client->get_cgi_fd(), POLLIN, 0});
+							_cgi_clients.emplace(client->get_cgi_fd(), &pfd);
+						}
 						return 2;
 					}
 				}
@@ -160,7 +162,7 @@ int WebServer::fd_is_cgi(pollfd pfd)
 			}
 			return 0;
 		}
-	if (client == NULL)
+	if (!client)
 	{
 		_cgi_clients.erase(pfd.fd);
 		return 1;

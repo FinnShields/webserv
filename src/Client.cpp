@@ -6,14 +6,14 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/17 15:08:06 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/18 11:30:33 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Client.hpp"
 
 
-Client::Client(int fd, Server *server) : _fd(fd), _server(server), _request(nullptr), _res(nullptr), _responseSent(false), _isCGI(false) 
+Client::Client(int fd, Server *server) : _fd(fd), _server(server), _request(nullptr), _res(nullptr), _responseSent(false) 
 {
 	starttime = std::time(NULL);
 }
@@ -69,7 +69,7 @@ int Client::readFromCGI()
 //return -1 = empty request
 //Return 0 == Request fully read
 //Return 1 == Body is not fully read
-//Return 2 == Body is fully read, wait for CGI.
+//Return 2 == CGI is waiting for body
 //Return 3 == Headers not fully read
 int Client::handle_request()
 {
@@ -82,18 +82,13 @@ int Client::handle_request()
 		std::cout << "[INFO] Request " << ((ret == 3) ? "has unread headers" : "failed/is empty") << std::endl;
         return ret;
     }
-	if (ret == 2)
-    {
-		_isCGI = true;
-    }
     if (!_res)
     {
         _res = std::make_unique<Response>(_fd, *_request, *_server);
     }
     _response = _res->run();
-    if (_res->getcode() == 413 || (_isCGI && _res->getcode() != 0))
+    if (_res->getcode() == 413 || (_request->isCGIflag() && _res->getcode() != 0))
 	{
-        _isCGI = false;
 		ret = 0;
 	}
     return ret;

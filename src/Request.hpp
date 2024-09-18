@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:41 by fshields          #+#    #+#             */
-/*   Updated: 2024/09/17 14:18:29 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/18 11:40:43 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,7 +50,7 @@ class Request
 		void moreChunks();
         void resetBody();
         int readContentLength(int);
-        int isCGI();
+        int setCGIflag();
         bool    isWholeHeader();
 		bool IsBodyIncomplete();
 	public:

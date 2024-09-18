@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/06 13:41:04 by apimikov          #+#    #+#             */
-/*   Updated: 2024/09/18 09:17:10 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/18 10:18:14 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -83,7 +83,7 @@ Cgi::~Cgi(){
 		// std::cerr << "[CGI Destructor] Failure close cgi topipe\n";
 	if (close(_fd_from_cgi[0]) == -1)
         std::cerr << "[CGI Destructor] Failure close cgi frompipe\n";
-	if (_pid > 0 && waitpid(_pid, &_status, WNOHANG) == 0)
+	if (_pid > 0)
 	{
 		kill(_pid, SIGKILL);
 		std::cerr << "[CGI Destructor] Child process killed\n";

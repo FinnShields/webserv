@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/09/17 15:11:53 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/18 11:41:17 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -104,12 +104,12 @@ int	Request::read(int _fd)
     for (size_t i = 0; i < (size_t) recvReturn; i++)
 	{
 		_reqRaw.push_back(buffer[i]);
-		if (buffer[i] == '\r')
-			std::cout << "\\r";
-		else if (buffer[i] == '\n')
-			std::cout << "\\n";
-		else 
-			std::cout << buffer[i];
+		// if (buffer[i] == '\r')
+		// 	std::cout << "\\r";
+		// else if (buffer[i] == '\n')
+		// 	std::cout << "\\n";
+		// else 
+		// 	std::cout << buffer[i];
 	}
 	std::cout << std::endl;
     if (_status == 0 && !isWholeHeader())
@@ -119,16 +119,16 @@ int	Request::read(int _fd)
     _status = !_headers["transfer-encoding"].empty() ? 2 :
         !_headers["content-length"].empty() ? 1 : 0; 
 	std::cout << "Request status: " << _status << std::endl;
-	return IsBodyIncomplete() ? 1 : isCGI() ? 2 : 0;
+	return _cgi_flag ? 2 : IsBodyIncomplete() ? 1 : 0;
 }
 
 bool Request::IsBodyIncomplete()
 {
 	if (_status == 1)
         return std::stol(_headers["content-length"]) > _bodyTotalSize ? 1 : 0;
-	return !_chunkedReqComplete ? 1 : 0;
+	return !_chunkedReqComplete || _incompleteChunk ? 1 : 0;
 }
-int Request::isCGI()
+int Request::setCGIflag()
 {
     if ((_target.size() > 9 && !_target.substr(0, 9).compare("/cgi-bin/"))){
 		_cgi_flag = true;
@@ -201,6 +201,7 @@ void	Request::extractHeaders(std::string& input)
 
 void	Request::handleChunks(char *reqArray, size_t start, size_t max_size)
 {
+	_chunkedReqComplete = false;
 	if (start == max_size)
 		return ;
 	size_t chunkLength = std::strtol(&reqArray[start], nullptr, 16);
@@ -236,15 +237,13 @@ void	Request::handleChunks(char *reqArray, size_t start, size_t max_size)
 	}
 	for (i = 0; i < contentRawBytes.size(); i++)
 		_bodyRawBytes.push_back(contentRawBytes[i]);
-	if (chunkLength != 0)
-		_chunkedReqComplete = false;
-	else
+	if (chunkLength == 0)
 		_chunkedReqComplete = true;
 }
 
 void	Request::moreChunks()
 {
-	if (!get("content-type").compare("multipart/form-data") || isCGI())
+	if (!get("content-type").compare("multipart/form-data") || _cgi_flag)
 		_bodyRawBytes.clear();
 	if (_incompleteChunk)
 	{
@@ -288,7 +287,7 @@ void	Request::extractBody()
 
 void    Request::resetBody()
 {
-	if ((!get("content-type").compare(0, 19, "multipart/form-data")) || (isCGI()))
+	if ((!get("content-type").compare(0, 19, "multipart/form-data")) || (_cgi_flag))
 		_bodyRawBytes.clear();
     for (size_t i = 0; i < _reqRaw.size(); i++)
 		_bodyRawBytes.push_back(_reqRaw[i]);
@@ -313,6 +312,8 @@ void	Request::parse()
 	extractBody();
 	// std::cout << "Extract " << i++ << " OK" << std::endl;
     display();
+	setCGIflag();
+	std::cout << "is cgi: " << _cgi_flag << std::endl;
 }
 
 const std::string	Request::get(std::string toGet)
