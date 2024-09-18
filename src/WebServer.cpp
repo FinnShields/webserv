@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/18 14:48:57 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/19 02:22:09 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -112,10 +112,14 @@ int WebServer::fd_is_client(pollfd &pfd)
 					}
 					else
 					{
-						if (_cgi_clients.find(client->get_cgi_fd()) == _cgi_clients.end())
+						if (_cgi_readfd_clients.find(client->get_cgi_fd()) == _cgi_readfd_clients.end())
 						{
 							_fds.push_back({client->get_cgi_fd(), POLLIN, 0});
-							_cgi_clients.emplace(client->get_cgi_fd(), &pfd);
+							_cgi_readfd_clients.emplace(client->get_cgi_fd(), &pfd);
+							_fds.push_back(client->getCGIwritepollfd());
+							_cgi__writefd_clients.emplace(client->getCGIwritepollfd().fd, &pfd);
+							std::cout << "[INFO] CGI fd: " << client->get_cgi_fd() << std::endl;
+							std::cout << "[INFO] CGI write fd: " << client->getCGIwritepollfd().fd << std::endl;
 							return 2;
 						}
 					}
@@ -140,8 +144,8 @@ int WebServer::fd_is_client(pollfd &pfd)
 
 int WebServer::fd_is_cgi(pollfd pfd)
 {
-	auto it = _cgi_clients.find(pfd.fd);
-	if (it == _cgi_clients.end())
+	auto it = _cgi_readfd_clients.find(pfd.fd);
+	if (it == _cgi_readfd_clients.end())
 		return -1;
 	std::cout << "[INFO] CGI fd: " << pfd.fd << std::endl;
 	Client *client = nullptr;
@@ -154,17 +158,52 @@ int WebServer::fd_is_cgi(pollfd pfd)
 			{
 				std::cout << "[INFO] CGI has finished" << std::endl;
 				it->second->events |= POLLOUT;
-				_cgi_clients.erase(pfd.fd);
+				_cgi_readfd_clients.erase(pfd.fd);
 				return 1;
 			}
 			return 0;
 		}
 	if (!client)
 	{
-		_cgi_clients.erase(pfd.fd);
+		_cgi_readfd_clients.erase(pfd.fd);
 		return 1;
 	}
 	return 0;
+}
+
+int WebServer::fd_is_cgiwrite(pollfd &pfd)
+{
+	auto it = _cgi__writefd_clients.find(pfd.fd);
+	if (it == _cgi__writefd_clients.end())
+		return -1;
+	std::cout << "[INFO] CGI write fd: " << pfd.fd << std::endl;
+	Client *client = nullptr;
+
+	for (Server &srv : _servers)
+		if ((client = srv.get_client(it->second->fd)))
+		{
+			std::cout << "[INFO] Writes to CGI" << std::endl;
+			if (pfd.revents & POLLOUT)
+			{
+				if (client->writeToCgi() == 0)
+				{
+					std::cout << "[INFO] body is emptied" << std::endl;
+					pfd.events = 0;
+					if (client->isRequestComplete())
+					{
+						std::cout << "[INFO] Request is complete" << std::endl;	
+						_cgi__writefd_clients.erase(pfd.fd);
+						close(pfd.fd);
+						return 1;
+					}
+				}
+			}
+			return 0;
+		}
+	std::cout << "[ERROR] client is not found, deleting the fd" << std::endl;
+	_cgi__writefd_clients.erase(pfd.fd);
+	close(pfd.fd);
+	return 1;
 }
 bool WebServer::checkTimer(int timeout_seconds)
 {
@@ -214,8 +253,12 @@ void WebServer::iterateAndRunActiveFD()
 					if (status == 1 && eraseAndContinue(it, "client"))
 						continue;
 				}
-				else if ((status = fd_is_cgi(*it)) >= 0)
+				else if ((status = fd_is_cgi(*it)) >= 0) {
 					if (status == 1 && eraseAndContinue(it, "cgi"))
+						continue;
+				}
+				else if ((status = fd_is_cgiwrite(*it)) >= 0)
+					if (status == 1 && eraseAndContinue(it, "cgi write"))
 						continue;
 			}
 		}

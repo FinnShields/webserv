@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/18 14:50:28 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/19 01:52:39 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,13 +57,28 @@ int Client::get_socket_fd()
 
 int Client::get_cgi_fd()
 {
-	return _res->getCGIfd();
+	return _res->getCGIreadfd();
+}
+
+pollfd &Client::getCGIwritepollfd()
+{
+	return _res->getCGIwritepollfd();
 }
 
 int Client::readFromCGI()
 {
 	_response = _res->readfromCGI();
 	return (_response.size());
+}
+
+int Client::writeToCgi()
+{
+	return _res->writeToCgi();
+}
+
+bool Client::isRequestComplete()
+{
+	return !_request->IsBodyIncomplete();
 }
 
 //return -1 = empty request

@@ -52,6 +52,7 @@ class Cgi
         int _fd_to_cgi[2];
         int _pid;
         int _status;
+		pollfd _pollfd_writecgi;
 
         Cgi();
         void setExtension();
@@ -76,7 +77,8 @@ class Cgi
         int getStatus();
 		ssize_t writeToPipe(const void *buf, size_t count);
 		std::string readFromPipe();
-		int get_pipefd();
+		int get_pipereadfd();
+		pollfd &get_writepollfd();
 		void closeWritePipe();
         
 };

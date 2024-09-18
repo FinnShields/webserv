@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:06:10 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/18 13:42:20 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/19 01:43:24 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -108,8 +108,10 @@ class Response
         bool hasMoreChunks() const;
 		void display() const;
         int getcode() const;
-		int getCGIfd();
+		int getCGIreadfd();
+		pollfd &getCGIwritepollfd();
 		const std::string readfromCGI();
+		int writeToCgi();
 		const std::string getTimeOutErrorPage();
 };
 #endif

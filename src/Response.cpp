@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/18 15:08:43 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/19 02:07:58 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -134,9 +134,10 @@ const std::string Response::run()
     {
         return getErrorPage(413);
     }
-	if(isMethodValid(method))
-        _response = _srv.config.getBestValues(_index_virt, _target, "return", {""})[0] != "" ? redirect() :
-                    isCGI() ? runCGI() :
+	if(!isMethodValid(method))
+		return _response;
+    _response = _srv.config.getBestValues(_index_virt, _target, "return", {""})[0] != "" ? redirect() :
+    	            isCGI() ? runCGI() :
                     (method == "GET" || method == "HEAD") ? get() : 
                     (method == "POST") ? post() :
                     (method == "PUT") ? put() :
@@ -277,21 +278,27 @@ const std::string Response::runCGI()
 		std::cerr << "CGI status = " << _code << "\n";
 		std::cout << "------- END ----------" << std::endl;
 	}
-	if (_req.getStatus() == 0)
+	if (!_req.IsBodyIncomplete())
 	{
 		_cgi->closeWritePipe();
 		return "";
 	}
-	std::vector<char> &bodyRaw = _req.getBodyRawBytes();
-	if (int bytesWritten = _cgi->writeToPipe(_req.getBodyRawBytes().data(), _req.getBodyRawBytes().size()))
-		bodyRaw.erase(bodyRaw.begin(), bodyRaw.begin() + bytesWritten);
+	if (!_req.getBodyRawBytes().empty())
+		_cgi->get_writepollfd().events = POLLOUT;
 	return _cgi->getStatus() == 0 ? "" : getErrorPage(_cgi->getStatus());
 }
 
+int Response::writeToCgi()
+{
+	std::vector<char> &bodyraw = _req.getBodyRawBytes();
+	if (int bytesWritten = _cgi->writeToPipe(_req.getBodyRawBytes().data(), _req.getBodyRawBytes().size()))
+		bodyraw.erase(bodyraw.begin(), bodyraw.begin() + bytesWritten);
+	return bodyraw.size();
+}
 const std::string Response::readfromCGI()
 {
 	std::string tmp = _cgi->readFromPipe();
-	// std::cout << "tmp from cgi: " << tmp.size() << "\n" << tmp << std::endl;
+	std::cout << "tmp from cgi: " << tmp.size() << "\n" << tmp << std::endl;
 	if (tmp.find("Status: 500 Internal Server Error") != std::string::npos)
 		return STATUS_LINE_200 + tmp;
 	_cgi_response.append(tmp);
@@ -302,9 +309,14 @@ const std::string Response::readfromCGI()
 	return "";
 }
 
-int Response::getCGIfd()
+int Response::getCGIreadfd()
 {
-	return _cgi->get_pipefd();
+	return _cgi->get_pipereadfd();
+}
+
+pollfd &Response::getCGIwritepollfd()
+{
+	return _cgi->get_writepollfd();
 }
 
 const std::string Response::load_file(std::string filepath)
