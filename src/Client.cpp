@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/19 12:47:36 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/19 15:20:00 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,8 @@
 
 Client::Client(int fd, Server *server) : _fd(fd), _server(server), _request(nullptr), _res(nullptr), _responseSent(false) 
 {
-	starttime = std::time(NULL);
+	_starttime = std::time(NULL);
+	_totalBytesSent = 0;
 }
 Client::Client(const Client &copy)
 {
@@ -40,12 +41,13 @@ Client::~Client() {}
 bool Client::timeout(unsigned int timeout)
 {
 	// std::cout << "Uptime: " << difftime(std::time(NULL), starttime) << std::endl;
-	if (difftime(std::time(NULL), starttime) > timeout)
+	if (difftime(std::time(NULL), _starttime) > timeout)
 	{
 		std::cout << "[INFO] Client timed out" << std::endl;
 		if (!_res)
 			_res = std::make_unique<Response>(_fd, *_request, *_server);
 		_response = _res->getTimeOutErrorPage();
+		_starttime = std::time(NULL);
 		return true;
 	}
 	return false;
@@ -67,8 +69,7 @@ pollfd &Client::getCGIwritepollfd()
 
 int Client::readFromCGI()
 {
-	_response = _res->readfromCGI();
-	return (_response.size());
+	return _res->readfromCGI();
 }
 
 int Client::writeToCgi()
@@ -118,15 +119,28 @@ bool Client::responseReady()
 int Client::send_response()
 {
     ssize_t bytesSent;
-	// _res->display();
-    std::cout << "---response----\n" << _response.size() << "\n----END----" << std::endl;
+	if (_response.empty() && _request->isCGIflag())
+	{
+		_response = _res->getCgiResponse();
+		std::cout << "[INFO] CGI Response size" << _response.size() << std::endl;
+		std::cout << "[INFO] CGI Response adr" << &_res->getCgiResponse() << std::endl;
+		std::cout << "[INFO] Response adr" << &_response << std::endl;
+	}
+    // std::cout << "---response----\n" << _response << "\n----END----" << std::endl;
     if ((bytesSent = send(_fd, _response.c_str(), std::min((size_t) 10000, _response.size()), 0)) < 0)
     {
         perror("Send error");
         return 1;
     }
-	std::cout << "[INFO] Response Bytes sent: " << bytesSent << "/" << _response.size() << std::endl;
-	if (bytesSent < (ssize_t) _response.size())
+	_totalBytesSent += bytesSent;
+	std::cout << "[INFO] Response Bytes sent: " << bytesSent << "/" << _totalBytesSent << std::endl;
+	if (_request->isCGIflag())
+	{
+		_res->getCgiResponse().erase(0, bytesSent);
+		if (_res->getCgiResponse().empty() && !isRequestComplete())
+			return 2;
+	}
+	if (bytesSent < (ssize_t)  _response.size())
 	{
 		std::cout << "[INFO] Response will send the remaining on next loop\n";
 		_response = _response.substr(bytesSent);
@@ -135,12 +149,14 @@ int Client::send_response()
     if (_res->hasMoreChunks())
     {
         std::cout << "[INFO] Response has more chunks to send\n";
+		_totalBytesSent = 0;
         _response = _res->getNextChunk();
         return 0;
     }
-	if (_request->IsBodyIncomplete())
+	if (!isRequestComplete())
 	{
-		std::cout << "[INFO] Request body is incomplete\n";
+		_totalBytesSent = 0;
+		std::cout << "[INFO] Request incomplete\n";
 		return 0;
 	}
     return 1;

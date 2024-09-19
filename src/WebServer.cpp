@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/19 13:00:42 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/19 15:26:03 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -100,6 +100,7 @@ int WebServer::fd_is_client(pollfd &pfd)
 	for (Server &srv : _servers)
 		if ((client = srv.get_client(pfd.fd)))
 		{
+			std::cout << "[INFO] Client fd: " << pfd.fd << std::endl;
             if (pfd.revents & POLLIN)
             {
 			    int ret = client->handle_request();
@@ -120,7 +121,6 @@ int WebServer::fd_is_client(pollfd &pfd)
 							_cgi__writefd_clients.emplace(client->getCGIwritepollfd().fd, &pfd);
 							std::cout << "[INFO] CGI fd: " << client->get_cgi_fd() << std::endl;
 							std::cout << "[INFO] CGI write fd: " << client->getCGIwritepollfd().fd << std::endl;
-							std::cout << "[INFO] CGI write pollfd address: " << &client->getCGIwritepollfd() << std::endl;
 							std::cout << "[INFO] CGI write pollfd address: " << &_fds.back() << std::endl;
 							return 2;
 						}
@@ -136,8 +136,14 @@ int WebServer::fd_is_client(pollfd &pfd)
                 return 0;
             }
             if (pfd.revents & POLLOUT)
-                if (!client->send_response())
-                    return 0;
+			{
+                int ret = client->send_response();
+				std::cout << "[INFO] Client send response return: " << ret << std::endl;
+				if (ret == 2) 
+					pfd.events &= ~POLLOUT;
+				if (ret == 0 || ret == 2)
+					return 0;
+			}
 			client->close_connection();
 			return 1;
 		}
@@ -156,10 +162,15 @@ int WebServer::fd_is_cgi(pollfd pfd)
 		if ((client = srv.get_client(it->second->fd)))
 		{
 			std::cout << "[INFO] Reads from CGI" << std::endl;
-			if ((pfd.revents & (POLLIN | POLLHUP) && client->readFromCGI()) || pfd.revents & POLLNVAL)
+			if ((pfd.revents & (POLLIN | POLLHUP) && client->readFromCGI()) )
 			{
-				std::cout << "[INFO] CGI has finished" << std::endl;
+				std::cout << "[INFO] CGI read new data" << std::endl;
 				it->second->events |= POLLOUT;
+			}
+			if (pfd.revents & (POLLNVAL | POLLHUP))
+			{
+				it->second->events |= POLLOUT;
+				close(pfd.fd);
 				_cgi_readfd_clients.erase(pfd.fd);
 				return 1;
 			}
@@ -167,6 +178,7 @@ int WebServer::fd_is_cgi(pollfd pfd)
 		}
 	if (!client)
 	{
+		close(pfd.fd);
 		_cgi_readfd_clients.erase(pfd.fd);
 		return 1;
 	}

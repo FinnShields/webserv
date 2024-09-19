@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/19 13:21:37 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/19 14:29:51 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,9 @@ const std::string Response::setAbsolutePath()
     return "/" + exePath.parent_path().string() + '/';
 }
 
-Response::Response(int fd, Request &req, Server &srv) : _fd(fd), _req(req), _srv(srv), _file(0), _code(0){}
+Response::Response(int fd, Request &req, Server &srv) : _fd(fd), _req(req), _srv(srv), _file(0), _code(0){
+	_cgi_response = STATUS_LINE_200;
+}
 
 Response::Response(const Response &copy) : _req(copy._req), _srv(copy._srv)
 {
@@ -304,21 +306,25 @@ int Response::writeToCgi()
 		bodyraw.erase(bodyraw.begin(), bodyraw.begin() + bytesWritten);
 	return bodyraw.size();
 }
-const std::string Response::readfromCGI()
+size_t Response::readfromCGI()
 {
 	std::string tmp = _cgi->readFromPipe();
-	std::cout << "tmp from cgi: " << tmp.size() << "\n" << tmp << std::endl;
+	// std::cout << "tmp from cgi: " << tmp.size() << "\n" << tmp << std::endl;
 	if (tmp.find("Status: 500 Internal Server Error") != std::string::npos)
-		return STATUS_LINE_200 + tmp;
+	{
+		_cgi_response = STATUS_LINE_200 + tmp;
+		_code = 200;
+		return _cgi_response.size();
+	}
+	_code = _cgi->getStatus();
 	_cgi_response.append(tmp);
 	std::cout << "_response size: " << _cgi_response.size() << std::endl;
     std::cout << "CGI STATUS: " << _cgi->getStatus() << std::endl;
-	if (_cgi->getStatus() == 200)
-	{
-		
-		return STATUS_LINE_200 + _cgi_response;
-	}
-	return "";
+	return tmp.size();
+}
+std::string &Response::getCgiResponse()
+{
+	return _cgi_response;
 }
 
 int Response::getCGIreadfd()
