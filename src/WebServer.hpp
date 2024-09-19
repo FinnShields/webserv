@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:19 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/19 02:16:19 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/19 23:05:31 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,7 +28,7 @@
 #include "Config.hpp"
 #include "Response.hpp"
 
-#define SOCKETTIMEOUT 60
+#define SOCKETTIMEOUT 180
 #define POLLTIMEOUT 10000
 
 

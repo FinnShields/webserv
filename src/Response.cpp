@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/19 16:26:00 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/19 22:49:56 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -279,26 +279,21 @@ const std::string Response::runCGI()
 		_code = _cgi->getStatus();
 		std::cerr << "CGI status = " << _code << "\n";
 		std::cout << "------- END ----------" << std::endl;
-		if (!_req.IsBodyIncomplete() && _req.getBodyRawBytes().empty())
-		{
-			std::cout << "[INFO RUN CGI] closed write PIPE" << std::endl;
-			_cgi->closeWritePipe();
-			return "";
-		}
-		if (!_req.getBodyRawBytes().empty())
-		{
-			writeToCgi();
-		}
+		writeToCgi();
 	}
 	if (!_req.getBodyRawBytes().empty())
 	{
+		int haswritten = 0;
 		for (pollfd &pfd : *_srv.get_fds())
 			if (pfd.fd == _cgi->get_writefd())
 			{
 				pfd.events = POLLOUT;
 				std::cout << "CGI_write_fd set to POLLOUT" << std::endl;
+				haswritten = 1;
 				break;
 			}
+		if (!haswritten)
+			std::cerr << "[ERROR] CGI has body but could not find pfd to set POLLOUT" << std::endl;
 	}
 	return _cgi->getStatus() == 0 ? "" : getErrorPage(_cgi->getStatus());
 }
@@ -306,10 +301,10 @@ const std::string Response::runCGI()
 int Response::writeToCgi()
 {
 	std::vector<char> &bodyraw = _req.getBodyRawBytes();
-	std::cout << "[INFO] Writes to CGI. Body size: " << bodyraw.size() << std::endl;
+	// std::cout << "[INFO] Writes to CGI. Body size: " << bodyraw.size() << std::endl;
 	if (int bytesWritten = _cgi->writeToPipe(_req.getBodyRawBytes().data(), _req.getBodyRawBytes().size()))
 		bodyraw.erase(bodyraw.begin(), bodyraw.begin() + bytesWritten);
-	std::cout << "[INFO] Body size after write: " << bodyraw.size() << std::endl;
+	// std::cout << "[INFO] Body size after write: " << bodyraw.size() << std::endl;
 	return bodyraw.size();
 }
 size_t Response::readfromCGI()

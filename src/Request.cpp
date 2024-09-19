@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/09/19 15:47:54 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/19 23:22:27 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -204,9 +204,9 @@ void	Request::extractHeaders(std::string& input)
 
 void	Request::handleChunks(char *reqArray, size_t start, size_t max_size)
 {
+	_chunkedReqComplete = false;
 	if (start == max_size)
 		return ;
-	_chunkedReqComplete = false;
 	_currentChunkSize = std::strtol(&reqArray[start], nullptr, 16);
 	std::vector<char> contentRawBytes;
 
@@ -241,7 +241,8 @@ void	Request::handleChunks(char *reqArray, size_t start, size_t max_size)
 void Request::moreChunks()
 {
 	size_t i = 0;
-
+	if (_currentChunkSize == -1)
+		return handleChunks(&_reqRaw[0], 0, _reqRaw.size());
 	while (_currentChunkBytesDone < (size_t) _currentChunkSize && i < _reqRaw.size())
 	{
 		if (_reqRaw[i] == '\r' || _reqRaw[i] == '\n') {

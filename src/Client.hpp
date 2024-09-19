@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:36 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/19 16:03:27 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/19 23:34:30 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,7 +43,7 @@ class Client
 		//void clean_socket_fd();
 		time_t _starttime;
 		
-
+		int send_cgi_response();
         Client();
         Client(const Client &copy);
         Client &operator=(const Client &assign);
