@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/06 13:41:04 by apimikov          #+#    #+#             */
-/*   Updated: 2024/09/13 13:30:31 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/19 01:32:09 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,7 +45,7 @@ not implemented
 "TEAPOT", 418   
 
 */
-#define DEBUG 0
+#define DEBUG 1
 
 Cgi::Cgi(const Cgi& other):
     _request(other._request),
@@ -57,14 +57,16 @@ Cgi::Cgi(const Cgi& other):
     _envp = nullptr;
 }
 
-Cgi::Cgi(Request& r, const Server& s, const size_t virt_index):
+Cgi::Cgi(Request& r, const Server& s, const size_t virt_index, std::string path):
     _request(r),
     _server(s),
-    _target(_request.get("target")),
-    _index_virt(virt_index)
+    _target(r.get("target")),
+    _index_virt(virt_index),
+    _path(path)
 {
     _argv = new char*[4] {nullptr};
     _envp = nullptr;
+	_pollfd_writecgi = {0, 0, 0};
 }
 
 Cgi& Cgi::operator=(const Cgi&){
@@ -82,7 +84,7 @@ Cgi::~Cgi(){
 		// std::cerr << "[CGI Destructor] Failure close cgi topipe\n";
 	if (close(_fd_from_cgi[0]) == -1)
         std::cerr << "[CGI Destructor] Failure close cgi frompipe\n";
-	if (waitpid(_pid, &_status, WNOHANG) == 0)
+	if (_pid > 0)
 	{
 		kill(_pid, SIGKILL);
 		std::cerr << "[CGI Destructor] Child process killed\n";
@@ -127,7 +129,7 @@ void Cgi::start(){
         runCmd();
     }
     catch (const std::runtime_error& e){
-        std::cerr << e.what() << "\n";
+        std::cerr << "Caught Exception: " << e.what() << "\n";
         _status = 500;
     }
     catch (...) {
@@ -161,27 +163,34 @@ void Cgi::runCmd(){
 
 ssize_t Cgi::writeToPipe(const void *buf, size_t count)
 {
+	std::cout << "[CGI] Writing to pipe " << count << " bytes\n";
+	if (count == 0)
+	{
+		std::cout << "CGI: No data to write\n";
+		return 0;
+	}
 	int bytesWritten = write(_fd_to_cgi[1], buf, count);
 	std::cout << "[CGI] Wrote to pipe " << bytesWritten << " bytes\n";
-	if (bytesWritten == 0 || (_request.getStatus() == 1 && std::stol(_request.getHeader("content-length")) == _request.getBodyTotalSize()))
+	// if (bytesWritten == -1)
+	// 	_status = 500;
+	if (bytesWritten < 0 || (!_request.IsBodyIncomplete() && (size_t) bytesWritten == count))
 	{
 		if (close(_fd_to_cgi[1]) == -1)
 			std::cerr << "[CGI] Failure close cgi topipe\n";
 		else
 			std::cerr << "[CGI] closed CGI Pipe\n";
 	}
-	return bytesWritten;
-	
+	return bytesWritten;	
+}
+
+void Cgi::closeWritePipe()
+{
+	close(_fd_to_cgi[1]);
 }
 
 std::string Cgi::readFromPipe()
 {
     char buffer[MAX_BUFFER_SIZE];
-    if (waitpid(_pid, &_status, WNOHANG) != 0)
-	{
-		_status = 200;
-		return "";
-	}
 	ssize_t size = read(_fd_from_cgi[0], buffer, sizeof(buffer));
 	std::cout << "[CGI] Read from pipe " << size << " bytes\n";
     if (size < 0) 
@@ -191,32 +200,43 @@ std::string Cgi::readFromPipe()
     return std::string(buffer, size);
 }
 
-int Cgi::get_pipefd()
+int Cgi::get_pipereadfd()
 {
-	return _fd_from_cgi[0];
+	if (_status == 0 || _status == 200)
+        return _fd_from_cgi[0]; 
+    return -1;
+}
+
+pollfd &Cgi::get_writepollfd()
+{
+	if (_pollfd_writecgi.fd == 0)
+		_pollfd_writecgi.fd = _fd_to_cgi[1];
+	return _pollfd_writecgi;
 }
 void Cgi::setExtension()
 {
-    _pos_cgi = 9;
-    _pos_dot = _target.find('.', _pos_cgi);
+    //_pos_cgi = 9;   //  /cgi-bin/
+    _pos_cgi = 1;   //  /
+    _pos_dot = _path.find('.', _pos_cgi);
     if (_pos_dot == std::string::npos)
         return ;
-    _pos_query = _target.find('?', _pos_dot);
-    _pos_info = _target.find('/', _pos_dot);
+    _pos_query = _path.find('?', _pos_dot);
+    _pos_info = _path.find('/', _pos_dot);
     //std::cerr << "_pos_dot =" << _pos_dot << "\n";
     //std::cerr << "_pos_query =" << _pos_query << "\n";
     ///std::cerr << "_pos_info =" << _pos_info << "\n";
-    size_t ext_len = std::min(_target.size(), std::min(_pos_query,_pos_info)) - _pos_dot;
-    _ext = _target.substr(_pos_dot, ext_len);
+    size_t ext_len = std::min(_path.size(), std::min(_pos_query,_pos_info)) - _pos_dot;
+    _ext = _path.substr(_pos_dot, ext_len);
 }
 
 void Cgi::analizeTarget()
 {
+    
     if (_pos_info == std::string::npos && _pos_query == std::string::npos)
     {
         if (DEBUG)
 			std::cout << "analizeTarget: no info_path, no query\n";
-        _target_file_path = _target.substr(_pos_cgi);
+        _target_file_path = _path.substr(_pos_cgi);
         _target_query = "";
         _target_path_info = "";
     }
@@ -224,33 +244,33 @@ void Cgi::analizeTarget()
     {
         if (DEBUG)
 			std::cout << "analizeTarget: no info_path\n";
-        _target_file_path = _target.substr(_pos_cgi, _pos_query - _pos_cgi);
+        _target_file_path = _path.substr(_pos_cgi, _pos_query - _pos_cgi);
         _target_path_info = "";
-        _target_query = _target.substr(_pos_query + 1);
+        _target_query = _path.substr(_pos_query + 1);
     }
     else if (_pos_info != std::string::npos && _pos_query == std::string::npos)
     {
         if (DEBUG)
 			std::cout << "analizeTarget: no query\n";
-        _target_file_path = _target.substr(_pos_cgi, _pos_info - _pos_cgi);
-        _target_path_info = _target.substr(_pos_info);
+        _target_file_path = _path.substr(_pos_cgi, _pos_info - _pos_cgi);
+        _target_path_info = _path.substr(_pos_info);
         _target_query = "";
     }
     else if (_pos_info < _pos_query)
     {
         if (DEBUG)
 			std::cout << "analizeTarget: info and query\n";
-        _target_file_path = _target.substr(_pos_cgi, _pos_info - _pos_cgi);
-        _target_path_info = _target.substr(_pos_info, _pos_query - _pos_info);
-        _target_query = _target.substr(_pos_query + 1);
+        _target_file_path = _path.substr(_pos_cgi, _pos_info - _pos_cgi);
+        _target_path_info = _path.substr(_pos_info, _pos_query - _pos_info);
+        _target_query = _path.substr(_pos_query + 1);
     }
     else
     {
         if (DEBUG)
 			std::cout << "analizeTarget: ? in query\n";
-        _target_file_path = _target.substr(_pos_cgi, _pos_query - _pos_cgi);
+        _target_file_path = _path.substr(_pos_cgi, _pos_query - _pos_cgi);
         _target_path_info = "";
-        _target_query = _target.substr(_pos_query + 1);
+        _target_query = _path.substr(_pos_query + 1);
     }
     if (DEBUG)
 	{
@@ -361,20 +381,20 @@ void Cgi::_runChildCgi(){
         throw std::runtime_error("dub2 error occurred!");
     if (close(_fd_to_cgi[0]) == -1 || close(_fd_from_cgi[1]) == -1)
             throw std::runtime_error("close error occurred!");
-	int max_fd = 1024;
-	for (int i = 3; i < max_fd; i++)
-		close(i);
+	// int max_fd = 1024;
+	// for (int i = 3; i < max_fd; i++)
+	// 	close(i);
 	if (DEBUG)
 	{
-		std::cout << "CGI: chdir to " << _env_map["DOCUMENT_ROOT"] + "/" + _target_foldername << "\n";
-		std::cout << "CGI: execve for ->" << _argv[0] << "<- ->" << _argv[1] << "<- \n";
+		std::cerr << "CGI: chdir to " << _target_foldername << "\n";
+		std::cerr << "CGI: execve for ->" << _argv[0] << "<- ->" << _argv[1] << "<- \n";
 	}
-    std::string path = _env_map["DOCUMENT_ROOT"] + "/" + _target_foldername;
+    std::string path = _target_foldername;
 	if (DEBUG)
 			 std::cerr << "CGI: chdir to " << path << "\n";
-    chdir(path.c_str());
-    execve(_argv[0], _argv, _envp);;
-	std::cout << "HTTP/1.1 500" << std::endl;
+    std::cerr << "chdir returns: " << chdir(path.c_str()) << std::endl;
+    execve(_argv[0], _argv, _envp);
+	std::cout << "Status: 500 Internal Server Error" << std::endl;
 	close(0);
     close(1);
     std::cerr << ("CGI: execve error occurred!") << std::endl;
@@ -405,7 +425,7 @@ void Cgi::setEnvMap(){
 	_env_map["SERVER_SOFTWARE"] = "Webserv_FAB/1.0";
     _env_map["DOCUMENT_ROOT"] = _server.config.getValues(_index_virt, _target, "root", {""})[0];
     if (_env_map["DOCUMENT_ROOT"].empty())
-        _env_map["DOCUMENT_ROOT"] = _server.config.getFirst("main","root","") + "/cgi-bin";
+        _env_map["DOCUMENT_ROOT"] = _server.config.getFirst("main","root",""); // + "/cgi-bin";
 
     _env_map["CONTENT_LENGTH"] = _request.getHeader("content-length");
 	_env_map["CONTENT_TYPE"] = _request.getHeader("content-type");
@@ -413,8 +433,9 @@ void Cgi::setEnvMap(){
     _env_map["HTTP_USER_AGENT"] = _request.getHeader("user-agent");
     _env_map["SERVER_NAME"] = _request.getHeader("Host");
     _env_map["REQUEST_METHOD"] = _request.get("method");
-    _env_map["SCRIPT_FILENAME"] = _env_map["DOCUMENT_ROOT"] + "/" + _target_file_path;
-    _env_map["PATH_INFO"] = _target_path_info;
+    _env_map["SCRIPT_FILENAME"] = _target_file_path;
+    //_env_map["PATH_INFO"] = _target_path_info;
+    _env_map["PATH_INFO"] = _target_file_path;
     _env_map["QUERY_STRING"] = _target_query;
 
     _env_map["PATH_TRANSLATED"] = _env_map["DOCUMENT_ROOT"] + _env_map["PATH_INFO"];

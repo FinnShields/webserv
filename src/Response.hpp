@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:06:10 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/12 14:16:39 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/19 01:43:24 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,21 +62,24 @@ class Response
 		size_t _index_virt;
         std::string _response;
 		std::unique_ptr<Cgi> _cgi;
+		std::string _cgi_response = "";
 
 		const std::string redirect();
 		const std::string runCGI();
         const std::string get();
 		const std::string post();
+		const std::string put();
 		const std::string deleteResp();
 		const std::string load_file(std::string filename);
 		const std::string load_directory_listing(std::string directoryPath);
 		const std::string getErrorPage(int code);
 		const std::string appendfile();
 
-        int saveFile();        
+		int createFile(int);      
         int deleteFile(const std::string &);
 		std::string createCookie();
-		bool isMethodValid(std::string &method);
+		bool isMethodValid(std::string method);
+		bool isCGI();
 
         //Helper functions
         bool check_body_size();
@@ -84,7 +87,7 @@ class Response
         bool isHtml(const std::string fileName);
         bool load_directory_entries(const std::string directoryPath, t_vector_str &directories, t_vector_str &files);
         std::string getFileName(const std::string filepath);
-        int setFileName(std::vector<char> &bodyRaw);
+        int setFileName(std::vector<char> &bodyRaw, int);
         void setDirectoryToFileName();
         void RenameIfFileExists();
         void checkOtherBoundary(std::vector<char> &bodyRaw, size_t &end, size_t offset);
@@ -105,8 +108,10 @@ class Response
         bool hasMoreChunks() const;
 		void display() const;
         int getcode() const;
-		int getCGIfd();
+		int getCGIreadfd();
+		pollfd &getCGIwritepollfd();
 		const std::string readfromCGI();
+		int writeToCgi();
 		const std::string getTimeOutErrorPage();
 };
 #endif

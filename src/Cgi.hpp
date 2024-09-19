@@ -29,6 +29,7 @@ class Cgi
         const Server& _server;
         std::string _target;
         const size_t _index_virt;
+        std::string _path;
         size_t _pos_cgi;
         size_t _pos_dot;
         size_t _pos_query;
@@ -51,6 +52,7 @@ class Cgi
         int _fd_to_cgi[2];
         int _pid;
         int _status;
+		pollfd _pollfd_writecgi;
 
         Cgi();
         void setExtension();
@@ -64,7 +66,7 @@ class Cgi
         void _runChildCgi();
         bool _wait();
     public:
-        Cgi(Request&, const Server&, const size_t);
+        Cgi(Request&, const Server&, const size_t, std::string path);
         Cgi(const Cgi&);
         Cgi &operator=(const Cgi&);
         ~Cgi();
@@ -75,7 +77,9 @@ class Cgi
         int getStatus();
 		ssize_t writeToPipe(const void *buf, size_t count);
 		std::string readFromPipe();
-		int get_pipefd();
+		int get_pipereadfd();
+		pollfd &get_writepollfd();
+		void closeWritePipe();
         
 };
 

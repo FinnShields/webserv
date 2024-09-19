@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:19 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/13 12:40:48 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/19 02:16:19 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,7 +28,7 @@
 #include "Config.hpp"
 #include "Response.hpp"
 
-#define SOCKETTIMEOUT 30
+#define SOCKETTIMEOUT 60
 #define POLLTIMEOUT 10000
 
 
@@ -42,13 +42,15 @@ class WebServer
 		std::vector<pollfd> _fds;
 		std::vector<Server> _servers;
 		std::map<size_t, std::vector<size_t>> _real_to_virt;
-		std::map<int, pollfd *> _cgi_clients;
+		std::map<int, pollfd *> _cgi_readfd_clients;
+		std::map<int, pollfd *> _cgi__writefd_clients;
 
 		void setServers();
 		//void parse_file(std::string filename);
 		bool fd_is_server(int fd);
 		int fd_is_client(pollfd &pfd);
 		int fd_is_cgi(pollfd pfd);
+		int fd_is_cgiwrite(pollfd &pfd);
 		//std::vector<size_t>  virtualHostIndices;
 		void setRealToVirt();
 		std::vector<size_t>  extractVirtualHostsIndices();

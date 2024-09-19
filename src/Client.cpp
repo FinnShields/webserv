@@ -6,14 +6,14 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/13 10:04:19 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/19 01:52:39 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Client.hpp"
 
 
-Client::Client(int fd, Server *server) : _fd(fd), _server(server), _request(nullptr), _res(nullptr), _responseSent(false), _isCGI(false) 
+Client::Client(int fd, Server *server) : _fd(fd), _server(server), _request(nullptr), _res(nullptr), _responseSent(false) 
 {
 	starttime = std::time(NULL);
 }
@@ -57,7 +57,12 @@ int Client::get_socket_fd()
 
 int Client::get_cgi_fd()
 {
-	return _res->getCGIfd();
+	return _res->getCGIreadfd();
+}
+
+pollfd &Client::getCGIwritepollfd()
+{
+	return _res->getCGIwritepollfd();
 }
 
 int Client::readFromCGI()
@@ -66,32 +71,39 @@ int Client::readFromCGI()
 	return (_response.size());
 }
 
+int Client::writeToCgi()
+{
+	return _res->writeToCgi();
+}
+
+bool Client::isRequestComplete()
+{
+	return !_request->IsBodyIncomplete();
+}
+
 //return -1 = empty request
 //Return 0 == Request fully read
 //Return 1 == Body is not fully read
-//Return 2 == Body is fully read, wait for CGI.
+//Return 2 == CGI is waiting for body
 //Return 3 == Headers not fully read
 int Client::handle_request()
 {
     if (!_request)
-        _request = std::make_unique<Request>();
+        _request = std::make_unique<Request>(_server);
     int ret = _request->read(_fd);
+	std::cout << "[INFO] Request return: " << ret << std::endl;
     if (ret == 3 || ret == -1)
     {
+		std::cout << "[INFO] Request " << ((ret == 3) ? "has unread headers" : "failed/is empty") << std::endl;
         return ret;
-    }
-	if (ret == 2)
-    {
-		_isCGI = true;
     }
     if (!_res)
     {
         _res = std::make_unique<Response>(_fd, *_request, *_server);
     }
     _response = _res->run();
-    if (_res->getcode() == 413 || (_isCGI && _res->getcode() != 200))
+    if (_res->getcode() == 413 || (_request->isCGIflag() && _res->getcode() != 0))
 	{
-        _isCGI = false;
 		ret = 0;
 	}
     return ret;
@@ -106,8 +118,9 @@ bool Client::responseReady()
 int Client::send_response()
 {
     ssize_t bytesSent;
-	_res->display();
-    if ((bytesSent = send(_fd, _response.c_str(), std::min((size_t) 100000, _response.size()), 0)) < 0)
+	// _res->display();
+    std::cout << "---response----\n" << _response.size() << "\n----END----" << std::endl;
+    if ((bytesSent = send(_fd, _response.c_str(), std::min((size_t) 10000, _response.size()), 0)) < 0)
     {
         perror("Send error");
         return 1;
@@ -125,6 +138,11 @@ int Client::send_response()
         _response = _res->getNextChunk();
         return 0;
     }
+	if (_request->IsBodyIncomplete())
+	{
+		std::cout << "[INFO] Request body is incomplete\n";
+		return 0;
+	}
     return 1;
 }
 

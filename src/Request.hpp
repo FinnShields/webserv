@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:41 by fshields          #+#    #+#             */
-/*   Updated: 2024/09/13 10:11:10 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/18 13:26:02 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,12 +19,15 @@
 # include <vector>
 # include "Client.hpp"
 # include "Cgi.hpp"
+# include "Server.hpp"
 
 class Cgi;
+class Server;
 
 class Request
 {
 	private:
+		Server *_srv;
 		std::string _method;
 		std::string _target;
 		std::string _version;
@@ -36,21 +39,21 @@ class Request
         int _status;
 		bool _chunkedReqComplete;
 		bool _incompleteChunk;
+		bool _cgi_flag = false;
 		void parse();
 		bool extractMethod(std::string& input);
 		void extractTarget(std::string& input);
 		void extractVersion(std::string& input);
 		void extractHeaders(std::string& input);
 		void extractBody();
-		void handleChunks(char *reqArray, size_t i);
+		void handleChunks(char *reqArray, size_t i, size_t max_size);
 		void moreChunks();
         void resetBody();
         int readContentLength(int);
-        int isCGI();
+        int setCGIflag();
         bool    isWholeHeader();
-		bool IsBodyIncomplete();
 	public:
-		Request();
+		Request(Server *srv);
 		Request(const Request&);
 		Request& operator=(const Request&);
 		~Request();
@@ -58,10 +61,12 @@ class Request
 		const std::string get(std::string toGet);
 		const std::string getHeader(std::string toGet);
 		std::string& getRef(std::string toGet);
-		std::vector<char> getBodyRawBytes();
+		std::vector<char> &getBodyRawBytes();
         ssize_t getBodyTotalSize();
 		void display();
 		int getStatus();
+		bool isCGIflag();
+		bool IsBodyIncomplete();
 };
 
 #endif
