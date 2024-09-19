@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:06 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/29 14:27:03 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/19 13:08:50 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,7 +57,7 @@ void Server::start_listen()
 		throw std::runtime_error("listen");
 }
 
-void Server::start(std::vector<pollfd> &_fds)
+void Server::start(std::vector<pollfd> &fds)
 {
     setup_socket();
     start_listen();
@@ -65,10 +65,12 @@ void Server::start(std::vector<pollfd> &_fds)
     pollfd server;
     server.fd = _server_fd;
     server.events = POLLIN;
-    _fds.push_back(server);
+    fds.push_back(server);
+	_fds = &fds;
+	
 }
 
-void Server::accept_new_connection(std::vector<pollfd> &_fds)
+void Server::accept_new_connection(std::vector<pollfd> &fds)
 {
 	pollfd client;
 	
@@ -76,7 +78,7 @@ void Server::accept_new_connection(std::vector<pollfd> &_fds)
 	if ((client.fd = accept(_server_fd, (struct sockaddr *)&_address, (socklen_t*)&_addrlen)) < 0)
 		return (perror("accept"));
 	client.events = POLLIN;
-	_fds.push_back(client);
+	fds.push_back(client);
 	_clients.push_back(std::make_unique<Client>(client.fd, this));
 }
 
@@ -101,6 +103,11 @@ Client *Server::get_client(int fd)
 int Server::get_port() const
 {
 	return _port;
+}
+
+std::vector<pollfd> *Server::get_fds()
+{
+	return _fds;
 }
 
 std::string Server::get_ip_string() const

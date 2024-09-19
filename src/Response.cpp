@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/19 02:07:58 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/19 13:21:37 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -284,7 +284,16 @@ const std::string Response::runCGI()
 		return "";
 	}
 	if (!_req.getBodyRawBytes().empty())
-		_cgi->get_writepollfd().events = POLLOUT;
+	{
+		for (pollfd &pfd : *_srv.get_fds())
+			if (pfd.fd == _cgi->get_writepollfd().fd)
+			{
+				pfd.events = POLLOUT;
+				std::cout << "CGI_write_fd set to POLLOUT" << std::endl;
+				std::cout << "Address of pollfd: " << &pfd << std::endl;
+				break;
+			}
+	}
 	return _cgi->getStatus() == 0 ? "" : getErrorPage(_cgi->getStatus());
 }
 
@@ -305,7 +314,10 @@ const std::string Response::readfromCGI()
 	std::cout << "_response size: " << _cgi_response.size() << std::endl;
     std::cout << "CGI STATUS: " << _cgi->getStatus() << std::endl;
 	if (_cgi->getStatus() == 200)
+	{
+		
 		return STATUS_LINE_200 + _cgi_response;
+	}
 	return "";
 }
 

@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/19 01:52:39 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/19 12:47:36 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -78,7 +78,7 @@ int Client::writeToCgi()
 
 bool Client::isRequestComplete()
 {
-	return !_request->IsBodyIncomplete();
+	return !_request->IsBodyIncomplete() && _request->getBodyRawBytes().empty();
 }
 
 //return -1 = empty request

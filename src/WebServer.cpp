@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/19 02:22:09 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/19 13:00:42 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -120,6 +120,8 @@ int WebServer::fd_is_client(pollfd &pfd)
 							_cgi__writefd_clients.emplace(client->getCGIwritepollfd().fd, &pfd);
 							std::cout << "[INFO] CGI fd: " << client->get_cgi_fd() << std::endl;
 							std::cout << "[INFO] CGI write fd: " << client->getCGIwritepollfd().fd << std::endl;
+							std::cout << "[INFO] CGI write pollfd address: " << &client->getCGIwritepollfd() << std::endl;
+							std::cout << "[INFO] CGI write pollfd address: " << &_fds.back() << std::endl;
 							return 2;
 						}
 					}
@@ -189,14 +191,14 @@ int WebServer::fd_is_cgiwrite(pollfd &pfd)
 				{
 					std::cout << "[INFO] body is emptied" << std::endl;
 					pfd.events = 0;
-					if (client->isRequestComplete())
-					{
-						std::cout << "[INFO] Request is complete" << std::endl;	
-						_cgi__writefd_clients.erase(pfd.fd);
-						close(pfd.fd);
-						return 1;
-					}
 				}
+			}
+			if (client->isRequestComplete() || pfd.revents & POLLHUP || pfd.revents & POLLNVAL)
+			{
+				std::cout << "[INFO] Request is complete" << std::endl;	
+				_cgi__writefd_clients.erase(pfd.fd);
+				close(pfd.fd);
+				return 1;
 			}
 			return 0;
 		}
