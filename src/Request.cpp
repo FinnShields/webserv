@@ -17,8 +17,9 @@ Request::Request(Server *srv) : _srv(srv)
 	_recvReturnTotal = 0;
     _bodyTotalSize = 0;
     _status = 0;
+	_currentChunkSize = -1;
+	_currentChunkBytesDone = 0;
 	_chunkedReqComplete = true;
-	_incompleteChunk = false;
 	_bodyRawBytes.clear();
 }
 
@@ -126,7 +127,7 @@ bool Request::IsBodyIncomplete()
 {
 	if (_status == 1)
         return std::stol(_headers["content-length"]) > _bodyTotalSize ? 1 : 0;
-	return !_chunkedReqComplete || _incompleteChunk ? 1 : 0;
+	return !_chunkedReqComplete ? 1 : 0;
 }
 int Request::setCGIflag()
 {
@@ -204,69 +205,83 @@ void	Request::handleChunks(char *reqArray, size_t start, size_t max_size)
 	_chunkedReqComplete = false;
 	if (start == max_size)
 		return ;
-	size_t chunkLength = std::strtol(&reqArray[start], nullptr, 16);
+	_currentChunkSize = std::strtol(&reqArray[start], nullptr, 16);
 	std::vector<char> contentRawBytes;
 
 	size_t i = start;
-	while (chunkLength != 0 && i < max_size)
+	while (_currentChunkSize != 0 && i < max_size)
 	{
-		_bodyTotalSize += chunkLength;
 		while (i < max_size && (isdigit(reqArray[i]) || (reqArray[i] >= 'A' && reqArray[i] <= 'E') ||
 		reqArray[i] == '\r' || reqArray[i] == '\n'))
 			i ++;
 		if (i == max_size)
-		{
-			_incompleteChunk = true;
 			break ;
-		}
-		while (i < max_size && reqArray[i] != '\r')
+		while (i < max_size && reqArray[i] != '\r') {
 			contentRawBytes.push_back(reqArray[i++]);
-		if (i == max_size)
-		{
-			_incompleteChunk = true;
-			break ;
+			_currentChunkBytesDone ++;
+			_bodyTotalSize ++;
 		}
+		if (i == max_size)
+			break ;
 		while (i < max_size && !isdigit(reqArray[i]) && !(reqArray[i] >= 'A' && reqArray[i] <= 'E'))
 			i ++;
 		if (i == max_size)
-		{
-			_incompleteChunk = true;
 			break ;
-		}
-		chunkLength = std::strtol(&reqArray[i], nullptr, 16);
+		_currentChunkSize = std::strtol(&reqArray[i], nullptr, 16);
+		_currentChunkBytesDone = 0;
 	}
 	for (i = 0; i < contentRawBytes.size(); i++)
 		_bodyRawBytes.push_back(contentRawBytes[i]);
-	if (chunkLength == 0)
+	if (_currentChunkSize == 0)
 		_chunkedReqComplete = true;
 }
 
-void	Request::moreChunks()
+void Request::moreChunks()
 {
-	// if (!get("content-type").compare("multipart/form-data") || _cgi_flag)
-	// 	_bodyRawBytes.clear();
-	if (_incompleteChunk)
+	size_t i = 0;
+
+	while (_currentChunkBytesDone < (size_t) _currentChunkSize && i < _reqRaw.size())
 	{
-		size_t i = 0;
-		while (i < _reqRaw.size())
-		{
-			if (i < _reqRaw.size() - 1 && _reqRaw[i] != '\r' && _reqRaw[i + 1] != '\n')
-				_bodyRawBytes.push_back(_reqRaw[i]);
-			else if (i < _reqRaw.size()-1 && _reqRaw[i] == '\r' && _reqRaw[i + 1] == '\n')
-			{
-				_incompleteChunk = false;
-				break ;
-			}
-			else
-				_bodyRawBytes.push_back(_reqRaw[i]);
+		if (_reqRaw[i] == '\r' || _reqRaw[i] == '\n') {
 			i ++;
+			continue ;
 		}
-		if (!_incompleteChunk)
-			handleChunks(&_reqRaw[0], i + 2, _reqRaw.size());	
+		_bodyRawBytes.push_back(_reqRaw[i++]);
+		_currentChunkBytesDone ++;
+		_bodyTotalSize ++;
 	}
-	else
-		handleChunks(&_reqRaw[0], 0, _reqRaw.size());
+	if (i == _reqRaw.size())
+		return ;
+	while (_reqRaw[i] == '\r' || _reqRaw[i] == '\n')
+		if ((i++) == _reqRaw.size())
+			return ;
+	handleChunks(&_reqRaw[0], i, _reqRaw.size());
 }
+
+// void	Request::moreChunks()
+// {
+// 	if (_currentChunkBytesDone < _currentChunkSize)
+// 	{
+// 		size_t i = 0;
+// 		while (i < _reqRaw.size())
+// 		{
+// 			if (i < _reqRaw.size() - 1 && _reqRaw[i] != '\r' && _reqRaw[i + 1] != '\n')
+// 				_bodyRawBytes.push_back(_reqRaw[i]);
+// 			else if (i < _reqRaw.size()-1 && _reqRaw[i] == '\r' && _reqRaw[i + 1] == '\n')
+// 			{
+// 				_incompleteChunk = false;
+// 				break ;
+// 			}
+// 			else
+// 				_bodyRawBytes.push_back(_reqRaw[i]);
+// 			i ++;
+// 		}
+// 		if (!_incompleteChunk)
+// 			handleChunks(&_reqRaw[0], i + 2, _reqRaw.size());	
+// 	}
+// 	else
+// 		handleChunks(&_reqRaw[0], 0, _reqRaw.size());
+// }
 
 void	Request::extractBody()
 {

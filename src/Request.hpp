@@ -37,8 +37,9 @@ class Request
 		ssize_t _recvReturnTotal;
         ssize_t _bodyTotalSize;
         int _status;
+		int _currentChunkSize;
+		size_t _currentChunkBytesDone;
 		bool _chunkedReqComplete;
-		bool _incompleteChunk;
 		bool _cgi_flag = false;
 		void parse();
 		bool extractMethod(std::string& input);
