@@ -202,7 +202,6 @@ void	Request::extractHeaders(std::string& input)
 
 void	Request::handleChunks(char *reqArray, size_t start, size_t max_size)
 {
-	_chunkedReqComplete = false;
 	if (start == max_size)
 		return ;
 	_currentChunkSize = std::strtol(&reqArray[start], nullptr, 16);
@@ -327,6 +326,8 @@ void	Request::parse()
 	extractVersion(input);
 	// std::cout << "Extract " << i++ << " OK" << std::endl;
 	extractHeaders(input);
+	if (!get("transfer-encoding").compare("chunked"))
+		_chunkedReqComplete = false;
 	// std::cout << "Extract " << i++ << " OK" << std::endl;
 	extractBody();
 	// std::cout << "Extract " << i++ << " OK" << std::endl;
