@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/19 16:14:27 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/19 16:26:00 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -284,6 +284,10 @@ const std::string Response::runCGI()
 			std::cout << "[INFO RUN CGI] closed write PIPE" << std::endl;
 			_cgi->closeWritePipe();
 			return "";
+		}
+		if (!_req.getBodyRawBytes().empty())
+		{
+			writeToCgi();
 		}
 	}
 	if (!_req.getBodyRawBytes().empty())
