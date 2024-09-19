@@ -206,6 +206,7 @@ void	Request::handleChunks(char *reqArray, size_t start, size_t max_size)
 	if (start == max_size)
 		return ;
 	_currentChunkSize = std::strtol(&reqArray[start], nullptr, 16);
+	_currentChunkBytesDone = 0;
 	std::vector<char> contentRawBytes;
 
 	size_t i = start;
@@ -221,6 +222,8 @@ void	Request::handleChunks(char *reqArray, size_t start, size_t max_size)
 			_currentChunkBytesDone ++;
 			_bodyTotalSize ++;
 		}
+		if (_currentChunkBytesDone == (size_t) _currentChunkSize)
+			_currentChunkBytesDone = 0;
 		if (i == max_size)
 			break ;
 		while (i < max_size && !isdigit(reqArray[i]) && !(reqArray[i] >= 'A' && reqArray[i] <= 'E'))
@@ -228,7 +231,6 @@ void	Request::handleChunks(char *reqArray, size_t start, size_t max_size)
 		if (i == max_size)
 			break ;
 		_currentChunkSize = std::strtol(&reqArray[i], nullptr, 16);
-		_currentChunkBytesDone = 0;
 	}
 	for (i = 0; i < contentRawBytes.size(); i++)
 		_bodyRawBytes.push_back(contentRawBytes[i]);
@@ -239,7 +241,8 @@ void	Request::handleChunks(char *reqArray, size_t start, size_t max_size)
 void Request::moreChunks()
 {
 	size_t i = 0;
-
+	if (_currentChunkSize == -1)
+		return handleChunks(&_reqRaw[0], 0, _reqRaw.size());
 	while (_currentChunkBytesDone < (size_t) _currentChunkSize && i < _reqRaw.size())
 	{
 		if (_reqRaw[i] == '\r' || _reqRaw[i] == '\n') {
@@ -255,7 +258,8 @@ void Request::moreChunks()
 	while (_reqRaw[i] == '\r' || _reqRaw[i] == '\n')
 		if ((i++) == _reqRaw.size())
 			return ;
-	handleChunks(&_reqRaw[0], i, _reqRaw.size());
+	if (_currentChunkBytesDone == (size_t) _currentChunkSize)
+		handleChunks(&_reqRaw[0], i, _reqRaw.size());
 }
 
 // void	Request::moreChunks()
