@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/19 14:29:51 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/19 16:14:27 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -279,20 +279,20 @@ const std::string Response::runCGI()
 		_code = _cgi->getStatus();
 		std::cerr << "CGI status = " << _code << "\n";
 		std::cout << "------- END ----------" << std::endl;
-	}
-	if (!_req.IsBodyIncomplete())
-	{
-		_cgi->closeWritePipe();
-		return "";
+		if (!_req.IsBodyIncomplete() && _req.getBodyRawBytes().empty())
+		{
+			std::cout << "[INFO RUN CGI] closed write PIPE" << std::endl;
+			_cgi->closeWritePipe();
+			return "";
+		}
 	}
 	if (!_req.getBodyRawBytes().empty())
 	{
 		for (pollfd &pfd : *_srv.get_fds())
-			if (pfd.fd == _cgi->get_writepollfd().fd)
+			if (pfd.fd == _cgi->get_writefd())
 			{
 				pfd.events = POLLOUT;
 				std::cout << "CGI_write_fd set to POLLOUT" << std::endl;
-				std::cout << "Address of pollfd: " << &pfd << std::endl;
 				break;
 			}
 	}
@@ -302,8 +302,10 @@ const std::string Response::runCGI()
 int Response::writeToCgi()
 {
 	std::vector<char> &bodyraw = _req.getBodyRawBytes();
+	std::cout << "[INFO] Writes to CGI. Body size: " << bodyraw.size() << std::endl;
 	if (int bytesWritten = _cgi->writeToPipe(_req.getBodyRawBytes().data(), _req.getBodyRawBytes().size()))
 		bodyraw.erase(bodyraw.begin(), bodyraw.begin() + bytesWritten);
+	std::cout << "[INFO] Body size after write: " << bodyraw.size() << std::endl;
 	return bodyraw.size();
 }
 size_t Response::readfromCGI()
@@ -332,9 +334,9 @@ int Response::getCGIreadfd()
 	return _cgi->get_pipereadfd();
 }
 
-pollfd &Response::getCGIwritepollfd()
+int Response::getCGIwritefd()
 {
-	return _cgi->get_writepollfd();
+	return _cgi->get_writefd();
 }
 
 const std::string Response::load_file(std::string filepath)

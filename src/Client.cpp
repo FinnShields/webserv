@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/19 15:20:00 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/19 16:03:50 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,9 +62,9 @@ int Client::get_cgi_fd()
 	return _res->getCGIreadfd();
 }
 
-pollfd &Client::getCGIwritepollfd()
+int Client::getCGIwritefd()
 {
-	return _res->getCGIwritepollfd();
+	return _res->getCGIwritefd();
 }
 
 int Client::readFromCGI()
@@ -79,6 +79,8 @@ int Client::writeToCgi()
 
 bool Client::isRequestComplete()
 {
+	std::cout << "[INFO] Request is body incomplete: " << _request->IsBodyIncomplete() << std::endl;
+	std::cout << "[INFO] Request bodyRaw size: " << _request->getBodyRawBytes().size() << std::endl;
 	return !_request->IsBodyIncomplete() && _request->getBodyRawBytes().empty();
 }
 
@@ -136,7 +138,10 @@ int Client::send_response()
 	std::cout << "[INFO] Response Bytes sent: " << bytesSent << "/" << _totalBytesSent << std::endl;
 	if (_request->isCGIflag())
 	{
+		std::cout << "cgi response size: " << _res->getCgiResponse().size() << std::endl;
 		_res->getCgiResponse().erase(0, bytesSent);
+		std::cout << "cgi response size: " << _res->getCgiResponse().size() << std::endl;
+		std::cout << "is completed: " << isRequestComplete() << std::endl;
 		if (_res->getCgiResponse().empty() && !isRequestComplete())
 			return 2;
 	}

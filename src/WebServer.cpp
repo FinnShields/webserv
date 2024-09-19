@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/19 15:26:03 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/19 16:05:48 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -117,10 +117,10 @@ int WebServer::fd_is_client(pollfd &pfd)
 						{
 							_fds.push_back({client->get_cgi_fd(), POLLIN, 0});
 							_cgi_readfd_clients.emplace(client->get_cgi_fd(), &pfd);
-							_fds.push_back(client->getCGIwritepollfd());
-							_cgi__writefd_clients.emplace(client->getCGIwritepollfd().fd, &pfd);
+							_fds.push_back({client->getCGIwritefd(), 0, 0});
+							_cgi__writefd_clients.emplace(client->getCGIwritefd(), &pfd);
 							std::cout << "[INFO] CGI fd: " << client->get_cgi_fd() << std::endl;
-							std::cout << "[INFO] CGI write fd: " << client->getCGIwritepollfd().fd << std::endl;
+							std::cout << "[INFO] CGI write fd: " << client->getCGIwritefd() << std::endl;
 							std::cout << "[INFO] CGI write pollfd address: " << &_fds.back() << std::endl;
 							return 2;
 						}

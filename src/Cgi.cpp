@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/06 13:41:04 by apimikov          #+#    #+#             */
-/*   Updated: 2024/09/19 01:32:09 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/19 16:04:47 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,7 +66,6 @@ Cgi::Cgi(Request& r, const Server& s, const size_t virt_index, std::string path)
 {
     _argv = new char*[4] {nullptr};
     _envp = nullptr;
-	_pollfd_writecgi = {0, 0, 0};
 }
 
 Cgi& Cgi::operator=(const Cgi&){
@@ -207,11 +206,9 @@ int Cgi::get_pipereadfd()
     return -1;
 }
 
-pollfd &Cgi::get_writepollfd()
+int Cgi::get_writefd()
 {
-	if (_pollfd_writecgi.fd == 0)
-		_pollfd_writecgi.fd = _fd_to_cgi[1];
-	return _pollfd_writecgi;
+	return _fd_to_cgi[1];
 }
 void Cgi::setExtension()
 {

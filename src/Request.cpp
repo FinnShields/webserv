@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/09/19 01:49:47 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/19 15:47:54 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -125,6 +125,8 @@ int	Request::read(int _fd)
 
 bool Request::IsBodyIncomplete()
 {
+	if (_status == 0)
+		return 0;
 	if (_status == 1)
         return std::stol(_headers["content-length"]) > _bodyTotalSize ? 1 : 0;
 	return !_chunkedReqComplete ? 1 : 0;
@@ -202,9 +204,9 @@ void	Request::extractHeaders(std::string& input)
 
 void	Request::handleChunks(char *reqArray, size_t start, size_t max_size)
 {
-	_chunkedReqComplete = false;
 	if (start == max_size)
 		return ;
+	_chunkedReqComplete = false;
 	_currentChunkSize = std::strtol(&reqArray[start], nullptr, 16);
 	std::vector<char> contentRawBytes;
 
@@ -306,7 +308,7 @@ void    Request::resetBody()
 	// 	_bodyRawBytes.clear();
     for (size_t i = 0; i < _reqRaw.size(); i++)
 		_bodyRawBytes.push_back(_reqRaw[i]);
-	_bodyTotalSize += _reqRaw.size();
+	_bodyTotalSize += _bodyRawBytes.size();
 }
 
 void	Request::parse()

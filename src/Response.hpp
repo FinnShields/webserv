@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:06:10 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/19 14:29:35 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/19 16:02:47 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -109,7 +109,7 @@ class Response
 		void display() const;
         int getcode() const;
 		int getCGIreadfd();
-		pollfd &getCGIwritepollfd();
+		int getCGIwritefd();
 		size_t readfromCGI();
 		int writeToCgi();
 		const std::string getTimeOutErrorPage();
