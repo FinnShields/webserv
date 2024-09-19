@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/09/19 23:22:27 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/20 00:10:08 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -207,7 +207,23 @@ void	Request::handleChunks(char *reqArray, size_t start, size_t max_size)
 	_chunkedReqComplete = false;
 	if (start == max_size)
 		return ;
+	std::cout << "[INFO] _currentChunksize before set: " << _currentChunkSize << std::endl;
 	_currentChunkSize = std::strtol(&reqArray[start], nullptr, 16);
+	if (_currentChunkSize == 0)
+	{
+		size_t i = -1;
+		std::cout << "[INFO] chunksize is 0\n";
+		while (++i < max_size)
+		{
+			if (reqArray[i] == '\r')
+				std::cout << "\\r";
+			else if (reqArray[i] == '\n')
+				std::cout << "\\n";
+			else 
+				std::cout << reqArray[i];
+		}
+		std::cout << "[INFO] reqarray end------" << std::endl;
+	}
 	std::vector<char> contentRawBytes;
 
 	size_t i = start;
@@ -256,7 +272,7 @@ void Request::moreChunks()
 	if (i == _reqRaw.size())
 		return ;
 	while (_reqRaw[i] == '\r' || _reqRaw[i] == '\n')
-		if ((i++) == _reqRaw.size())
+		if ((++i) == _reqRaw.size())
 			return ;
 	handleChunks(&_reqRaw[0], i, _reqRaw.size());
 }
