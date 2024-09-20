@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/20 05:36:13 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/20 13:56:23 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -107,15 +107,18 @@ int Client::handle_request()
 		std::cout << "[INFO] Request " << ((ret == 3) ? "has unread headers" : "failed/is empty") << std::endl;
         return ret;
     }
+	if (_responseSent &&_request->IsBodyIncomplete())
+	{
+		_request->getBodyRawBytes().clear();
+		return 3;
+	}
+	if (_responseSent)
+		return -1;
     if (!_res)
     {
         _res = std::make_unique<Response>(_fd, *_request, *_server);
     }
     _response = _res->run();
-    if (_res->getcode() == 413)
-	{
-		ret = 0;
-	}
     return ret;
 }
 
@@ -161,7 +164,7 @@ int Client::send_response()
 	{
 		return send_cgi_response();
 	}
-    // std::cout << "---response----\n" << _response << "\n----END----" << std::endl;
+    std::cout << "---response----\n" << _response << "\n----END----" << std::endl;
 	if ((bytesSent = send(_fd, _response.c_str(), std::min((size_t) 10000, _response.size()), 0)) < 0)
     {
         perror("Send error");
@@ -183,8 +186,9 @@ int Client::send_response()
     }
 	if (!isRequestComplete())
 	{
-		std::cout << "[INFO] Request incomplete\n";
-		return 0;
+		std::cout << "[INFO] Response is done and sent but Request incomplete\n";
+		_responseSent = true;
+		return 2;
 	}
     return 1;
 }

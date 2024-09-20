@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:41 by fshields          #+#    #+#             */
-/*   Updated: 2024/09/20 04:17:32 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/20 15:23:24 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,6 +70,7 @@ class Request
 		int getStatus();
 		bool isCGIflag();
 		bool IsBodyIncomplete();
+		std::map<std::string, std::string> getHeaders();
 };
 
 #endif

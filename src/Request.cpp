@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/09/20 04:30:28 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/20 15:35:10 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -227,12 +227,12 @@ static void chunkdebug(int _currentChunkSize, size_t max_size, char *reqArray)
 int Request::extractNumber(char *reqArray, size_t &i, size_t max_size)
 {
 	size_t start = i;
-	while (i < max_size && (isdigit(reqArray[i]) || (reqArray[i] >= 'A' && reqArray[i] <= 'E')))
+	while (i < max_size && (isdigit(reqArray[i]) || (std::toupper(reqArray[i]) >= 'A' && std::toupper(reqArray[i])  <= 'E')))
 		i++;
 	if ((i < max_size && reqArray[i] != '\r') || (i + 1 < max_size && reqArray[i + 1] != '\n'))
 	{
 		std::cout << "[INFO] Chunk number is invalid" << std::endl;
-		std::cout << std::string(reqArray, max_size) << std::endl;
+		chunkdebug(_currentChunkSize, max_size, reqArray);
 		_status = -1;
 		return -1;
 	}
@@ -405,6 +405,10 @@ const std::string	Request::get(std::string toGet)
 	return (_headers[toGet]);
 }
 
+std::map<std::string, std::string> Request::getHeaders()
+{
+	return _headers;
+}
 const std::string	Request::getHeader(std::string toGet)
 {
 	for (size_t i = 0; i < toGet.size(); i++)

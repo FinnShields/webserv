@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/06 13:41:04 by apimikov          #+#    #+#             */
-/*   Updated: 2024/09/20 05:44:22 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/20 15:27:56 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -320,7 +320,8 @@ std::string Cgi::readFromFd(int fd) {
 }
 
 int Cgi::_access(){
-    const char* file_path = _env_map["SCRIPT_FILENAME"].c_str();
+    return 0;
+	const char* file_path = _env_map["SCRIPT_FILENAME"].c_str();
     if (DEBUG)
 			std::cout << "CGI: access for ->" << file_path << "<-\n";
     if (access(file_path, F_OK) != 0)
@@ -399,6 +400,7 @@ void Cgi::setEnv(){
         line_pnt = new char[line.size() + 1] {0};
         std::strcpy(line_pnt, line.c_str());
         _envp[i] = line_pnt;
+		std::cout << "envp[" << i << "] = " << _envp[i] << std::endl;
         ++i;
     }
 }
@@ -431,6 +433,12 @@ void Cgi::setEnvMap(){
     else
         _env_map["SERVER_PORT"] = "80";
     
+    for (const auto& header : _request.getHeaders()) {
+        std::string envName = "HTTP_" + header.first;
+        std::replace(envName.begin(), envName.end(), '-', '_');
+        std::transform(envName.begin(), envName.end(), envName.begin(), ::toupper);
+        _env_map[envName.c_str()] = header.second.c_str();
+    }
     /*
     for (auto it = _env_map.begin(); it != _env_map.end();) {
         if (it->second.empty()) {
