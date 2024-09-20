@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/06 13:41:04 by apimikov          #+#    #+#             */
-/*   Updated: 2024/09/19 22:51:03 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/20 05:44:22 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -163,8 +163,8 @@ void Cgi::runCmd(){
 ssize_t Cgi::writeToPipe(const void *buf, size_t count)
 {
 	std::cout << "[CGI] Writing to pipe " << count << " bytes\n";
-	int bytesWritten = count == 0 ? 0 : write(_fd_to_cgi[1], buf, count);
-	if (count != 0)
+	int bytesWritten = count <= 0 ? count : write(_fd_to_cgi[1], buf, count);
+	if (count > 0)
 		std::cout << "[CGI] Wrote to pipe " << bytesWritten << " bytes\n";
 	if (bytesWritten < 0 || (!_request.IsBodyIncomplete() && (size_t) bytesWritten == count))
 		std::cerr << (close(_fd_to_cgi[1]) == -1 ? "[CGI] Failure close cgi topipe\n" : "[CGI] closed CGI Pipe\n");
@@ -367,9 +367,9 @@ void Cgi::_runChildCgi(){
         throw std::runtime_error("dub2 error occurred!");
     if (close(_fd_to_cgi[0]) == -1 || close(_fd_from_cgi[1]) == -1)
             throw std::runtime_error("close error occurred!");
-	// int max_fd = 1024;
-	// for (int i = 3; i < max_fd; i++)
-	// 	close(i);
+	int max_fd = 1024;
+	for (int i = 3; i < max_fd; i++)
+		close(i);
 	if (DEBUG)
 	{
 		std::cerr << "CGI: chdir to " << _target_foldername << "\n";

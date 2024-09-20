@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/19 16:05:48 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/20 05:42:33 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -116,6 +116,7 @@ int WebServer::fd_is_client(pollfd &pfd)
 						if (_cgi_readfd_clients.find(client->get_cgi_fd()) == _cgi_readfd_clients.end())
 						{
 							_fds.push_back({client->get_cgi_fd(), POLLIN, 0});
+							client->setcgiireadpfd(&_fds.back());
 							_cgi_readfd_clients.emplace(client->get_cgi_fd(), &pfd);
 							_fds.push_back({client->getCGIwritefd(), 0, 0});
 							_cgi__writefd_clients.emplace(client->getCGIwritefd(), &pfd);
@@ -133,7 +134,6 @@ int WebServer::fd_is_client(pollfd &pfd)
                     client->close_connection();
                     return 1;
                 }
-                return 0;
             }
             if (pfd.revents & POLLOUT)
 			{
@@ -141,11 +141,18 @@ int WebServer::fd_is_client(pollfd &pfd)
 				std::cout << "[INFO] Client send response return: " << ret << std::endl;
 				if (ret == 2) 
 					pfd.events &= ~POLLOUT;
-				if (ret == 0 || ret == 2)
-					return 0;
+				if (ret == 1)
+				{
+					client->close_connection();
+					return 1;
+				}
 			}
-			client->close_connection();
-			return 1;
+			if (pfd.revents & (POLLNVAL | POLLHUP))
+			{
+				client->close_connection();
+				return 1;
+			}
+			return 0;
 		}
 	return -1;
 }

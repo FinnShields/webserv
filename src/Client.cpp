@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/19 23:42:14 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/20 05:36:13 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,7 @@ Client::Client(int fd, Server *server) : _fd(fd), _server(server), _request(null
 {
 	_starttime = std::time(NULL);
 	_totalBytesSent = 0;
+	_cgireadpfd = nullptr;
 }
 Client::Client(const Client &copy)
 {
@@ -34,6 +35,7 @@ Client& Client::operator=(const Client &assign)
     _server = assign._server;
     _response = assign._response;
     _responseSent = assign._responseSent;
+	_cgireadpfd = assign._cgireadpfd;
     return (*this);
 }
 Client::~Client() {}
@@ -55,6 +57,11 @@ bool Client::timeout(unsigned int timeout)
 int Client::get_socket_fd()
 {
     return (_fd);
+}
+
+void Client::setcgiireadpfd(pollfd *pfd)
+{
+	_cgireadpfd = pfd;
 }
 
 int Client::get_cgi_fd()
@@ -105,7 +112,7 @@ int Client::handle_request()
         _res = std::make_unique<Response>(_fd, *_request, *_server);
     }
     _response = _res->run();
-    if (_res->getcode() == 413 || (_request->isCGIflag() && _res->getcode() != 0))
+    if (_res->getcode() == 413)
 	{
 		ret = 0;
 	}
@@ -130,7 +137,7 @@ int Client::send_cgi_response()
 	_totalBytesSent += bytesSent;
 	std::cout << "[INFO] Response Bytes sent: " << bytesSent << "/" << _totalBytesSent << std::endl;
 	std::cout << "is completed: " << isRequestComplete() << std::endl;
-	if (_res->getCgiResponse().empty() && !isRequestComplete())
+	if (_res->getCgiResponse().empty() && (!isRequestComplete() || (_cgireadpfd && _cgireadpfd->revents & POLLIN)))
 	{
 		std::cout << "[INFO] CGI doesnt have more response in buffer, waiting for CGI read\n";
 		return 2;

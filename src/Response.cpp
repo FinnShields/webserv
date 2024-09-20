@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/20 00:41:38 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/20 05:03:04 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -293,16 +293,20 @@ const std::string Response::runCGI()
 				break;
 			}
 		if (!haswritten)
-			std::cerr << "[ERROR] CGI has body but could not find pfd to set POLLOUT" << std::endl;
+		{	std::cerr << "[INFO] Response could not find cgi pfd to set POLLOUT" << std::endl;
+			if (_req.getBodyRawBytes().size() > 0)
+				writeToCgi();
+		}
 	}
 	return _cgi->getStatus() == 0 ? "" : getErrorPage(_cgi->getStatus());
 }
 
 int Response::writeToCgi()
 {
+	int bytesWritten;
 	std::vector<char> &bodyraw = _req.getBodyRawBytes();
 	// std::cout << "[INFO] Writes to CGI. Body size: " << bodyraw.size() << std::endl;
-	if (int bytesWritten = _cgi->writeToPipe(_req.getBodyRawBytes().data(), _req.getBodyRawBytes().size()))
+	if ((bytesWritten = _cgi->writeToPipe(_req.getBodyRawBytes().data(), _req.getBodyRawBytes().size())) > 0)
 		bodyraw.erase(bodyraw.begin(), bodyraw.begin() + bytesWritten);
 	// std::cout << "[INFO] Body size after write: " << bodyraw.size() << std::endl;
 	return bodyraw.size();
