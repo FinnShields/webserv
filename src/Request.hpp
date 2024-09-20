@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:41 by fshields          #+#    #+#             */
-/*   Updated: 2024/09/18 13:26:02 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/20 04:17:32 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,11 +34,12 @@ class Request
 		std::map<std::string, std::string> _headers;
 		std::vector<char> _bodyRawBytes;
 		std::vector<char> _reqRaw;
+		std::vector<char> _currentChunkBytes;
 		ssize_t _recvReturnTotal;
         ssize_t _bodyTotalSize;
         int _status;
 		int _currentChunkSize;
-		size_t _currentChunkBytesDone;
+		// size_t _currentChunkBytesDone;
 		bool _chunkedReqComplete;
 		bool _cgi_flag = false;
 		void parse();
@@ -47,8 +48,9 @@ class Request
 		void extractVersion(std::string& input);
 		void extractHeaders(std::string& input);
 		void extractBody();
+		int extractNumber(char *reqArray, size_t &i, size_t max_size);
 		void handleChunks(char *reqArray, size_t i, size_t max_size);
-		void moreChunks();
+		void moreChunks(char *reqArray, size_t i, size_t max_size);
         void resetBody();
         int readContentLength(int);
         int setCGIflag();

@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/19 22:49:56 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/20 00:41:38 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -281,7 +281,7 @@ const std::string Response::runCGI()
 		std::cout << "------- END ----------" << std::endl;
 		writeToCgi();
 	}
-	if (!_req.getBodyRawBytes().empty())
+	else
 	{
 		int haswritten = 0;
 		for (pollfd &pfd : *_srv.get_fds())
