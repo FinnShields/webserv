@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:36 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/19 01:52:37 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/20 05:28:06 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,10 +39,12 @@ class Client
         std::string _response;
         std::unique_ptr<Response> _res;
         bool _responseSent;
+		size_t _totalBytesSent;
 		//void clean_socket_fd();
-		time_t starttime;
+		time_t _starttime;
+		pollfd *_cgireadpfd;
 		
-
+		int send_cgi_response();
         Client();
         Client(const Client &copy);
         Client &operator=(const Client &assign);
@@ -50,13 +52,14 @@ class Client
         Client(int socket_fd, Server *srv);
         ~Client();
         
+		void setcgiireadpfd(pollfd *pfd);
         int handle_request();
         int send_response();
         void close_connection();
         int get_socket_fd();
         bool responseReady();
 		int get_cgi_fd();
-		pollfd &getCGIwritepollfd();
+		int getCGIwritefd();
 		int readFromCGI();
 		int writeToCgi();
 		bool timeout(unsigned int seconds);

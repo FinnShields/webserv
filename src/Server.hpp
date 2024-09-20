@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:10 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/08/28 11:48:53 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/19 13:14:01 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,6 +49,7 @@ class Server
 		int _port;
         in_addr_t _ip;
         std::string _name;
+		std::vector<pollfd> *_fds;
 
         std::vector<size_t> _virthost_list;
         std::map<std::string, size_t> _virthost_map;
@@ -86,6 +87,7 @@ class Server
         void setVirthostList( std::vector<size_t>);
         void setVirthostMap();
         size_t getVirtHostIndex(std::string);
+		std::vector<pollfd> *get_fds();
 
         const size_t index;
         const Config config;

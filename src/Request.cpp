@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/09/19 01:49:47 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/20 16:52:43 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@ Request::Request(Server *srv) : _srv(srv)
     _bodyTotalSize = 0;
     _status = 0;
 	_currentChunkSize = -1;
-	_currentChunkBytesDone = 0;
+	// _currentChunkBytesDone = 0;
 	_chunkedReqComplete = true;
 	_bodyRawBytes.clear();
 }
@@ -115,7 +115,12 @@ int	Request::read(int _fd)
 	std::cout << std::endl;
     if (_status == 0 && !isWholeHeader())
 		return 3;
-    _status == 1 ? resetBody() : _status == 2 ? moreChunks() : parse();
+    _status == 1 ? resetBody()
+		: _status == 2 ? moreChunks(_reqRaw.data(), 0, _reqRaw.size())
+		: _status == 3 ? handleChunks(_reqRaw.data(), 0, _reqRaw.size())
+		: parse();
+	if (_status == 3 || _status == -1)
+		return _status;
     _reqRaw.clear();
     _status = !_headers["transfer-encoding"].empty() ? 2 :
         !_headers["content-length"].empty() ? 1 : 0; 
@@ -125,6 +130,8 @@ int	Request::read(int _fd)
 
 bool Request::IsBodyIncomplete()
 {
+	if (_status == 0)
+		return 0;
 	if (_status == 1)
         return std::stol(_headers["content-length"]) > _bodyTotalSize ? 1 : 0;
 	return !_chunkedReqComplete ? 1 : 0;
@@ -200,66 +207,115 @@ void	Request::extractHeaders(std::string& input)
 	}
 }
 
-void	Request::handleChunks(char *reqArray, size_t start, size_t max_size)
+static void chunkdebug(int _currentChunkSize, size_t max_size, char *reqArray)
+{	
+	size_t i = -1;
+	std::cout << "[INFO] chunksize is " << _currentChunkSize << std::endl;
+	while (++i < max_size)
+	{
+		if (reqArray[i] == '\r')
+			std::cout << "\\r";
+		else if (reqArray[i] == '\n')
+			std::cout << "\\n";
+		else 
+			std::cout << reqArray[i];
+	}
+	std::cout << "\n[INFO] reqArray end------" << std::endl;
+
+}
+
+int Request::extractNumber(char *reqArray, size_t &i, size_t max_size)
 {
-	if (start == max_size)
-		return ;
+	size_t start = i;
+	while (i < max_size && (isdigit(reqArray[i]) || (std::toupper(reqArray[i]) >= 'A' && std::toupper(reqArray[i])  <= 'E')))
+		i++;
+	if ((i < max_size && reqArray[i] != '\r') || (i + 1 < max_size && reqArray[i + 1] != '\n'))
+	{
+		std::cout << "[INFO] Chunk number is invalid" << std::endl;
+		chunkdebug(_currentChunkSize, max_size, reqArray);
+		_status = -1;
+		return -1;
+	}
+	i += 2;
+	if (i >= max_size)
+	{
+		std::cout << "[INFO] Chunk number is not fully received" << std::endl;
+		_reqRaw.erase(_reqRaw.begin(), _reqRaw.begin() + start);
+		_status = 3;
+		return -1;
+	}
 	_currentChunkSize = std::strtol(&reqArray[start], nullptr, 16);
-	_currentChunkBytesDone = 0;
-	std::vector<char> contentRawBytes;
-
-	size_t i = start;
-	while (_currentChunkSize != 0 && i < max_size)
-	{
-		while (i < max_size && (isdigit(reqArray[i]) || (reqArray[i] >= 'A' && reqArray[i] <= 'E') ||
-		reqArray[i] == '\r' || reqArray[i] == '\n'))
-			i ++;
-		if (i == max_size)
-			break ;
-		while (i < max_size && reqArray[i] != '\r') {
-			contentRawBytes.push_back(reqArray[i++]);
-			_currentChunkBytesDone ++;
-			_bodyTotalSize ++;
-		}
-		if (_currentChunkBytesDone == (size_t) _currentChunkSize)
-			_currentChunkBytesDone = 0;
-		if (i == max_size)
-			break ;
-		while (i < max_size && !isdigit(reqArray[i]) && !(reqArray[i] >= 'A' && reqArray[i] <= 'E'))
-			i ++;
-		if (i == max_size)
-			break ;
-		_currentChunkSize = std::strtol(&reqArray[i], nullptr, 16);
-	}
-	for (i = 0; i < contentRawBytes.size(); i++)
-		_bodyRawBytes.push_back(contentRawBytes[i]);
 	if (_currentChunkSize == 0)
+	{
+		chunkdebug(_currentChunkSize, max_size, reqArray);
 		_chunkedReqComplete = true;
+		return -1;
+	}
+	return 1;
 }
 
-void Request::moreChunks()
+void	Request::handleChunks(char *reqArray, size_t i, size_t max_size)
 {
-	size_t i = 0;
-	if (_currentChunkSize == -1)
-		return handleChunks(&_reqRaw[0], 0, _reqRaw.size());
-	while (_currentChunkBytesDone < (size_t) _currentChunkSize && i < _reqRaw.size())
-	{
-		if (_reqRaw[i] == '\r' || _reqRaw[i] == '\n') {
-			i ++;
-			continue ;
-		}
-		_bodyRawBytes.push_back(_reqRaw[i++]);
-		_currentChunkBytesDone ++;
-		_bodyTotalSize ++;
-	}
-	if (i == _reqRaw.size())
+	_chunkedReqComplete = false;
+	_status = 2;
+	if (i == max_size)
 		return ;
-	while (_reqRaw[i] == '\r' || _reqRaw[i] == '\n')
-		if ((i++) == _reqRaw.size())
-			return ;
-	if (_currentChunkBytesDone == (size_t) _currentChunkSize)
-		handleChunks(&_reqRaw[0], i, _reqRaw.size());
+	std::cout << "[INFO] _currentChunksize before set: " << _currentChunkSize << std::endl;
+	if (extractNumber(reqArray, i, max_size) < 0)
+		return ;
+	moreChunks(reqArray, i, max_size);
 }
+void Request::moreChunks(char *reqArray, size_t i, size_t max_size)
+{
+	if (_currentChunkSize == -1)
+		return handleChunks(_reqRaw.data(), 0, _reqRaw.size());
+	while (i < max_size && _currentChunkBytes.size() < (size_t) _currentChunkSize)
+		_currentChunkBytes.push_back(reqArray[i++]);
+	if (i < max_size && reqArray[i] == '\r')
+		_currentChunkBytes.push_back(reqArray[i++]);
+	if (i < max_size && reqArray[i] == '\n')
+		_currentChunkBytes.push_back(reqArray[i++]);
+	if (_currentChunkBytes.size() >= (size_t) _currentChunkSize + 2)
+	{
+		if (_currentChunkBytes.back() != '\n' || *(_currentChunkBytes.end() - 2) != '\r')
+		{
+			std::cout << "[INFO] Chunk is invalid" << std::endl;
+			_status = -1;
+			return ;
+		}
+		_bodyRawBytes.insert(_bodyRawBytes.end(), _currentChunkBytes.begin(), _currentChunkBytes.end() - 2);
+		_bodyTotalSize += _currentChunkBytes.size();
+		_currentChunkBytes.clear();
+		_currentChunkSize = -1;
+	}
+	if (i < max_size)
+		handleChunks(reqArray, i, max_size);
+}
+
+
+// void Request::moreChunks()
+// {
+// 	size_t i = 0;
+// 	if (_currentChunkSize == -1)
+// 		return handleChunks(&_reqRaw[0], 0, _reqRaw.size());
+// 	while (_currentChunkBytesDone < (size_t) _currentChunkSize && i < _reqRaw.size())
+// 	{
+// 		if (_reqRaw[i] == '\r' || _reqRaw[i] == '\n') {
+// 			i ++;
+// 			continue ;
+// 		}
+// 		_bodyRawBytes.push_back(_reqRaw[i++]);
+// 		_currentChunkBytesDone ++;
+// 		_bodyTotalSize ++;
+// 	}
+// 	if (i == _reqRaw.size())
+// 		return ;
+// 	while (_reqRaw[i] == '\r' || _reqRaw[i] == '\n')
+// 		if ((++i) == _reqRaw.size())
+// 			return ;
+// 	if (_currentChunkBytesDone == (size_t) _currentChunkSize)
+// 		handleChunks(&_reqRaw[0], i, _reqRaw.size());
+// }
 
 // void	Request::moreChunks()
 // {
@@ -309,7 +365,7 @@ void    Request::resetBody()
 	// 	_bodyRawBytes.clear();
     for (size_t i = 0; i < _reqRaw.size(); i++)
 		_bodyRawBytes.push_back(_reqRaw[i]);
-	_bodyTotalSize += _reqRaw.size();
+	_bodyTotalSize += _bodyRawBytes.size();
 }
 
 void	Request::parse()
@@ -351,6 +407,10 @@ const std::string	Request::get(std::string toGet)
 	return (_headers[toGet]);
 }
 
+std::map<std::string, std::string> Request::getHeaders()
+{
+	return _headers;
+}
 const std::string	Request::getHeader(std::string toGet)
 {
 	for (size_t i = 0; i < toGet.size(); i++)
