@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/20 05:03:04 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/20 16:44:34 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,7 @@ const std::string Response::ABSOLUTE_PATH = Response::setAbsolutePath();
 const std::string Response::setAbsolutePath()
 {
     std::filesystem::path exePath = std::filesystem::read_symlink("/proc/self/exe");
-    return "/" + exePath.parent_path().string() + '/';
+    return exePath.parent_path().string() + '/';
 }
 
 Response::Response(int fd, Request &req, Server &srv) : _fd(fd), _req(req), _srv(srv), _file(0), _code(0){
@@ -198,7 +198,15 @@ const std::string Response::post()
 {
     try
     {
-        _code = createFile(0);
+        if (_req.get("content-type").compare(0, 19, "multipart/form-data") == 0)
+			_code = createFile(0);
+		else
+		{
+			_code = _code == 201 ? 201 : 
+					_req.getBodyRawBytes().empty() ? 204 :
+					201;
+			_req.getBodyRawBytes().clear();
+		}
     }
     catch(const std::exception& e)
     {
@@ -209,14 +217,24 @@ const std::string Response::post()
     _message = _code == 201 ? "Created" :
             _code == 204 ? "No Content" :
             "Unknown error";
-    return get();
+    return _code == 201 ? STATUS_LINE_201 + std::string("\r\n") : 
+			_code == 204 ? STATUS_LINE_204 + std::string("\r\n") :
+			getErrorPage(500);
 }
 
 const std::string Response::put()
 {
     try
     {
-        _code = createFile(1);
+        if (_req.get("content-type").compare(0, 19, "multipart/form-data") == 0)
+			_code = createFile(0);
+		else
+		{
+			_code = _code == 201 ? 201 : 
+					_req.getBodyRawBytes().empty() ? 204 :
+					201;
+			_req.getBodyRawBytes().clear();
+		}
     }
     catch(const std::exception& e)
     {
@@ -227,7 +245,9 @@ const std::string Response::put()
     _message = _code == 201 ? "Created" :
             _code == 204 ? "No Content" :
             "Unknown error";
-    return get();
+    return _code == 201 ? STATUS_LINE_201 + std::string("\r\n") : 
+			_code == 204 ? STATUS_LINE_204 + std::string("\r\n") :
+			getErrorPage(500);
 }
 
 const std::string Response::getErrorPage(int code)
@@ -450,15 +470,19 @@ char Response::decodeChar(const char *ch)
 
 int Response::setFileName(std::vector<char> &bodyRaw, int type)
 {
-    std::vector<char>::iterator it = bodyRaw.begin();
+    std::cout << "[INFO] Setting file name" << std::endl;
+	std::vector<char>::iterator it = bodyRaw.begin();
     size_t fileNamePos = findString(bodyRaw, "filename", 0);
     if (fileNamePos == std::string::npos)
-        throw std::invalid_argument("No filename");
-    it += fileNamePos + 10;
-    while (*it != '\"')
-        _fileName.append(1, *(it++));
-    if (_fileName.empty())
-        throw std::invalid_argument("No filename");
+        _fileName = "tempfile_" + std::to_string(std::time(nullptr));
+	else
+	{
+		it += fileNamePos + 10;
+		while (*it != '\"')
+			_fileName.append(1, *(it++));
+		if (_fileName.empty())
+			_fileName = "tempfile_" + std::to_string(std::time(nullptr));
+	}
     setDirectoryToFileName();
     if (type == 0)
         RenameIfFileExists();
@@ -572,7 +596,7 @@ const std::string Response::appendfile()
         _fileCurrentSize += end;
 		bodyRaw.clear();
         std::cout << "[INFO] File appended " << _req.getBodyTotalSize() << "/" << _req.getHeader("content-length") << std::endl;
-        return get(); 
+         return STATUS_LINE_201 + std::string("\r\n");
     }
     _file = -1;
     std::cerr << "[ERROR] File is not open" << std::endl;

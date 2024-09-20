@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/06 13:41:04 by apimikov          #+#    #+#             */
-/*   Updated: 2024/09/20 15:27:56 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/20 16:00:54 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -202,12 +202,12 @@ int Cgi::get_writefd()
 void Cgi::setExtension()
 {
     //_pos_cgi = 9;   //  /cgi-bin/
-    _pos_cgi = 1;   //  /
+    _pos_cgi = 0;   //  /
     _pos_dot = _path.find('.', _pos_cgi);
     if (_pos_dot == std::string::npos)
         return ;
     _pos_query = _path.find('?', _pos_dot);
-    _pos_info = _path.find('/', _pos_dot);
+    _pos_info = _path.rfind('/', _pos_dot);
     //std::cerr << "_pos_dot =" << _pos_dot << "\n";
     //std::cerr << "_pos_query =" << _pos_query << "\n";
     ///std::cerr << "_pos_info =" << _pos_info << "\n";
