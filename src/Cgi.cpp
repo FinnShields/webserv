@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/06 13:41:04 by apimikov          #+#    #+#             */
-/*   Updated: 2024/09/20 16:00:54 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/21 03:04:18 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,7 +45,6 @@ not implemented
 "TEAPOT", 418   
 
 */
-#define DEBUG 1
 
 Cgi::Cgi(const Cgi& other):
     _request(other._request),
@@ -162,10 +161,10 @@ void Cgi::runCmd(){
 
 ssize_t Cgi::writeToPipe(const void *buf, size_t count)
 {
-	std::cout << "[CGI] Writing to pipe " << count << " bytes\n";
-	int bytesWritten = count <= 0 ? count : write(_fd_to_cgi[1], buf, count);
-	if (count > 0)
-		std::cout << "[CGI] Wrote to pipe " << bytesWritten << " bytes\n";
+	// std::cout << "[CGI] Writing to pipe " << count << " bytes\n";
+	int bytesWritten = count <= 0 ? count : write(_fd_to_cgi[1], buf, std::min(count, (size_t)10000));
+	// if (count > 0)
+		// std::cout << "[CGI] Wrote to pipe " << bytesWritten << " bytes\n";
 	if (bytesWritten < 0 || (!_request.IsBodyIncomplete() && (size_t) bytesWritten == count))
 		std::cerr << (close(_fd_to_cgi[1]) == -1 ? "[CGI] Failure close cgi topipe\n" : "[CGI] closed CGI Pipe\n");
 	return bytesWritten;	
@@ -180,7 +179,7 @@ std::string Cgi::readFromPipe()
 {
     char buffer[MAX_BUFFER_SIZE];
 	ssize_t size = read(_fd_from_cgi[0], buffer, sizeof(buffer));
-	std::cout << "[CGI] Read from pipe " << size << " bytes\n";
+	// std::cout << "[CGI] Read from pipe " << size << " bytes\n";
     if (size < 0) 
 		throw std::runtime_error("readFromFd: read error occured!");
 	if (waitpid(_pid, &_status, WNOHANG) != 0)
@@ -400,7 +399,7 @@ void Cgi::setEnv(){
         line_pnt = new char[line.size() + 1] {0};
         std::strcpy(line_pnt, line.c_str());
         _envp[i] = line_pnt;
-		std::cout << "envp[" << i << "] = " << _envp[i] << std::endl;
+		// std::cout << "envp[" << i << "] = " << _envp[i] << std::endl;
         ++i;
     }
 }

@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/20 16:44:34 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/21 02:58:18 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -134,6 +134,7 @@ const std::string Response::run()
 		std::cout << "[INFO] Request is readdressed to virtual server " << _index_virt << "\n";
     if(!check_body_size()) 
     {
+		_req.getBodyRawBytes().clear();
         return getErrorPage(413);
     }
 	if(!isMethodValid(method))
@@ -181,7 +182,7 @@ const std::string Response::get()
         _message = "OK";
     }
 	std::string path = getPath();
-    std::cout << "PATH=" << path << std::endl;
+    // std::cout << "PATH=" << path << std::endl;
 	if (std::filesystem::is_regular_file(path) && std::filesystem::exists(path))
 		return load_file(path);
 	std::string _index = _srv.config.getBestValues(_index_virt, _target, "index", DEFAULT_INDEX)[0];
@@ -308,7 +309,7 @@ const std::string Response::runCGI()
 			if (pfd.fd == _cgi->get_writefd())
 			{
 				pfd.events = POLLOUT;
-				std::cout << "CGI_write_fd set to POLLOUT" << std::endl;
+				// std::cout << "CGI_write_fd set to POLLOUT" << std::endl;
 				haswritten = 1;
 				break;
 			}
@@ -343,8 +344,8 @@ size_t Response::readfromCGI()
 	}
 	_code = _cgi->getStatus();
 	_cgi_response.append(tmp);
-	std::cout << "_response size: " << _cgi_response.size() << std::endl;
-    std::cout << "CGI STATUS: " << _cgi->getStatus() << std::endl;
+	// std::cout << "_response size: " << _cgi_response.size() << std::endl;
+    // std::cout << "CGI STATUS: " << _cgi->getStatus() << std::endl;
 	return tmp.size();
 }
 std::string &Response::getCgiResponse()
@@ -441,14 +442,20 @@ bool Response::check_body_size()
     const std::string max_body_size_str = _srv.config.getBestValues(_index_virt, _target, "client_max_body_size", {DEFAULT_MAX_BODY_SIZE})[0];
 	if (max_body_size_str == "0")
         return true;
-    const std::string body_size_str = _req.get("content-length");
-    if (body_size_str.empty())
+    size_t curr_body_size = _req.getBodyTotalSize();
+	size_t max_body_size = std::stol(max_body_size_str);
+	if (curr_body_size > max_body_size)
+	{
+		std::cout << "[INFO] Current Body: " << curr_body_size << "\nMax Body: " << max_body_size << std::endl;
+		return false;
+	}
+    const std::string contentlength_str = _req.get("content-length");
+    if (contentlength_str.empty())
         return true;
-    long max_body_size = std::stol(max_body_size_str);
     _bodyMaxSize = max_body_size;
-    long body_size = std::stol(body_size_str);
-    std::cout << "check_body_size: \nbody:" << body_size << "\nmax: " << max_body_size << std::endl;
-    return body_size > max_body_size ? false : true;
+    size_t contentlength = std::stol(contentlength_str);
+    std::cout << "check_body_size: \nbody:" << contentlength_str << "\nmax: " << max_body_size << std::endl;
+    return contentlength > max_body_size ? false : true;
 }
 
 char Response::decodeChar(const char *ch)

@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/20 13:56:23 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/21 02:56:09 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -86,8 +86,8 @@ int Client::writeToCgi()
 
 bool Client::isRequestComplete()
 {
-	std::cout << "[INFO] Request is body incomplete: " << _request->IsBodyIncomplete() << std::endl;
-	std::cout << "[INFO] Request bodyRaw size: " << _request->getBodyRawBytes().size() << std::endl;
+	// std::cout << "[INFO] Request is body incomplete: " << _request->IsBodyIncomplete() << std::endl;
+	// std::cout << "[INFO] Request bodyRaw size: " << _request->getBodyRawBytes().size() << std::endl;
 	return !_request->IsBodyIncomplete() && _request->getBodyRawBytes().empty();
 }
 
@@ -101,12 +101,13 @@ int Client::handle_request()
     if (!_request)
         _request = std::make_unique<Request>(_server);
     int ret = _request->read(_fd);
-	std::cout << "[INFO] Request return: " << ret << std::endl;
+	// std::cout << "[INFO] Request return: " << ret << std::endl;
     if (ret == 3 || ret == -1)
     {
-		std::cout << "[INFO] Request " << ((ret == 3) ? "has unread headers" : "failed/is empty") << std::endl;
+		// std::cout << "[INFO] Request " << ((ret == 3) ? "has unread headers" : "failed/is empty") << std::endl;
         return ret;
     }
+	// std::cout << "_responseSent: " << _responseSent << std::endl;
 	if (_responseSent &&_request->IsBodyIncomplete())
 	{
 		_request->getBodyRawBytes().clear();
@@ -138,22 +139,22 @@ int Client::send_cgi_response()
 	}
 	_res->getCgiResponse().erase(0, bytesSent);
 	_totalBytesSent += bytesSent;
-	std::cout << "[INFO] Response Bytes sent: " << bytesSent << "/" << _totalBytesSent << std::endl;
-	std::cout << "is completed: " << isRequestComplete() << std::endl;
+	// std::cout << "[INFO] Response Bytes sent: " << bytesSent << "/" << _totalBytesSent << std::endl;
+	// std::cout << "is completed: " << isRequestComplete() << std::endl;
 	if (_res->getCgiResponse().empty() && (!isRequestComplete() || (_cgireadpfd && _cgireadpfd->revents & POLLIN)))
 	{
-		std::cout << "[INFO] CGI doesnt have more response in buffer, waiting for CGI read\n";
+		// std::cout << "[INFO] CGI doesnt have more response in buffer, waiting for CGI read\n";
 		return 2;
 	}
 	if (_res->getCgiResponse().empty() && isRequestComplete())
 	{
-		std::cout << "[INFO] CGI doesnt have more response in buffer and request is completed\n";
+		// std::cout << "[INFO] CGI doesnt have more response in buffer and request is completed\n";
 		return 1;
 	}
-	if (!isRequestComplete())
-		std::cout << "[INFO] Request incomplete\n";
-	if (!_res->getCgiResponse().empty())
-		std::cout << "[INFO] CGI has more response buffer\n";
+	// if (!isRequestComplete())
+	// 	std::cout << "[INFO] Request incomplete\n";
+	// if (!_res->getCgiResponse().empty())
+	// 	std::cout << "[INFO] CGI has more response buffer\n";
 	return 0;
 }
 
@@ -164,29 +165,29 @@ int Client::send_response()
 	{
 		return send_cgi_response();
 	}
-    std::cout << "---response----\n" << _response << "\n----END----" << std::endl;
+    // std::cout << "---response----\n" << _response << "\n----END----" << std::endl;
 	if ((bytesSent = send(_fd, _response.c_str(), std::min((size_t) 10000, _response.size()), 0)) < 0)
     {
         perror("Send error");
         return 1;
     }
 	_totalBytesSent += bytesSent;
-	std::cout << "[INFO] Response Bytes sent: " << bytesSent << "/" << _totalBytesSent << std::endl;
+	// std::cout << "[INFO] Response Bytes sent: " << bytesSent << "/" << _totalBytesSent << std::endl;
 	if (bytesSent < (ssize_t)  _response.size())
 	{
-		std::cout << "[INFO] Response will send the remaining on next loop\n";
+		// std::cout << "[INFO] Response will send the remaining on next loop\n";
 		_response = _response.substr(bytesSent);
 		return 0;
 	}
     if (_res->hasMoreChunks())
     {
-        std::cout << "[INFO] Response has more chunks to send\n";
+        // std::cout << "[INFO] Response has more chunks to send\n";
         _response = _res->getNextChunk();
         return 0;
     }
 	if (!isRequestComplete())
 	{
-		std::cout << "[INFO] Response is done and sent but Request incomplete\n";
+		// std::cout << "[INFO] Response is done and sent but Request incomplete\n";
 		_responseSent = true;
 		return 2;
 	}
@@ -195,7 +196,7 @@ int Client::send_response()
 
 void Client::close_connection()
 {
-    std::cout << "[INFO] Closing connection" << std::endl;
+    // std::cout << "[INFO] Closing connection" << std::endl;
     close(_fd);
     _server->remove_client(_fd);
 }
