@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:41 by fshields          #+#    #+#             */
-/*   Updated: 2024/09/20 15:23:24 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/22 23:18:48 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,9 +48,9 @@ class Request
 		void extractVersion(std::string& input);
 		void extractHeaders(std::string& input);
 		void extractBody();
-		int extractNumber(char *reqArray, size_t &i, size_t max_size);
+		int chunkExtractNumber(char *reqArray, size_t &i, size_t max_size);
 		void handleChunks(char *reqArray, size_t i, size_t max_size);
-		void moreChunks(char *reqArray, size_t i, size_t max_size);
+		void chunkExtractBody(char *reqArray, size_t i, size_t max_size);
         void resetBody();
         int readContentLength(int);
         int setCGIflag();

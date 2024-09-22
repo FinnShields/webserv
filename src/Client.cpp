@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/21 02:56:09 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/23 00:15:21 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -84,6 +84,25 @@ int Client::writeToCgi()
 	return _res->writeToCgi();
 }
 
+void Client::resetForNextRequest()
+{
+	std::cout << "[INFO] Resetting client for next request" << std::endl;
+	_request = std::make_unique<Request>(_server);
+	_res = std::make_unique<Response>(_fd, *_request, *_server);
+	_responseSent = false;
+	_starttime = std::time(NULL);
+	_totalBytesSent = 0;
+	_response.clear();
+
+}
+
+int Client::shouldCloseConnection()
+{
+	if (_request->getHeader("connection").compare("close") == 0) 
+		return 1;
+	return 0;
+}
+
 bool Client::isRequestComplete()
 {
 	// std::cout << "[INFO] Request is body incomplete: " << _request->IsBodyIncomplete() << std::endl;
@@ -108,7 +127,7 @@ int Client::handle_request()
         return ret;
     }
 	// std::cout << "_responseSent: " << _responseSent << std::endl;
-	if (_responseSent &&_request->IsBodyIncomplete())
+	if (_responseSent && _request->IsBodyIncomplete())
 	{
 		_request->getBodyRawBytes().clear();
 		return 3;
@@ -139,6 +158,7 @@ int Client::send_cgi_response()
 	}
 	_res->getCgiResponse().erase(0, bytesSent);
 	_totalBytesSent += bytesSent;
+	std::cout << "Bytes sent: " << bytesSent << " TotalSent: " << _totalBytesSent << std::endl;
 	// std::cout << "[INFO] Response Bytes sent: " << bytesSent << "/" << _totalBytesSent << std::endl;
 	// std::cout << "is completed: " << isRequestComplete() << std::endl;
 	if (_res->getCgiResponse().empty() && (!isRequestComplete() || (_cgireadpfd && _cgireadpfd->revents & POLLIN)))
@@ -163,7 +183,9 @@ int Client::send_response()
     ssize_t bytesSent;
 	if (_response.empty() && _request->isCGIflag())
 	{
-		return send_cgi_response();
+		int status = send_cgi_response();
+		std::cout << "send_cgi_response status: " << status << std::endl;
+		return status;
 	}
     // std::cout << "---response----\n" << _response << "\n----END----" << std::endl;
 	if ((bytesSent = send(_fd, _response.c_str(), std::min((size_t) 10000, _response.size()), 0)) < 0)
@@ -172,6 +194,7 @@ int Client::send_response()
         return 1;
     }
 	_totalBytesSent += bytesSent;
+	std::cout << "Bytes sent: " << bytesSent << " TotalSent: " << _totalBytesSent << std::endl;
 	// std::cout << "[INFO] Response Bytes sent: " << bytesSent << "/" << _totalBytesSent << std::endl;
 	if (bytesSent < (ssize_t)  _response.size())
 	{
@@ -196,7 +219,7 @@ int Client::send_response()
 
 void Client::close_connection()
 {
-    // std::cout << "[INFO] Closing connection" << std::endl;
+    std::cout << "[INFO] Closing connection" << std::endl;
     close(_fd);
     _server->remove_client(_fd);
 }

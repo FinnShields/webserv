@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:36 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/20 05:28:06 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/22 23:18:56 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,6 +64,8 @@ class Client
 		int writeToCgi();
 		bool timeout(unsigned int seconds);
 		bool isRequestComplete();
+		int shouldCloseConnection();
+		void resetForNextRequest();
 };
 
 #endif
