@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/23 00:22:03 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/23 14:05:16 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -204,9 +204,7 @@ const std::string Response::post()
 			_code = createFile(0);
 		else
 		{
-			_code = _code == 201 ? 201 : 
-					_req.getBodyRawBytes().empty() ? 204 :
-					201;
+			_code = 204;
 			_req.getBodyRawBytes().clear();
 		}
     }
@@ -345,7 +343,7 @@ size_t Response::readfromCGI()
 	}
 	_code = _cgi->getStatus();
 	_cgi_response.append(tmp);
-	// std::cout << "_response size: " << _cgi_response.size() << std::endl;
+	std::cout << "_response size: " << _cgi_response.size() << std::endl;
     // std::cout << "CGI STATUS: " << _cgi->getStatus() << std::endl;
 	return tmp.size();
 }

@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/09/23 00:48:26 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/23 13:52:00 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -99,10 +99,15 @@ int	Request::read(int _fd)
 	_recvReturnTotal += recvReturn;
     std::cout << " read bytes: " << recvReturn << " total bytes:" << _recvReturnTotal << std::endl;
 	std::cout << "status: " << _status << std::endl;
-	if (recvReturn <= 0)
+	if (recvReturn < 0)
 	{
-		// std::cerr << (recvReturn == 0 ? "[INFO] Client disconnected" : "[ERROR] Recv error: ") << (recvReturn == -1 ? strerror(errno) : "") << std::endl;
+		std::cerr << "[ERROR] Recv error: " << strerror(errno) << std::endl;
         throw std::runtime_error("Client read error");
+	}
+	if (recvReturn == 0)
+	{
+		std::cerr << "[INFO] Client disconnected" << std::endl;
+		return -1;
 	}
     for (size_t i = 0; i < (size_t) recvReturn; i++)
 	{
@@ -349,18 +354,24 @@ void Request::chunkExtractBody(char *reqArray, size_t i, size_t max_size)
 
 void	Request::extractBody()
 {
-	char *ch;
-	char *reqArray = &_reqRaw[0];
+	// char *ch;
+	// char *reqArray = &_reqRaw[0];
 
-	ch = strstr(reqArray, "\r\n\r\n");
-	if (!ch)
+	// ch = strstr(reqArray, "\r\n\r\n");
+	// if (!ch)
+	// 	return ;
+	// ch += 4;
+	// size_t start = ch - reqArray;
+	const char headerEnd[] = "\r\n\r\n";
+    auto it = std::search(_reqRaw.begin(), _reqRaw.end(), headerEnd, headerEnd + 4);
+	if (it == _reqRaw.end())
 		return ;
-	ch += 4;
-	size_t start = ch - reqArray;
+	it += 4;
+	_reqRaw.erase(_reqRaw.begin(), it);
 	if (!get("transfer-encoding").compare("chunked"))
-		return handleChunks(reqArray, start, _reqRaw.size());
-	for (size_t i = 0; start + i < (size_t) _reqRaw.size(); i++)
-		_bodyRawBytes.push_back(_reqRaw[start + i]);
+		return handleChunks(_reqRaw.data(), 0, _reqRaw.size());
+	for (size_t i = 0; i < (size_t) _reqRaw.size(); i++)
+		_bodyRawBytes.push_back(_reqRaw[i]);
 	_reqRaw.clear();
     _bodyTotalSize += _bodyRawBytes.size();
 }

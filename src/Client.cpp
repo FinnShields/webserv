@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/23 00:15:21 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/23 13:53:46 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@ Client::Client(int fd, Server *server) : _fd(fd), _server(server), _request(null
 	_starttime = std::time(NULL);
 	_totalBytesSent = 0;
 	_cgireadpfd = nullptr;
+	_force_closeconnection = false;
 }
 Client::Client(const Client &copy)
 {
@@ -49,6 +50,7 @@ bool Client::timeout(unsigned int timeout)
 		if (!_res)
 			_res = std::make_unique<Response>(_fd, *_request, *_server);
 		_response = _res->getTimeOutErrorPage();
+		_force_closeconnection = true;
 		_starttime = std::time(NULL);
 		return true;
 	}
@@ -93,12 +95,15 @@ void Client::resetForNextRequest()
 	_starttime = std::time(NULL);
 	_totalBytesSent = 0;
 	_response.clear();
+	_force_closeconnection = false;
 
 }
 
 int Client::shouldCloseConnection()
 {
 	if (_request->getHeader("connection").compare("close") == 0) 
+		return 1;
+	if (_force_closeconnection)
 		return 1;
 	return 0;
 }
@@ -121,11 +126,10 @@ int Client::handle_request()
         _request = std::make_unique<Request>(_server);
     int ret = _request->read(_fd);
 	// std::cout << "[INFO] Request return: " << ret << std::endl;
-    if (ret == 3 || ret == -1)
-    {
-		// std::cout << "[INFO] Request " << ((ret == 3) ? "has unread headers" : "failed/is empty") << std::endl;
+    if (ret == -1)
+		_force_closeconnection = 1;
+	if (ret == 3 || ret == -1)
         return ret;
-    }
 	// std::cout << "_responseSent: " << _responseSent << std::endl;
 	if (_responseSent && _request->IsBodyIncomplete())
 	{
@@ -151,7 +155,10 @@ bool Client::responseReady()
 int Client::send_cgi_response()
 {
 	ssize_t bytesSent;
-	if ((bytesSent = send(_fd, _res->getCgiResponse().c_str(), std::min((size_t) 10000, _res->getCgiResponse().size()), 0)) < 0)
+	std::string &response = _res->getCgiResponse();
+	if (response.empty())
+		_force_closeconnection = true;
+	if ((bytesSent = send(_fd, response.c_str(), std::min((size_t) 10000, response.size()), 0)) < 0)
 	{
 		perror("Send error");
 		return 1;
@@ -161,12 +168,12 @@ int Client::send_cgi_response()
 	std::cout << "Bytes sent: " << bytesSent << " TotalSent: " << _totalBytesSent << std::endl;
 	// std::cout << "[INFO] Response Bytes sent: " << bytesSent << "/" << _totalBytesSent << std::endl;
 	// std::cout << "is completed: " << isRequestComplete() << std::endl;
-	if (_res->getCgiResponse().empty() && (!isRequestComplete() || (_cgireadpfd && _cgireadpfd->revents & POLLIN)))
+	if (!_force_closeconnection && _res->getCgiResponse().empty() && (!isRequestComplete() || (_cgireadpfd && _cgireadpfd->revents & (POLLIN | POLLHUP))))
 	{
 		// std::cout << "[INFO] CGI doesnt have more response in buffer, waiting for CGI read\n";
 		return 2;
 	}
-	if (_res->getCgiResponse().empty() && isRequestComplete())
+	if (_force_closeconnection || (_res->getCgiResponse().empty() && isRequestComplete()))
 	{
 		// std::cout << "[INFO] CGI doesnt have more response in buffer and request is completed\n";
 		return 1;

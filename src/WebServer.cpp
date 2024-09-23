@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/23 01:00:17 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/23 13:53:37 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -182,7 +182,7 @@ int WebServer::fd_is_cgi(pollfd pfd)
 		if ((client = srv.get_client(it->second->fd)))
 		{
 			// std::cout << "[INFO] Reads from CGI" << std::endl;
-			if ((pfd.revents & (POLLIN) && client->readFromCGI()) )
+			if ((pfd.revents & (POLLIN | POLLHUP) && client->readFromCGI()) )
 			{
 				// std::cout << "[INFO] CGI read new data" << std::endl;
 				it->second->events |= POLLOUT;
