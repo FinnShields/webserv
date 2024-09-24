@@ -7,7 +7,12 @@
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 20px;
-            background-color: #f4f4f4;
+            background-image: url('https://img.freepik.com/free-photo/clear-water_1361-95.jpg?t=st=1727180734~exp=1727184334~hmac=6d35f9354c25b8282d46d3fab52c815c37779bed4cf914e5dc22b2c825019e80&w=1060'); /* Add your image URL */
+            background-size: cover; /* Ensures the image covers the whole background */
+            background-position: center; /* Centers the image */
+            background-attachment: fixed; /* Keeps the image fixed while scrolling */
+            background-repeat: no-repeat; /* Prevents the image from repeating */
+            color: white; /* Changes text color for better contrast with background */
         }
         h1 {
             color: #333;
@@ -19,10 +24,11 @@
         }
         form {
             margin-bottom: 20px;
-            background-color: #fff;
+            background-color: rgba(255, 255, 255, 0.8); /* Slightly transparent background */
             padding: 15px;
             border-radius: 5px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            color: #000; /* Ensure form text remains black */
         }
         label {
             font-weight: bold;
@@ -66,14 +72,23 @@
     </style>
 </head>
 <body>
-    <h1>Welcome to FAB WebServer</h1>
+    <h2>Welcome to FAB WebServer</h2>
+    <!-- YouTube Video Section -->
+    <div class="video-container">
+        <!-- <h2>Watch This Video</h2> -->
+        <iframe width="560" height="315" src="https://www.youtube.com/embed/pX-R5P6Cais?autoplay=1&mute=1" 
+            frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+            allowfullscreen></iframe>
+    </div>
+    <h1>_______________________________</h1>    
+    <h2>Test functionality of the server by following forms and links.</h2>
     <form id="uploadForm" method="post" enctype="multipart/form-data">
         <label for="fileInput">Upload a file!</label>
         <input id="fileInput" name="fileInput" type="file" placeholder="Upload a file" />
         <button id="uploadButton">Upload</button>
     </form>
     <div>
-        <button id="deleteButton">Delete some files?</button>
+        <button id="deleteButton">Delete uploaded files?</button>
     </div>
 
     <script>
