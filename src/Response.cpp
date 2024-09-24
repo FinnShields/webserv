@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/24 15:29:43 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/24 16:31:41 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -229,8 +229,8 @@ const std::string Response::post()
     _message = _code == 201 ? "Created" :
             _code == 204 ? "No Content" :
             "Unknown error";
-    return _code == 201 ? STATUS_LINE_201 + std::string("\r\n") : 
-			_code == 204 ? STATUS_LINE_204 + std::string("\r\n") :
+    return _code == 201 ? STATUS_LINE_201 + std::string("Content-Length: 0\r\n\r\n") : 
+			_code == 204 ? STATUS_LINE_204 + std::string("\r\n") : 
 			getErrorPage(500);
 }
 
