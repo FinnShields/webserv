@@ -146,6 +146,10 @@ const std::string Response::run()
                     (method == "PUT") ? put() :
                     (method == "DELETE") ? deleteResp() : 
                     getErrorPage(501);
+    if (_req.get("cookie").empty() || _req.get("cookie").find("session-id") == std::string::npos)
+        _response.insert(_response.find("\r\n\r\n") + 2, (createCookie() + "\r\n"));
+    else
+        _srv.saveCookieInfo(_req.getRef("cookie"));
     return _response;
 }
 
@@ -660,7 +664,7 @@ std::string Response::createCookie()
 		newSessionId = (size_t) rand();
 	}
 	_srv.setNewCookie(newSessionId);
-	return ("Set-Cookie: SID=" + std::to_string(newSessionId) + "\r\n");
+	return ("Set-Cookie: session-id=" + std::to_string(newSessionId) + "\r\n");
 }
 
 bool Response::isMethodValid(std::string method)
