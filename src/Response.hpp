@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:06:10 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/24 23:47:40 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/25 00:34:32 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,6 +62,7 @@ class Response
         std::string _response;
 		std::unique_ptr<Cgi> _cgi;
 		std::string _cgi_response;
+		std::string _body;
 
 		const std::string redirect();
 		const std::string runCGI();
