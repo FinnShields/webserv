@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/24 02:05:58 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/24 14:50:01 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -146,11 +146,19 @@ const std::string Response::run()
                     (method == "PUT") ? put() :
                     (method == "DELETE") ? deleteResp() : 
                     getErrorPage(501);
-    if (_req.get("cookie").empty() || _req.get("cookie").find("session-id") == std::string::npos)
-        _response.insert(_response.find("\r\n\r\n") + 2, (createCookie() + "\r\n"));
+	setCookie();
+    return _response;
+}
+void Response::setCookie()
+{
+    size_t endofheader = _response.find("\r\n\r\n");
+	if (endofheader == std::string::npos)
+		return ;
+	endofheader += 2;
+	if (_req.get("cookie").empty() || _req.get("cookie").find("session-id") == std::string::npos)
+        _response.insert(endofheader, createCookie());
     else
         _srv.saveCookieInfo(_req.getRef("cookie"));
-    return _response;
 }
 
 bool Response::isCGI()
