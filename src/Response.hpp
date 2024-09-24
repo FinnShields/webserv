@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:06:10 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/21 01:18:36 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/24 14:47:33 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -80,6 +80,7 @@ class Response
 		std::string createCookie();
 		bool isMethodValid(std::string method);
 		bool isCGI();
+		void setCookie();
 
         //Helper functions
         bool check_body_size();
