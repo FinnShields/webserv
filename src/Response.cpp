@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/24 14:50:01 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/24 15:29:43 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -349,8 +349,9 @@ size_t Response::readfromCGI()
 	// std::cout << "tmp from cgi: " << tmp.size() << "\n" << tmp << std::endl;
 	if (tmp.find("Status: 500 Internal Server Error") != std::string::npos)
 	{
-		_cgi_response = STATUS_LINE_200 + tmp;
-		_code = 200;
+		_cgi_response = getErrorPage(500);
+		// _cgi_response = STATUS_LINE_200 + tmp + "\r\n\r\n";
+		_code = 500;
 		return _cgi_response.size();
 	}
 	_code = _cgi->getStatus();

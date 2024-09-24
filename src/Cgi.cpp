@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/06 13:41:04 by apimikov          #+#    #+#             */
-/*   Updated: 2024/09/22 04:22:00 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/24 15:33:24 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -380,10 +380,10 @@ void Cgi::_runChildCgi(){
 			 std::cerr << "CGI: chdir to " << path << "\n";
     std::cerr << "chdir returns: " << chdir(path.c_str()) << std::endl;
     execve(_argv[0], _argv, _envp);
-	std::cout << "Status: 500 Internal Server Error" << std::endl;
+    std::cerr << ("CGI: execve error occurred!") << std::endl;
+	write(1, "Status: 500 Internal Server Error", 34);
 	close(0);
     close(1);
-    std::cerr << ("CGI: execve error occurred!") << std::endl;
 	exit(0);
 }
 
