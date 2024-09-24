@@ -17,7 +17,7 @@
 //#define STDOUT_FILENO  1
 //#define STDIN_FILENO  0
 #define CGI_TIMEOUT	 10
-#define DEBUG_MODE 0
+#define DEBUG 0
 
 class Server;
 class Request;
@@ -52,7 +52,6 @@ class Cgi
         int _fd_to_cgi[2];
         int _pid;
         int _status;
-		pollfd _pollfd_writecgi;
 
         Cgi();
         void setExtension();
@@ -78,7 +77,7 @@ class Cgi
 		ssize_t writeToPipe(const void *buf, size_t count);
 		std::string readFromPipe();
 		int get_pipereadfd();
-		pollfd &get_writepollfd();
+		int get_writefd();
 		void closeWritePipe();
         
 };

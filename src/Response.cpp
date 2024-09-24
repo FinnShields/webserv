@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/19 02:07:58 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/24 02:05:58 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,10 +17,12 @@ const std::string Response::ABSOLUTE_PATH = Response::setAbsolutePath();
 const std::string Response::setAbsolutePath()
 {
     std::filesystem::path exePath = std::filesystem::read_symlink("/proc/self/exe");
-    return "/" + exePath.parent_path().string() + '/';
+    return exePath.parent_path().string() + '/';
 }
 
-Response::Response(int fd, Request &req, Server &srv) : _fd(fd), _req(req), _srv(srv), _file(0), _code(0){}
+Response::Response(int fd, Request &req, Server &srv) : _fd(fd), _req(req), _srv(srv), _file(0), _code(0){
+	_cgi_response = STATUS_LINE_200;
+}
 
 Response::Response(const Response &copy) : _req(copy._req), _srv(copy._srv)
 {
@@ -132,6 +134,7 @@ const std::string Response::run()
 		std::cout << "[INFO] Request is readdressed to virtual server " << _index_virt << "\n";
     if(!check_body_size()) 
     {
+		_req.getBodyRawBytes().clear();
         return getErrorPage(413);
     }
 	if(!isMethodValid(method))
@@ -143,6 +146,10 @@ const std::string Response::run()
                     (method == "PUT") ? put() :
                     (method == "DELETE") ? deleteResp() : 
                     getErrorPage(501);
+    if (_req.get("cookie").empty() || _req.get("cookie").find("session-id") == std::string::npos)
+        _response.insert(_response.find("\r\n\r\n") + 2, (createCookie() + "\r\n"));
+    else
+        _srv.saveCookieInfo(_req.getRef("cookie"));
     return _response;
 }
 
@@ -179,7 +186,7 @@ const std::string Response::get()
         _message = "OK";
     }
 	std::string path = getPath();
-    std::cout << "PATH=" << path << std::endl;
+    // std::cout << "PATH=" << path << std::endl;
 	if (std::filesystem::is_regular_file(path) && std::filesystem::exists(path))
 		return load_file(path);
 	std::string _index = _srv.config.getBestValues(_index_virt, _target, "index", DEFAULT_INDEX)[0];
@@ -189,14 +196,21 @@ const std::string Response::get()
 	bool autoindex = _srv.config.getBestValues(_index_virt, _target, "autoindex", {"off"})[0] == "on";
 	if (autoindex && std::filesystem::is_directory(path)) 
 		return load_directory_listing(path);
-	return (getErrorPage(404));
+	return _srv.config.selectLocation(_target) == "main" ? (STATUS_LINE_200 + std::string("Content-Length: 0\r\n\r\n"))
+		: getErrorPage(404);
 }
 
 const std::string Response::post()
 {
     try
     {
-        _code = createFile(0);
+        if (_req.get("content-type").compare(0, 19, "multipart/form-data") == 0)
+			_code = createFile(0);
+		else
+		{
+			_code = 204;
+			_req.getBodyRawBytes().clear();
+		}
     }
     catch(const std::exception& e)
     {
@@ -207,14 +221,24 @@ const std::string Response::post()
     _message = _code == 201 ? "Created" :
             _code == 204 ? "No Content" :
             "Unknown error";
-    return get();
+    return _code == 201 ? STATUS_LINE_201 + std::string("\r\n") : 
+			_code == 204 ? STATUS_LINE_204 + std::string("\r\n") :
+			getErrorPage(500);
 }
 
 const std::string Response::put()
 {
     try
     {
-        _code = createFile(1);
+        if (_req.get("content-type").compare(0, 19, "multipart/form-data") == 0)
+			_code = createFile(0);
+		else
+		{
+			_code = _code == 201 ? 201 : 
+					_req.getBodyRawBytes().empty() ? 204 :
+					201;
+			_req.getBodyRawBytes().clear();
+		}
     }
     catch(const std::exception& e)
     {
@@ -225,7 +249,9 @@ const std::string Response::put()
     _message = _code == 201 ? "Created" :
             _code == 204 ? "No Content" :
             "Unknown error";
-    return get();
+    return _code == 201 ? STATUS_LINE_201 + std::string("\r\n") : 
+			_code == 204 ? STATUS_LINE_204 + std::string("\r\n") :
+			getErrorPage(500);
 }
 
 const std::string Response::getErrorPage(int code)
@@ -277,36 +303,57 @@ const std::string Response::runCGI()
 		_code = _cgi->getStatus();
 		std::cerr << "CGI status = " << _code << "\n";
 		std::cout << "------- END ----------" << std::endl;
+		writeToCgi();
 	}
-	if (!_req.IsBodyIncomplete())
+	else
 	{
-		_cgi->closeWritePipe();
-		return "";
+		int haswritten = 0;
+		for (pollfd &pfd : *_srv.get_fds())
+			if (pfd.fd == _cgi->get_writefd())
+			{
+				pfd.events = POLLOUT;
+				// std::cout << "CGI_write_fd set to POLLOUT" << std::endl;
+				haswritten = 1;
+				break;
+			}
+		if (!haswritten)
+		{	std::cerr << "[INFO] Response could not find cgi pfd to set POLLOUT" << std::endl;
+			if (_req.getBodyRawBytes().size() > 0)
+				writeToCgi();
+		}
 	}
-	if (!_req.getBodyRawBytes().empty())
-		_cgi->get_writepollfd().events = POLLOUT;
 	return _cgi->getStatus() == 0 ? "" : getErrorPage(_cgi->getStatus());
 }
 
 int Response::writeToCgi()
 {
+	int bytesWritten;
 	std::vector<char> &bodyraw = _req.getBodyRawBytes();
-	if (int bytesWritten = _cgi->writeToPipe(_req.getBodyRawBytes().data(), _req.getBodyRawBytes().size()))
+	// std::cout << "[INFO] Writes to CGI. Body size: " << bodyraw.size() << std::endl;
+	if ((bytesWritten = _cgi->writeToPipe(_req.getBodyRawBytes().data(), _req.getBodyRawBytes().size())) > 0)
 		bodyraw.erase(bodyraw.begin(), bodyraw.begin() + bytesWritten);
+	// std::cout << "[INFO] Body size after write: " << bodyraw.size() << std::endl;
 	return bodyraw.size();
 }
-const std::string Response::readfromCGI()
+size_t Response::readfromCGI()
 {
 	std::string tmp = _cgi->readFromPipe();
-	std::cout << "tmp from cgi: " << tmp.size() << "\n" << tmp << std::endl;
+	// std::cout << "tmp from cgi: " << tmp.size() << "\n" << tmp << std::endl;
 	if (tmp.find("Status: 500 Internal Server Error") != std::string::npos)
-		return STATUS_LINE_200 + tmp;
+	{
+		_cgi_response = STATUS_LINE_200 + tmp;
+		_code = 200;
+		return _cgi_response.size();
+	}
+	_code = _cgi->getStatus();
 	_cgi_response.append(tmp);
 	std::cout << "_response size: " << _cgi_response.size() << std::endl;
-    std::cout << "CGI STATUS: " << _cgi->getStatus() << std::endl;
-	if (_cgi->getStatus() == 200)
-		return STATUS_LINE_200 + _cgi_response;
-	return "";
+    // std::cout << "CGI STATUS: " << _cgi->getStatus() << std::endl;
+	return tmp.size();
+}
+std::string &Response::getCgiResponse()
+{
+	return _cgi_response;
 }
 
 int Response::getCGIreadfd()
@@ -314,9 +361,9 @@ int Response::getCGIreadfd()
 	return _cgi->get_pipereadfd();
 }
 
-pollfd &Response::getCGIwritepollfd()
+int Response::getCGIwritefd()
 {
-	return _cgi->get_writepollfd();
+	return _cgi->get_writefd();
 }
 
 const std::string Response::load_file(std::string filepath)
@@ -398,14 +445,20 @@ bool Response::check_body_size()
     const std::string max_body_size_str = _srv.config.getBestValues(_index_virt, _target, "client_max_body_size", {DEFAULT_MAX_BODY_SIZE})[0];
 	if (max_body_size_str == "0")
         return true;
-    const std::string body_size_str = _req.get("content-length");
-    if (body_size_str.empty())
+    size_t curr_body_size = _req.getBodyTotalSize();
+	size_t max_body_size = std::stol(max_body_size_str);
+	if (curr_body_size > max_body_size)
+	{
+		std::cout << "[INFO] Current Body: " << curr_body_size << "\nMax Body: " << max_body_size << std::endl;
+		return false;
+	}
+    const std::string contentlength_str = _req.get("content-length");
+    if (contentlength_str.empty())
         return true;
-    long max_body_size = std::stol(max_body_size_str);
     _bodyMaxSize = max_body_size;
-    long body_size = std::stol(body_size_str);
-    std::cout << "check_body_size: \nbody:" << body_size << "\nmax: " << max_body_size << std::endl;
-    return body_size > max_body_size ? false : true;
+    size_t contentlength = std::stol(contentlength_str);
+    std::cout << "check_body_size: \nbody:" << contentlength_str << "\nmax: " << max_body_size << std::endl;
+    return contentlength > max_body_size ? false : true;
 }
 
 char Response::decodeChar(const char *ch)
@@ -427,15 +480,19 @@ char Response::decodeChar(const char *ch)
 
 int Response::setFileName(std::vector<char> &bodyRaw, int type)
 {
-    std::vector<char>::iterator it = bodyRaw.begin();
+    std::cout << "[INFO] Setting file name" << std::endl;
+	std::vector<char>::iterator it = bodyRaw.begin();
     size_t fileNamePos = findString(bodyRaw, "filename", 0);
     if (fileNamePos == std::string::npos)
-        throw std::invalid_argument("No filename");
-    it += fileNamePos + 10;
-    while (*it != '\"')
-        _fileName.append(1, *(it++));
-    if (_fileName.empty())
-        throw std::invalid_argument("No filename");
+        _fileName = "tempfile_" + std::to_string(std::time(nullptr));
+	else
+	{
+		it += fileNamePos + 10;
+		while (*it != '\"')
+			_fileName.append(1, *(it++));
+		if (_fileName.empty())
+			_fileName = "tempfile_" + std::to_string(std::time(nullptr));
+	}
     setDirectoryToFileName();
     if (type == 0)
         RenameIfFileExists();
@@ -549,7 +606,7 @@ const std::string Response::appendfile()
         _fileCurrentSize += end;
 		bodyRaw.clear();
         std::cout << "[INFO] File appended " << _req.getBodyTotalSize() << "/" << _req.getHeader("content-length") << std::endl;
-        return get(); 
+         return STATUS_LINE_201 + std::string("\r\n");
     }
     _file = -1;
     std::cerr << "[ERROR] File is not open" << std::endl;
@@ -607,7 +664,7 @@ std::string Response::createCookie()
 		newSessionId = (size_t) rand();
 	}
 	_srv.setNewCookie(newSessionId);
-	return ("Set-Cookie: SID=" + std::to_string(newSessionId) + "\r\n");
+	return ("Set-Cookie: session-id=" + std::to_string(newSessionId) + "\r\n");
 }
 
 bool Response::isMethodValid(std::string method)

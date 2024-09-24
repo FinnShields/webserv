@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/06 13:41:04 by apimikov          #+#    #+#             */
-/*   Updated: 2024/09/19 01:32:09 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/22 04:22:00 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,7 +45,6 @@ not implemented
 "TEAPOT", 418   
 
 */
-#define DEBUG 1
 
 Cgi::Cgi(const Cgi& other):
     _request(other._request),
@@ -66,7 +65,6 @@ Cgi::Cgi(Request& r, const Server& s, const size_t virt_index, std::string path)
 {
     _argv = new char*[4] {nullptr};
     _envp = nullptr;
-	_pollfd_writecgi = {0, 0, 0};
 }
 
 Cgi& Cgi::operator=(const Cgi&){
@@ -163,23 +161,12 @@ void Cgi::runCmd(){
 
 ssize_t Cgi::writeToPipe(const void *buf, size_t count)
 {
-	std::cout << "[CGI] Writing to pipe " << count << " bytes\n";
-	if (count == 0)
-	{
-		std::cout << "CGI: No data to write\n";
-		return 0;
-	}
-	int bytesWritten = write(_fd_to_cgi[1], buf, count);
-	std::cout << "[CGI] Wrote to pipe " << bytesWritten << " bytes\n";
-	// if (bytesWritten == -1)
-	// 	_status = 500;
+	// std::cout << "[CGI] Writing to pipe " << count << " bytes\n";
+	int bytesWritten = count <= 0 ? count : write(_fd_to_cgi[1], buf, std::min(count, (size_t)10000));
+	// if (count > 0)
+		std::cout << "[CGI] Wrote to pipe " << bytesWritten << " bytes" << std::endl;
 	if (bytesWritten < 0 || (!_request.IsBodyIncomplete() && (size_t) bytesWritten == count))
-	{
-		if (close(_fd_to_cgi[1]) == -1)
-			std::cerr << "[CGI] Failure close cgi topipe\n";
-		else
-			std::cerr << "[CGI] closed CGI Pipe\n";
-	}
+		std::cerr << (close(_fd_to_cgi[1]) == -1 ? "[CGI] Failure close cgi topipe\n" : "[CGI] closed write Pipe\n");
 	return bytesWritten;	
 }
 
@@ -192,7 +179,7 @@ std::string Cgi::readFromPipe()
 {
     char buffer[MAX_BUFFER_SIZE];
 	ssize_t size = read(_fd_from_cgi[0], buffer, sizeof(buffer));
-	std::cout << "[CGI] Read from pipe " << size << " bytes\n";
+	std::cout << "[CGI] Read from pipe " << size << " bytes" << std::endl;
     if (size < 0) 
 		throw std::runtime_error("readFromFd: read error occured!");
 	if (waitpid(_pid, &_status, WNOHANG) != 0)
@@ -207,21 +194,19 @@ int Cgi::get_pipereadfd()
     return -1;
 }
 
-pollfd &Cgi::get_writepollfd()
+int Cgi::get_writefd()
 {
-	if (_pollfd_writecgi.fd == 0)
-		_pollfd_writecgi.fd = _fd_to_cgi[1];
-	return _pollfd_writecgi;
+	return _fd_to_cgi[1];
 }
 void Cgi::setExtension()
 {
     //_pos_cgi = 9;   //  /cgi-bin/
-    _pos_cgi = 1;   //  /
+    _pos_cgi = 0;   //  /
     _pos_dot = _path.find('.', _pos_cgi);
     if (_pos_dot == std::string::npos)
         return ;
     _pos_query = _path.find('?', _pos_dot);
-    _pos_info = _path.find('/', _pos_dot);
+    _pos_info = _path.rfind('/', _pos_dot);
     //std::cerr << "_pos_dot =" << _pos_dot << "\n";
     //std::cerr << "_pos_query =" << _pos_query << "\n";
     ///std::cerr << "_pos_info =" << _pos_info << "\n";
@@ -334,7 +319,8 @@ std::string Cgi::readFromFd(int fd) {
 }
 
 int Cgi::_access(){
-    const char* file_path = _env_map["SCRIPT_FILENAME"].c_str();
+    return 0;
+	const char* file_path = _env_map["SCRIPT_FILENAME"].c_str();
     if (DEBUG)
 			std::cout << "CGI: access for ->" << file_path << "<-\n";
     if (access(file_path, F_OK) != 0)
@@ -381,9 +367,9 @@ void Cgi::_runChildCgi(){
         throw std::runtime_error("dub2 error occurred!");
     if (close(_fd_to_cgi[0]) == -1 || close(_fd_from_cgi[1]) == -1)
             throw std::runtime_error("close error occurred!");
-	// int max_fd = 1024;
-	// for (int i = 3; i < max_fd; i++)
-	// 	close(i);
+	int max_fd = 1024;
+	for (int i = 3; i < max_fd; i++)
+		close(i);
 	if (DEBUG)
 	{
 		std::cerr << "CGI: chdir to " << _target_foldername << "\n";
@@ -413,6 +399,7 @@ void Cgi::setEnv(){
         line_pnt = new char[line.size() + 1] {0};
         std::strcpy(line_pnt, line.c_str());
         _envp[i] = line_pnt;
+		// std::cout << "envp[" << i << "] = " << _envp[i] << std::endl;
         ++i;
     }
 }
@@ -445,6 +432,12 @@ void Cgi::setEnvMap(){
     else
         _env_map["SERVER_PORT"] = "80";
     
+    for (const auto& header : _request.getHeaders()) {
+        std::string envName = "HTTP_" + header.first;
+        std::replace(envName.begin(), envName.end(), '-', '_');
+        std::transform(envName.begin(), envName.end(), envName.begin(), ::toupper);
+        _env_map[envName.c_str()] = header.second.c_str();
+    }
     /*
     for (auto it = _env_map.begin(); it != _env_map.end();) {
         if (it->second.empty()) {

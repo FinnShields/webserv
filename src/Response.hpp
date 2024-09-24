@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:06:10 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/19 01:43:24 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/21 01:18:36 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,7 +31,7 @@
 #define RESPONSE_500 "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\n"
 #define RESPONSE_501 "HTTP/1.1 501 Not Implemented\r\nContent-Type: text/plain\r\n\r\nError: Method not recognized or not implemented"
 #define DEFAULT_INDEX {"index.html"}
-#define DEFAULT_MAX_BODY_SIZE {"30000000"}
+#define DEFAULT_MAX_BODY_SIZE {"0"}
 
 
 
@@ -62,7 +62,7 @@ class Response
 		size_t _index_virt;
         std::string _response;
 		std::unique_ptr<Cgi> _cgi;
-		std::string _cgi_response = "";
+		std::string _cgi_response;
 
 		const std::string redirect();
 		const std::string runCGI();
@@ -109,9 +109,10 @@ class Response
 		void display() const;
         int getcode() const;
 		int getCGIreadfd();
-		pollfd &getCGIwritepollfd();
-		const std::string readfromCGI();
+		int getCGIwritefd();
+		size_t readfromCGI();
 		int writeToCgi();
 		const std::string getTimeOutErrorPage();
+		std::string &getCgiResponse();
 };
 #endif
