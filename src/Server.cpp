@@ -210,7 +210,7 @@ void Server::setNewCookie(size_t value)
 
 void Server::saveCookieInfo(std::string& cookie)
 {
-	size_t value = (size_t) std::atoi(cookie.c_str() + 11);
+	size_t value = (size_t) std::atoi(cookie.c_str() + cookie.find("session-id=") + 11);
 	setNewCookie(value);
 }
 
