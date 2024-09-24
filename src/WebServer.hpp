@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:19 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/19 23:05:31 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/24 00:50:16 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,6 +57,7 @@ class WebServer
 		bool checkTimer(int timeout_seconds);
 		bool eraseAndContinue(std::vector<pollfd>::iterator &it, std::string from);
 		void iterateAndRunActiveFD();
+		int iterateAndCheckIncomingConnections();
 		void cleanexit();
 		
 		WebServer();

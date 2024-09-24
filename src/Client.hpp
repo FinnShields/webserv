@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:36 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/23 13:12:02 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/23 23:50:37 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,6 +44,7 @@ class Client
 		time_t _starttime;
 		pollfd *_cgireadpfd;
 		bool _force_closeconnection;
+		int resets;
 		
 		int send_cgi_response();
         Client();

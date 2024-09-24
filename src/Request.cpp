@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/09/23 13:52:00 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/24 03:00:54 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -112,12 +112,12 @@ int	Request::read(int _fd)
     for (size_t i = 0; i < (size_t) recvReturn; i++)
 	{
 		_reqRaw.push_back(buffer[i]);
-		if (buffer[i] == '\r')
-			std::cout << "\\r";
-		else if (buffer[i] == '\n')
-			std::cout << "\\n";
-		else 
-			std::cout << buffer[i];
+		// if (buffer[i] == '\r')
+		// 	std::cout << "\\r";
+		// else if (buffer[i] == '\n')
+		// 	std::cout << "\\n";
+		// else 
+		// 	std::cout << buffer[i];
 	}
 	std::cout << std::endl;
     if (_status == 0 && !isWholeHeader())

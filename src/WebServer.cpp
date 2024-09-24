@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/23 13:53:37 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/24 02:57:42 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -243,7 +243,10 @@ bool WebServer::checkTimer(int timeout_seconds)
 {
 	Client *client;
 	bool timedout = false;
+	static time_t lastCheck = std::time(NULL);
 	
+	if (std::difftime(lastCheck, std::time(NULL)) < 30)
+		return false;
 	// std::cout << "[INFO] Check timers" << std::endl;
 	for (std::vector<pollfd>::iterator it = _fds.begin(); it != _fds.end(); it++)
 		if (it->revents == 0)
@@ -258,49 +261,39 @@ bool WebServer::checkTimer(int timeout_seconds)
 					}
 					break;
 				}
+	lastCheck = std::time(NULL);
 	return timedout;
 }
 
 
-bool WebServer::eraseAndContinue(std::vector<pollfd>::iterator &it, std::string what)
-{
-	(void)what;
-	// std::cout << "[INFO] erasing " << what << " from pollfd fd: " << it->fd << std::endl;
-	it = _fds.erase(it);
-	it--;
-	return true;
-}
+// bool WebServer::eraseAndContinue(std::vector<pollfd>::iterator &it, std::string what)
+// {
+// 	(void)what;
+// 	// std::cout << "[INFO] erasing " << what << " from pollfd fd: " << it->fd << std::endl;
+// 	it = _fds.erase(it);
+// 	it--;
+// 	return true;
+// }
 
 void WebServer::iterateAndRunActiveFD()
 {
-	int status;
-	for (std::vector<pollfd>::iterator it = _fds.begin(); it != _fds.end(); it++)
+	static std::vector<pollfd>::iterator it = _fds.begin();
+	int status = -1;
+	while (1)
 	{
+		if (it == _fds.end())
+			it = _fds.begin();
 		try
 		{
 			if (it->revents & (POLLIN|POLLOUT|POLLHUP|POLLNVAL))
 			{
-				if (fd_is_server(it->fd))
-					;
-				else if ((status = fd_is_client(*it)) >=0)
-				{
-					if (status == 1)
-						eraseAndContinue(it, "client");
-					// if (status == 2)	
-					// 	return ;
-				}
-				else if ((status = fd_is_cgi(*it)) >= 0) 
-				{
-					if (status == 1)
-						eraseAndContinue(it, "cgi");
-				}
-				else if ((status = fd_is_cgiwrite(*it)) >= 0)
-				{
-					if (status == 1)
-						eraseAndContinue(it, "cgi write");
-				}
+				if ((status = fd_is_cgi(*it)) < 0)
+					if ((status = fd_is_cgiwrite(*it)) < 0)
+						status = fd_is_client(*it);
+				it = (status == 1) ? _fds.erase(it) : it + 1;
+				return;
 			}
-			usleep(1000);
+			it++;
 		}
 		catch (const std::exception& e)
 		{
@@ -308,6 +301,16 @@ void WebServer::iterateAndRunActiveFD()
 			throw it;
 		}
 	}
+}
+
+int WebServer::iterateAndCheckIncomingConnections()
+{
+	for (std::vector<pollfd>::iterator it = _fds.begin(); it != _fds.end(); it++)
+	{
+		if (it->revents)
+			return fd_is_server(it->fd);
+	}
+	return 0;
 }
 
 void WebServer::run()
@@ -324,16 +327,17 @@ void WebServer::run()
 			continue;
 		try
 		{
-			iterateAndRunActiveFD();
+			if (iterateAndCheckIncomingConnections() == 0)
+				iterateAndRunActiveFD();
 		}
 		catch (std::vector<pollfd>::iterator &it)
 		{
 			for (Server &srv : _servers)
 				if (Client *client = srv.get_client(it->fd))
 					client->close_connection();
-			_fds.erase(it);
+			it = _fds.erase(it);
 		}
-		// usleep(100);
+		// usleep(100000);
     }
 	cleanexit();
 }
