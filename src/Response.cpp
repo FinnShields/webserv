@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/24 16:31:41 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/24 23:48:13 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -204,10 +204,14 @@ const std::string Response::get()
 	bool autoindex = _srv.config.getBestValues(_index_virt, _target, "autoindex", {"off"})[0] == "on";
 	if (autoindex && std::filesystem::is_directory(path)) 
 		return load_directory_listing(path);
-	return _srv.config.selectLocation(_target) == "main" ? (STATUS_LINE_200 + std::string("Content-Length: 0\r\n\r\n"))
+	return _srv.config.selectLocation(_target) == "main" ? (STATUS_LINE_200 + contentLength(0) + std::string("\r\n"))
 		: getErrorPage(404);
 }
 
+std::string Response::contentLength(size_t len)
+{
+	return "Content-Length: " + std::to_string(len) + "\r\n";
+}
 const std::string Response::post()
 {
     try
@@ -292,7 +296,7 @@ const std::string Response::deleteResp()
     _message = "No content";
     std::string path = getPath();
 	if (deleteFile(path) == 204)
-		return (STATUS_LINE_204);
+		return (STATUS_LINE_204 + std::string("\r\n"));
 	return (getErrorPage(404));
 }
 
