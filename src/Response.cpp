@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/24 15:29:43 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/25 01:01:36 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -146,19 +146,19 @@ const std::string Response::run()
                     (method == "PUT") ? put() :
                     (method == "DELETE") ? deleteResp() : 
                     getErrorPage(501);
+	if (_response.empty())
+		return "";
 	setCookie();
+	_response += "\r\n";
+	_response += (_req.get("method").compare("HEAD") && !_body.empty()) ? _body : "";
     return _response;
 }
 void Response::setCookie()
 {
-    size_t endofheader = _response.find("\r\n\r\n");
-	if (endofheader == std::string::npos)
-		return ;
-	endofheader += 2;
-	if (_req.get("cookie").empty() || _req.get("cookie").find("session-id") == std::string::npos)
-        _response.insert(endofheader, createCookie());
-    else
-        _srv.saveCookieInfo(_req.getRef("cookie"));
+	// if (_req.get("cookie").empty() || _req.get("cookie").find("session-id") == std::string::npos)
+        _response += createCookie();
+    // else
+    //     _srv.saveCookieInfo(_req.getRef("cookie"));
 }
 
 bool Response::isCGI()
@@ -183,7 +183,7 @@ const std::string Response::redirect()
     if (redirect.size() > 1 && !redirect[1].empty())
         response += "Location: " + redirect[1] + "\r\n";
     response += "Content-Length: 0\r\n"
-                "Connection: close\r\n\r\n";
+                "Connection: close\r\n";
     return response;
 }
 
@@ -194,7 +194,7 @@ const std::string Response::get()
         _message = "OK";
     }
 	std::string path = getPath();
-    // std::cout << "PATH=" << path << std::endl;
+    std::cout << "PATH=" << path << std::endl;
 	if (std::filesystem::is_regular_file(path) && std::filesystem::exists(path))
 		return load_file(path);
 	std::string _index = _srv.config.getBestValues(_index_virt, _target, "index", DEFAULT_INDEX)[0];
@@ -204,10 +204,14 @@ const std::string Response::get()
 	bool autoindex = _srv.config.getBestValues(_index_virt, _target, "autoindex", {"off"})[0] == "on";
 	if (autoindex && std::filesystem::is_directory(path)) 
 		return load_directory_listing(path);
-	return _srv.config.selectLocation(_target) == "main" ? (STATUS_LINE_200 + std::string("Content-Length: 0\r\n\r\n"))
+	return _srv.config.selectLocation(_target) == "main" ? (STATUS_LINE_200 + contentLength(0) + std::string("\r\n"))
 		: getErrorPage(404);
 }
 
+std::string Response::contentLength(size_t len)
+{
+	return "Content-Length: " + std::to_string(len) + "\r\n";
+}
 const std::string Response::post()
 {
     try
@@ -229,8 +233,8 @@ const std::string Response::post()
     _message = _code == 201 ? "Created" :
             _code == 204 ? "No Content" :
             "Unknown error";
-    return _code == 201 ? STATUS_LINE_201 + std::string("\r\n") : 
-			_code == 204 ? STATUS_LINE_204 + std::string("\r\n") :
+    return _code == 201 ? STATUS_LINE_201 + contentLength(0) : 
+			_code == 204 ? STATUS_LINE_204  : 
 			getErrorPage(500);
 }
 
@@ -257,8 +261,8 @@ const std::string Response::put()
     _message = _code == 201 ? "Created" :
             _code == 204 ? "No Content" :
             "Unknown error";
-    return _code == 201 ? STATUS_LINE_201 + std::string("\r\n") : 
-			_code == 204 ? STATUS_LINE_204 + std::string("\r\n") :
+    return _code == 201 ? STATUS_LINE_201 + contentLength(0) : 
+			_code == 204 ? STATUS_LINE_204 :
 			getErrorPage(500);
 }
 
@@ -278,11 +282,10 @@ const std::string Response::getErrorPage(int code)
 	std::ifstream errorPage(errorPath);
 	std::stringstream buffer;
 	buffer << errorPage.rdbuf();
+	_body = buffer.str();
 	errorPage.close();
     std::string responseString = "HTTP/1.1 " + std::to_string(code) + " " + _message + "\r\nContent-Type: text/html\r\n";
-    responseString += "Content-Length: " + std::to_string(buffer.str().size()) + "\r\n\r\n";
-    if (_req.get("method").compare("HEAD"))
-	    responseString += buffer.str();
+    responseString += contentLength(_body.size()) + "\r\n";
 	return (responseString);
 }
 
@@ -292,7 +295,7 @@ const std::string Response::deleteResp()
     _message = "No content";
     std::string path = getPath();
 	if (deleteFile(path) == 204)
-		return (STATUS_LINE_204);
+		return (STATUS_LINE_204 + std::string("\r\n"));
 	return (getErrorPage(404));
 }
 
@@ -381,28 +384,22 @@ const std::string Response::load_file(std::string filepath)
 	if (!_filestream_read.is_open())
 		return (getErrorPage(404));
 	
-	std::stringstream buffer;
-	// if (_req.get("cookie").empty())
-	// 	buffer << createCookie();
-	// else
-	// 	_srv.saveCookieInfo(_req.getRef("cookie"));
-	// buffer << "\r\n";
-	
     std::string response = (!_req.get("Method").compare("POST")) ? STATUS_LINE_201 + ("Location: " + _fileName + "\r\n") : 
                             STATUS_LINE_200;
 	if (isHtml(filepath))
     {
+		std::stringstream buffer;
 		buffer << _filestream_read.rdbuf();
         _filestream_read.close();
+		_body = buffer.str();
+		buffer.clear();
         response += "Content-Type: text/html\r\n";
-        response += "Content-Length: " + std::to_string(buffer.str().size()) + "\r\n\r\n";
-        if (_req.get("method").compare("HEAD"))
-            response += buffer.str();
+        response += contentLength(_body.size());
     }
 	else
 	{
         response += "Transfer-Encoding: chunked\r\n";
-        response += "Content-Type: application/octet-stream\r\n\r\n";
+        response += "Content-Type: application/octet-stream\r\n";
         if (_req.get("method").compare("HEAD"))
             _file = 3;
         else
@@ -413,7 +410,6 @@ const std::string Response::load_file(std::string filepath)
 
 const std::string Response::load_directory_listing(std::string directoryPath)
 {
-    std::stringstream   buffer;
     t_vector_str        directories;
     t_vector_str        files;
     std::string         res;
@@ -423,29 +419,25 @@ const std::string Response::load_directory_listing(std::string directoryPath)
 
     if (_target == "/")
         _target = "";
-    buffer << "<html><head><title>Directory Listing</title></head><body>"
-            << "<h2>Directory Listing of " << htmlEscape(directoryPath) << "</h2><ul>";
-    buffer << "<li><a href=\"../\">..</a>";
+    _body = "<html><head><title>Directory Listing</title></head><body>\
+			<h2>Directory Listing of " + htmlEscape(directoryPath) + "</h2><ul>\
+    		<li><a href=\"../\">..</a>";
     for (const auto& dirName : directories) 
-        buffer << "<li id=\"" << dirName << "\"><a href=\"" << _target << "/" << dirName << "\">" << dirName << "</a>"
-                << "<button type=\"button\" onclick=\"deleteFile('" << dirName << "')\">Delete</button></li>";
+        _body += "<li id=\"" + dirName + "\"><a href=\"" + _target + "/" + dirName + "\">" + dirName + "</a>"
+                + "<button type=\"button\" onclick=\"deleteFile('" + dirName + "')\">Delete</button></li>";
     for (const auto& fileName : files) 
-        buffer << "<li id=\"" << fileName << "\"><a href=\"" << _target << "/" << fileName << "\" download>" << fileName << "</a>"
-                << "<button type=\"button\" onclick=\"deleteFile('" << fileName << "')\">Delete</button></li>";
-    buffer << "</ul><script>"
-        << "function deleteFile(fileName) {"
-        << "  fetch('" << _target << "/' + encodeURIComponent(fileName), { method: 'DELETE' })"
-        << "    .then(response => { if (response.ok) document.getElementById(fileName).remove(); })"
-        << "    .catch(error => console.error('Error:', error));"
-        << "}</script>"
-        << "</body></html>";
-    if (_code == 201)
-        res = STATUS_LINE_201;
-    else
-        res = STATUS_LINE_200 ;
-    res += "Content-Type: text/html\r\nContent-Length: " + std::to_string(buffer.str().size()) + "\r\n\r\n";
-    if (_req.get("method").compare("HEAD"))
-        res += buffer.str();
+        _body += "<li id=\"" + fileName + "\"><a href=\"" + _target + "/" + fileName + "\" download>" + fileName + "</a>"
+                + "<button type=\"button\" onclick=\"deleteFile('" + fileName + "')\">Delete</button></li>";
+    _body + "</ul><script>\
+        	function deleteFile(fileName) {\
+        	fetch('" + _target + "/' + encodeURIComponent(fileName), { method: 'DELETE' })\
+        	    .then(response => { if (response.ok) document.getElementById(fileName).remove(); })\
+        	    .catch(error => console.error('Error:', error));\
+        	}</script>\
+        	</body></html>";
+    
+    res = _code == 201 ? STATUS_LINE_201 : STATUS_LINE_200 ;
+    res += "Content-Type: text/html\r\n" + contentLength(_body.size());
     return (res);
 }
 
@@ -615,7 +607,9 @@ const std::string Response::appendfile()
         _fileCurrentSize += end;
 		bodyRaw.clear();
         std::cout << "[INFO] File appended " << _req.getBodyTotalSize() << "/" << _req.getHeader("content-length") << std::endl;
-         return STATUS_LINE_201 + std::string("\r\n");
+        _response = STATUS_LINE_201;
+		setCookie();
+		return _response + std::string("\r\n");
     }
     _file = -1;
     std::cerr << "[ERROR] File is not open" << std::endl;

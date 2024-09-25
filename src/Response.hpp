@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:06:10 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/24 14:47:33 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/25 00:34:32 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,7 +32,6 @@
 #define RESPONSE_501 "HTTP/1.1 501 Not Implemented\r\nContent-Type: text/plain\r\n\r\nError: Method not recognized or not implemented"
 #define DEFAULT_INDEX {"index.html"}
 #define DEFAULT_MAX_BODY_SIZE {"0"}
-
 
 
 class Request;
@@ -63,6 +62,7 @@ class Response
         std::string _response;
 		std::unique_ptr<Cgi> _cgi;
 		std::string _cgi_response;
+		std::string _body;
 
 		const std::string redirect();
 		const std::string runCGI();
@@ -83,6 +83,7 @@ class Response
 		void setCookie();
 
         //Helper functions
+		std::string contentLength(size_t len);
         bool check_body_size();
         std::string getPath();
         bool isHtml(const std::string fileName);
