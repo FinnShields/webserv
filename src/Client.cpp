@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/24 01:50:40 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/25 00:50:41 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -197,7 +197,7 @@ int Client::send_response()
 		std::cout << "send_cgi_response status: " << status << std::endl;
 		return status;
 	}
-    // std::cout << "---response----\n" << _response << "\n----END----" << std::endl;
+    std::cout << "---response----\n" << _response << "\n----END----" << std::endl;
 	if ((bytesSent = send(_fd, _response.c_str(), std::min((size_t) 10000, _response.size()), 0)) < 0)
     {
         _force_closeconnection = 1;
