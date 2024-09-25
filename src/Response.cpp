@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/25 15:19:27 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/25 16:08:56 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -661,10 +661,7 @@ std::string Response::createCookie()
 	srand((size_t) time(NULL));
 	newSessionId = (size_t) rand();
 	while (_srv.checkCookieExist(newSessionId))
-	{
-		srand((size_t) time(NULL));
 		newSessionId = (size_t) rand();
-	}
 	_srv.setNewCookie(newSessionId);
 	return ("Set-Cookie: session-id=" + std::to_string(newSessionId) + "\r\n");
 }
