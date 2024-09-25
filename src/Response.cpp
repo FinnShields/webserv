@@ -428,7 +428,7 @@ const std::string Response::load_directory_listing(std::string directoryPath)
     for (const auto& fileName : files) 
         _body += "<li id=\"" + fileName + "\"><a href=\"" + _target + "/" + fileName + "\" download>" + fileName + "</a>"
                 + "<button type=\"button\" onclick=\"deleteFile('" + fileName + "')\">Delete</button></li>";
-    _body + "</ul><script>\
+    _body += "</ul><script>\
         	function deleteFile(fileName) {\
         	fetch('" + _target + "/' + encodeURIComponent(fileName), { method: 'DELETE' })\
         	    .then(response => { if (response.ok) document.getElementById(fileName).remove(); })\

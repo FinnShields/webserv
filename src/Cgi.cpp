@@ -200,16 +200,20 @@ int Cgi::get_writefd()
 }
 void Cgi::setExtension()
 {
-    //_pos_cgi = 9;   //  /cgi-bin/
-    _pos_cgi = 0;   //  /
+    // std::cerr << "_path=" <<_path << std::endl;
+    // std::cerr << "_target=" << _target << std::endl;
+    //_pos_cgi = 9;   //  for old version staring from /cgi-bin/
+    _pos_cgi = 0;   //    for new verstion strating form begining /
     _pos_dot = _path.find('.', _pos_cgi);
     if (_pos_dot == std::string::npos)
         return ;
     _pos_query = _path.find('?', _pos_dot);
-    _pos_info = _path.rfind('/', _pos_dot);
-    //std::cerr << "_pos_dot =" << _pos_dot << "\n";
-    //std::cerr << "_pos_query =" << _pos_query << "\n";
-    ///std::cerr << "_pos_info =" << _pos_info << "\n";
+    _pos_info = _path.find('/', _pos_dot);
+    if (DEBUG){
+        std::cerr << "_pos_dot =" << _pos_dot << "\n";
+        std::cerr << "_pos_query =" << _pos_query << "\n";
+        std::cerr << "_pos_info =" << _pos_info << "\n";
+    }
     size_t ext_len = std::min(_path.size(), std::min(_pos_query,_pos_info)) - _pos_dot;
     _ext = _path.substr(_pos_dot, ext_len);
 }
