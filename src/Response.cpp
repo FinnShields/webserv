@@ -155,10 +155,10 @@ const std::string Response::run()
 }
 void Response::setCookie()
 {
-	// if (_req.get("cookie").empty() || _req.get("cookie").find("session-id") == std::string::npos)
+	if (_req.get("cookie").empty() || _req.get("cookie").find("session-id") == std::string::npos)
         _response += createCookie();
-    // else
-    //     _srv.saveCookieInfo(_req.getRef("cookie"));
+    else
+        _srv.saveCookieInfo(_req.getRef("cookie"));
 }
 
 bool Response::isCGI()
@@ -425,17 +425,17 @@ const std::string Response::load_directory_listing(std::string directoryPath)
     for (const auto& dirName : directories) 
         _body += "<li id=\"" + dirName + "\"><a href=\"" + _target + "/" + dirName + "\">" + dirName + "</a>"
                 + "<button type=\"button\" onclick=\"deleteFile('" + dirName + "')\">Delete</button></li>";
-    for (const auto& fileName : files) 
+    for (const auto& fileName : files) {
         _body += "<li id=\"" + fileName + "\"><a href=\"" + _target + "/" + fileName + "\" download>" + fileName + "</a>"
                 + "<button type=\"button\" onclick=\"deleteFile('" + fileName + "')\">Delete</button></li>";
-    _body += "</ul><script>\
+        _body += "</ul><script>\
         	function deleteFile(fileName) {\
         	fetch('" + _target + "/' + encodeURIComponent(fileName), { method: 'DELETE' })\
         	    .then(response => { if (response.ok) document.getElementById(fileName).remove(); })\
         	    .catch(error => console.error('Error:', error));\
         	}</script>\
         	</body></html>";
-    
+    }
     res = _code == 201 ? STATUS_LINE_201 : STATUS_LINE_200 ;
     res += "Content-Type: text/html\r\n" + contentLength(_body.size());
     return (res);
