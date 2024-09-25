@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/25 01:01:36 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/25 15:19:27 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -135,11 +135,10 @@ const std::string Response::run()
     if(!check_body_size()) 
     {
 		_req.getBodyRawBytes().clear();
-        return getErrorPage(413);
+        _response = getErrorPage(413);
     }
-	if(!isMethodValid(method))
-		return _response;
-    _response = _srv.config.getBestValues(_index_virt, _target, "return", {""})[0] != "" ? redirect() :
+	else if(isMethodValid(method))
+    	_response = _srv.config.getBestValues(_index_virt, _target, "return", {""})[0] != "" ? redirect() :
     	            isCGI() ? runCGI() :
                     (method == "GET" || method == "HEAD") ? get() : 
                     (method == "POST") ? post() :
@@ -204,7 +203,7 @@ const std::string Response::get()
 	bool autoindex = _srv.config.getBestValues(_index_virt, _target, "autoindex", {"off"})[0] == "on";
 	if (autoindex && std::filesystem::is_directory(path)) 
 		return load_directory_listing(path);
-	return _srv.config.selectLocation(_target) == "main" ? (STATUS_LINE_200 + contentLength(0) + std::string("\r\n"))
+	return _srv.config.selectLocation(_target) == "main" ? (STATUS_LINE_200 + contentLength(0))
 		: getErrorPage(404);
 }
 
@@ -285,7 +284,7 @@ const std::string Response::getErrorPage(int code)
 	_body = buffer.str();
 	errorPage.close();
     std::string responseString = "HTTP/1.1 " + std::to_string(code) + " " + _message + "\r\nContent-Type: text/html\r\n";
-    responseString += contentLength(_body.size()) + "\r\n";
+    responseString += contentLength(_body.size());
 	return (responseString);
 }
 
