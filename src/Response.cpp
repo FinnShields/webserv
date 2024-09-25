@@ -608,6 +608,7 @@ const std::string Response::appendfile()
 		bodyRaw.clear();
         std::cout << "[INFO] File appended " << _req.getBodyTotalSize() << "/" << _req.getHeader("content-length") << std::endl;
         _response = STATUS_LINE_201;
+		setCookie();
 		return _response + std::string("\r\n");
     }
     _file = -1;
