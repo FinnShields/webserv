@@ -155,10 +155,10 @@ const std::string Response::run()
 }
 void Response::setCookie()
 {
-	// if (_req.get("cookie").empty() || _req.get("cookie").find("session-id") == std::string::npos)
+	if (_req.get("cookie").empty() || _req.get("cookie").find("session-id") == std::string::npos)
         _response += createCookie();
-    // else
-    //     _srv.saveCookieInfo(_req.getRef("cookie"));
+    else
+        _srv.saveCookieInfo(_req.getRef("cookie"));
 }
 
 bool Response::isCGI()
@@ -608,7 +608,6 @@ const std::string Response::appendfile()
 		bodyRaw.clear();
         std::cout << "[INFO] File appended " << _req.getBodyTotalSize() << "/" << _req.getHeader("content-length") << std::endl;
         _response = STATUS_LINE_201;
-		setCookie();
 		return _response + std::string("\r\n");
     }
     _file = -1;
