@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/24 02:57:42 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/26 11:41:14 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -122,7 +122,7 @@ int WebServer::fd_is_client(pollfd &pfd)
             {
 				std::cout << "[INFO] Client fd: " << pfd.fd << " : " << pfd.revents;
 			    int ret = client->handle_request();
-				std::cout << "[INFO] Client handle request return: " << ret << std::endl;
+				// std::cout << "[INFO] Client handle request return: " << ret << std::endl;
 				if (ret == 2)
 				{
 					if (client->get_cgi_fd() == -1)
@@ -317,10 +317,10 @@ void WebServer::run()
 {
 	while (running)
 	{
-		std::cout << "Waiting for action... - size of pollfd vector: " << _fds.size() << std::endl;
+		// std::cout << "Waiting for action... - size of pollfd vector: " << _fds.size() << std::endl;
 		int poll_result = poll(_fds.data(), _fds.size(), POLLTIMEOUT);
-		for (pollfd &pfd : _fds)
-			std::cout << "fd: " << pfd.fd << " events: " << pfd.events << " revents: " << pfd.revents << " Address of object: " << &pfd << std::endl;
+		// for (pollfd &pfd : _fds)
+		// 	std::cout << "fd: " << pfd.fd << " events: " << pfd.events << " revents: " << pfd.revents << " Address of object: " << &pfd << std::endl;
 		if (poll_result == -1)
 			return (perror("poll"));
 		if (!checkTimer(SOCKETTIMEOUT) && poll_result == 0)

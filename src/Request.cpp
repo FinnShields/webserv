@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/09/24 03:00:54 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/26 11:44:35 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -98,7 +98,7 @@ int	Request::read(int _fd)
     ssize_t recvReturn = recv(_fd, &buffer, MAX_BUFFER_SIZE, 0);
 	_recvReturnTotal += recvReturn;
     std::cout << " read bytes: " << recvReturn << " total bytes:" << _recvReturnTotal << std::endl;
-	std::cout << "status: " << _status << std::endl;
+	// std::cout << "status: " << _status << std::endl;
 	if (recvReturn < 0)
 	{
 		std::cerr << "[ERROR] Recv error: " << strerror(errno) << std::endl;
@@ -119,7 +119,7 @@ int	Request::read(int _fd)
 		// else 
 		// 	std::cout << buffer[i];
 	}
-	std::cout << std::endl;
+	// std::cout << std::endl;
     if (_status == 0 && !isWholeHeader())
 		return 3;
     _status == 1 ? resetBody()
