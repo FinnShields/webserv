@@ -20,11 +20,11 @@ const std::string Response::setAbsolutePath()
     return exePath.parent_path().string() + '/';
 }
 
-Response::Response(int fd, Request &req, Server &srv) : _fd(fd), _req(req), _srv(srv), _file(0), _code(0){
+Response::Response(int fd, Request &req, Server &srv, Client &client) : _fd(fd), _req(req), _srv(srv), _client(client), _file(0), _code(0){
 	_cgi_response = STATUS_LINE_200;
 }
 
-Response::Response(const Response &copy) : _req(copy._req), _srv(copy._srv)
+Response::Response(const Response &copy) : _req(copy._req), _srv(copy._srv), _client(copy._client)
 {
     *this = copy;
 }
@@ -159,10 +159,17 @@ const std::string Response::appendHeadersAndBody(std::string &response)
 }
 void Response::setCookie()
 {
-	if (_req.get("cookie").empty() || _req.get("cookie").find("session-id") == std::string::npos)
+    if (_client.getSessionID() != -1) {
+        return ;
+    }
+	if (_req.get("cookie").empty() || _req.get("cookie").find("session-id") == std::string::npos) {
         _response += createCookie();
-    else
-        _srv.saveCookieInfo(_req.getRef("cookie"));
+    }
+    else {
+        std::string cookie = _req.getRef("cookie");
+        _srv.saveCookieInfo(cookie);
+        _client.setSessionID(std::atoi(cookie.c_str() + cookie.find("session-id=") + 11));
+    }
 }
 
 bool Response::isCGI()
@@ -670,6 +677,7 @@ std::string Response::createCookie()
 	while (_srv.checkCookieExist(newSessionId))
 		newSessionId = (size_t) rand();
 	_srv.setNewCookie(newSessionId);
+    _client.setSessionID(newSessionId);
 	return ("Set-Cookie: session-id=" + std::to_string(newSessionId) + "\r\n");
 }
 

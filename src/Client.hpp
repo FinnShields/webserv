@@ -45,6 +45,7 @@ class Client
 		pollfd *_cgireadpfd;
 		bool _force_closeconnection;
 		int resets;
+        int _sessionID;
 		
 		int send_cgi_response();
         Client();
@@ -68,6 +69,8 @@ class Client
 		bool isRequestComplete();
 		int shouldCloseConnection();
 		void resetForNextRequest();
+        int getSessionID();
+        void setSessionID(int id);
 };
 
 #endif
