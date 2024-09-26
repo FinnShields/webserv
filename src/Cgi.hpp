@@ -6,7 +6,7 @@
 /*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/26 14:04:53 by apimikov          #+#    #+#             */
-/*   Updated: 2024/09/26 14:05:16 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/09/26 15:23:11 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,9 +23,6 @@
 
 #include "Server.hpp"
 #include "Request.hpp"
-
-#define CGI_TIMEOUT	 10
-#define DEBUG 0
 
 class Server;
 class Request;

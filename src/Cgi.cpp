@@ -3,14 +3,16 @@
 /*                                                        :::      ::::::::   */
 /*   Cgi.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/06 13:41:04 by apimikov          #+#    #+#             */
-/*   Updated: 2024/09/26 11:05:10 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/26 15:32:10 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Cgi.hpp"
+
+#define DEBUG 0
 
 Cgi::Cgi(const Cgi& other):
     _request(other._request),
@@ -388,7 +390,7 @@ void Cgi::setEnvMap(){
     _env_map["SERVER_NAME"] = _request.getHeader("Host");
     _env_map["REQUEST_METHOD"] = _request.get("method");
     _env_map["SCRIPT_FILENAME"] = _target_file_path;
-    _env_map["PATH_INFO"] = _target_path_info;
+    _env_map["PATH_INFO_RFC"] = _target_path_info;
     _env_map["PATH_INFO"] = _target_file_path;
     _env_map["QUERY_STRING"] = _target_query;
 
