@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:19 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/26 15:19:54 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/26 16:11:44 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,6 +47,9 @@ class WebServer
 		int		fd_is_client(pollfd &pfd);
 		int		fd_is_cgi(pollfd pfd);
 		int		fd_is_cgiwrite(pollfd &pfd);
+		int		fd_is_client_write(pollfd &pfd, Client* client);
+		int		fd_is_client_read(pollfd &pfd, Client* client);
+		void	addCGItoPollfd(pollfd &pfd, Client *client);
 		void	setRealToVirt();
 		std::vector<size_t>  extractVirtualHostsIndices();
 		bool	checkTimer(int timeout_seconds);

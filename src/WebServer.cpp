@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/26 15:18:59 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/26 16:18:19 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -156,66 +156,78 @@ int WebServer::fd_is_client(pollfd &pfd)
 		{
 			std::cout << "[INFO] Client fd: " << pfd.fd << " : " << pfd.revents << " ";
             if (pfd.revents & POLLOUT)
-			{
-                int ret = client->send_response();
-				if (ret == 2) 
-					pfd.events &= ~POLLOUT;
-				if (ret == 1)
-				{
-					if (client->shouldCloseConnection())
-					{
-						client->close_connection();
-						return 1;
-					}
-					client->resetForNextRequest();
-					pfd.events = POLLIN;
-				}
-			}
+				if (fd_is_client_write(pfd, client) == 1)
+					return 1;
             if (pfd.revents & POLLIN)
-            {
-			    int ret = client->handle_request();
-				if (ret == 2)
-				{
-					if (client->get_cgi_fd() == -1)
-					{
-						std::cout << "[ERROR] CGI Pipe fd is invalid" << std::endl;
-						ret = 0;
-					}
-					else
-					{
-						if (_cgi_readfd_clients.find(client->get_cgi_fd()) == _cgi_readfd_clients.end())
-						{
-							_fds.push_back({client->get_cgi_fd(), POLLIN, 0});
-							client->setcgiireadpfd(&_fds.back());
-							_cgi_readfd_clients.emplace(client->get_cgi_fd(), &pfd);
-							_fds.push_back({client->getCGIwritefd(), 0, 0});
-							_cgi__writefd_clients.emplace(client->getCGIwritefd(), &pfd);
-							return 2;
-						}
-					}
-				}
-                if (ret == 0)
-                    pfd.events |= POLLOUT;
-                if (ret == -1)
-                {
-					if (client->shouldCloseConnection())
-					{
-						client->close_connection();
-						return 1;
-					}
-					client->resetForNextRequest();
-					pfd.events = POLLIN;
-                }
-            }
+				if (int ret = fd_is_client_read(pfd, client) > 0)
+					return ret;
 			if (pfd.revents & (POLLNVAL | POLLHUP))
 			{
-				std::cout << "[INFO] Client fd: " << pfd.fd << " : " << pfd.revents << std::endl;
 				client->close_connection();
 				return 1;
 			}
 			return 0;
 		}
 	return -1;
+}
+
+int WebServer::fd_is_client_read(pollfd &pfd, Client *client)
+{
+	int ret = client->handle_request();
+	if (ret == 2)
+	{
+		if (client->get_cgi_fd() == -1)
+		{
+			std::cout << "[ERROR] CGI Pipe fd is invalid" << std::endl;
+			ret = 0;
+		}
+		else if (_cgi_readfd_clients.find(client->get_cgi_fd()) == _cgi_readfd_clients.end())
+		{
+			addCGItoPollfd(pfd, client);
+			return 2;
+		}
+	}
+	if (ret == 0)
+		pfd.events |= POLLOUT;
+	if (ret == -1)
+	{
+		if (client->shouldCloseConnection())
+		{
+			client->close_connection();
+			return 1;
+		}
+		client->resetForNextRequest();
+		pfd.events = POLLIN;
+	}
+	return 0;
+}
+
+void WebServer::addCGItoPollfd(pollfd &pfd, Client *client)
+{
+	_fds.push_back({client->get_cgi_fd(), POLLIN, 0});
+	client->setcgiireadpfd(&_fds.back());
+	_cgi_readfd_clients.emplace(client->get_cgi_fd(), &pfd);
+	_fds.push_back({client->getCGIwritefd(), 0, 0});
+	_cgi__writefd_clients.emplace(client->getCGIwritefd(), &pfd);
+}
+
+
+int WebServer::fd_is_client_write(pollfd &pfd, Client* client)
+{
+	int ret = client->send_response();
+	if (ret == 2) 
+		pfd.events &= ~POLLOUT;
+	if (ret == 1)
+	{
+		if (client->shouldCloseConnection())
+		{
+			client->close_connection();
+			return 1;
+		}
+		client->resetForNextRequest();
+		pfd.events = POLLIN;
+	}
+	return ret;
 }
 
 int WebServer::fd_is_cgi(pollfd pfd)
