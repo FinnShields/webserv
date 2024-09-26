@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/25 00:50:41 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/26 10:27:59 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,8 @@ Client::Client(int fd, Server *server) : _fd(fd), _server(server), _request(null
 	_cgireadpfd = nullptr;
 	_force_closeconnection = false;
 	resets = 0;
+	_request = std::make_unique<Request>(_server);
+	_res = std::make_unique<Response>(_fd, *_request, *_server);
 }
 Client::Client(const Client &copy)
 {
@@ -38,6 +40,10 @@ Client& Client::operator=(const Client &assign)
     _response = assign._response;
     _responseSent = assign._responseSent;
 	_cgireadpfd = assign._cgireadpfd;
+	_starttime = assign._starttime;
+	_totalBytesSent = assign._totalBytesSent;
+	_force_closeconnection = assign._force_closeconnection;
+	resets = assign.resets;
     return (*this);
 }
 Client::~Client() {}
@@ -122,9 +128,7 @@ bool Client::isRequestComplete()
 //Return 2 == CGI is waiting for body
 //Return 3 == Headers not fully read
 int Client::handle_request()
-{
-    if (!_request)
-        _request = std::make_unique<Request>(_server);
+{ 
     int ret = _request->read(_fd);
 	// std::cout << "[INFO] Request return: " << ret << std::endl;
 	if (ret == -1)
@@ -139,10 +143,6 @@ int Client::handle_request()
 	}
 	if (_responseSent)
 		return -1;
-    if (!_res)
-    {
-        _res = std::make_unique<Response>(_fd, *_request, *_server);
-    }
     _response = _res->run();
     return ret;
 }
@@ -161,6 +161,7 @@ int Client::send_cgi_response()
 		_force_closeconnection = true;
 	if ((bytesSent = send(_fd, response.c_str(), std::min((size_t) 10000, response.size()), 0)) < 0)
 	{
+		std::cerr << "[ERROR] Send error: " << strerror(errno) << std::endl;
 		_force_closeconnection = 1;
 		return 1;
 	}

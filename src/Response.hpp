@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:06:10 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/25 00:34:32 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/26 10:28:56 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -74,6 +74,7 @@ class Response
 		const std::string load_directory_listing(std::string directoryPath);
 		const std::string getErrorPage(int code);
 		const std::string appendfile();
+		const std::string appendHeadersAndBody(std::string&);
 
 		int createFile(int);      
         int deleteFile(const std::string &);

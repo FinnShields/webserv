@@ -1,0 +1,168 @@
+<!doctype html>
+<html>
+<head>
+    <title>FAB WebServer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-image: url('https://img.freepik.com/free-photo/clear-water_1361-95.jpg?t=st=1727180734~exp=1727184334~hmac=6d35f9354c25b8282d46d3fab52c815c37779bed4cf914e5dc22b2c825019e80&w=1060'); /* Add your image URL */
+            background-size: cover; /* Ensures the image covers the whole background */
+            background-position: center; /* Centers the image */
+            background-attachment: fixed; /* Keeps the image fixed while scrolling */
+            background-repeat: no-repeat; /* Prevents the image from repeating */
+            color: white; /* Changes text color for better contrast with background */
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        p {
+            font-size: 1.1em;
+            line-height: 1.5;
+        }
+        form {
+            margin-bottom: 20px;
+            background-color: rgba(255, 255, 255, 0.8); /* Slightly transparent background */
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            color: #000; /* Ensure form text remains black */
+            display: flex;
+            justify-content: left;
+        }
+        label {
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: block;
+        }
+        input[type="text"], input[type="file"], textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        input[type="submit"], button {
+            background-color: #28a745;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        input[type="submit"]:hover, button:hover {
+            background-color: #218838;
+        }
+        .link-list {
+            margin-top: 20px;
+            padding: 0;
+            list-style-type: none;
+        }
+        .link-list li {
+            margin-bottom: 10px;
+        }
+        .link-list a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .link-list a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h2>Welcome to FAB WebServer</h2>
+    <!-- YouTube Video Section -->
+    <div class="video-container">
+        <!-- <h2>Watch This Video</h2> -->
+        <iframe width="560" height="315" src="https://www.youtube.com/embed/pX-R5P6Cais?autoplay=1&mute=1" 
+            frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+            allowfullscreen></iframe>
+    </div>
+    <h1>_______________________________</h1>    
+    <h2>Test functionality of the server by following forms and links.</h2>
+    <form id="uploadForm" method="post" enctype="multipart/form-data">
+        <label for="fileInput">Upload a file!</label>
+        <input id="fileInput" name="fileInput" type="file" placeholder="Upload a file" />
+        <button id="uploadButton">Upload</button>
+    </form>
+    <div>
+        <button id="deleteButton">Delete uploaded files?</button>
+    </div>
+
+    <script>
+        document.getElementById("uploadForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+            var formData = new FormData(this);
+
+            fetch('/uploads', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.text())
+            .then(data => {
+                console.log('Success:', data);
+                alert('File uploaded successfully!');
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                alert('File upload failed.');
+            });
+        });
+
+        document.getElementById("deleteButton").addEventListener("click", function() {
+            event.preventDefault();
+            window.location.href = "/uploads";
+        });
+    </script>
+
+    <h1>_______________________________</h1>
+    <h2>CGI Forms</h2>
+    <p>CGI GET with query</p>
+    <form action="/cgi-bin/hello.cgi" method="get">
+        First Name: <input type="text" name="first_name" /><br />
+        Last Name: <input type="text" name="last_name" />
+        <input type="submit" value="Submit" />
+    </form>
+
+    <p>CGI GET with query</p>
+    <form action="/cgi-bin/hello.cgi/info" method="get">
+        Name: <input type="text" name="last_name" />
+        <input type="submit" value="Submit with /info" />
+    </form>
+
+    <p>CGI POST .cgi</p>
+    <form action="/cgi-bin/hello.cgi" method="post" target="_blank">
+        <textarea name="textcontent" cols="40" rows="1">Type your text here...</textarea>
+        <input type="submit" value="Submit" />
+    </form>
+
+    <p>CGI POST .py</p>
+    <form action="/cgi-bin/hello.py" method="post" target="_blank">
+        <textarea name="textcontent" cols="40" rows="1">Type your text here...</textarea>
+        <input type="submit" value="Submit" />
+    </form>
+
+    <p>CGI POST with info</p>
+    <form action="/cgi-bin/hello.cgi/info" method="post" target="_blank">
+        <textarea name="textcontent" cols="40" rows="1">Type your text here...</textarea>
+        <input type="submit" value="Submit with /info" />
+    </form>
+
+    <form enctype="multipart/form-data" action="/cgi-bin/hello.cgi" method="post">
+        <p>File: <input type="file" name="userfile" /></p>
+        <p><input type="submit" value="Upload" /></p>
+    </form>
+
+    <h1>_______________________________</h1>
+    <h2>Run CGI Scripts</h2>
+    <ul class="link-list">
+        <li><a href="/cgi-bin/hello.cgi">Run .cgi</a></li>
+        <li><a href="/cgi-bin/script.py">Run .py</a></li>
+        <li><a href="/cgi-bin/script.sh">Run .sh</a></li>
+    </ul>
+</body>
+</html>
