@@ -1,11 +1,21 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   Config.hpp                                         :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2024/09/26 14:04:39 by apimikov          #+#    #+#             */
+/*   Updated: 2024/09/26 15:32:42 by apimikov         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #ifndef CONFIG_HPP
 # define CONFIG_HPP
 
 #include "Parser.hpp"
 
-/* This class is defined to keep and manage data extracted 
-	by parsing congifig file.
-*/
+/* This class is defined to keep and manage data extracted 	by parsing congifig file.*/
 
 class Config
 {
