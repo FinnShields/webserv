@@ -12,40 +12,6 @@
 
 #include "Cgi.hpp"
 
-//Cgi::Cgi();
-
-/*
-   // /cgi-bin/script.cgi   /info   ?   query=python
-DOCUMENT_ROOT: This is a server-specific configuration.
-REMOTE_PORT:  This is information about the client's connection.
-QUERY_STRING: The query string is part of the URL in the GET request, 
-        not a header. It appears after the ? in the URL.
-PATH_INFO:   This is additional path information in the URL.
-PATH_TRANSLATED:  This is a server-specific mapping.
-SCRIPT_FILENAME:   This is a server-specific configuration.
-SERVER_NAME:  However, the Host header typically includes the server name 
-        or IP address and the port number (if not the default port).
-SERVER_PORT:  This is part of the URL in the request line and also implicitly included in the Host header if it's not the default port.
-
-// types of error in Cgi
-If found and executable, the server runs the script.
-If not found, a 404 error is returned.
-If found but not executable, a 403 error or similar may be returned.
-If execution fails, a 502 error may be returned.
-any other error 500
-
-404 "PATH NOT FOUND" 
-403 "PERMISSION DENIED"
-500 unknown cgi problem 
-501 method is not implemented.
-502 cgi execution problem 
-504 time out
-
-not implemented
-"TEAPOT", 418   
-
-*/
-
 Cgi::Cgi(const Cgi& other):
     _request(other._request),
     _server(other._server),
@@ -198,10 +164,9 @@ int Cgi::get_writefd()
 {
 	return _fd_to_cgi[1];
 }
+
 void Cgi::setExtension()
 {
-    // std::cerr << "_path=" <<_path << std::endl;
-    // std::cerr << "_target=" << _target << std::endl;
     //_pos_cgi = 9;   //  for old version staring from /cgi-bin/
     _pos_cgi = 0;   //    for new verstion strating form begining /
     _pos_dot = _path.find('.', _pos_cgi);
@@ -402,7 +367,6 @@ void Cgi::setEnv(){
         line_pnt = new char[line.size() + 1] {0};
         std::strcpy(line_pnt, line.c_str());
         _envp[i] = line_pnt;
-		// std::cout << "envp[" << i << "] = " << _envp[i] << std::endl;
         ++i;
     }
 }
@@ -424,7 +388,7 @@ void Cgi::setEnvMap(){
     _env_map["SERVER_NAME"] = _request.getHeader("Host");
     _env_map["REQUEST_METHOD"] = _request.get("method");
     _env_map["SCRIPT_FILENAME"] = _target_file_path;
-    //_env_map["PATH_INFO"] = _target_path_info;
+    _env_map["PATH_INFO"] = _target_path_info;
     _env_map["PATH_INFO"] = _target_file_path;
     _env_map["QUERY_STRING"] = _target_query;
 
