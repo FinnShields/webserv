@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:06:10 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/26 14:43:37 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/26 15:35:33 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -101,11 +101,10 @@ class Response
 		size_t	findString(std::vector<char> bodyRaw, std::string str, size_t offset);
         char	decodeChar(const char *ch);
 
-	public:
-		// Response();
-		Response(int fd, Request &req, Server &srv, Client &client);
 		Response(const Response &copy);
 		Response &operator=(const Response &assign);
+	public:
+		Response(int fd, Request &req, Server &srv, Client &client);
 		~Response();
 		
 		const std::string	run();

@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/26 15:04:30 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/26 15:30:29 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,7 +49,6 @@ Response::Response(int fd, Request &req, Server &srv, Client &client) : _fd(fd),
 
 Response::~Response() 
 {
-    // std::cout << "[INFO] Response destructor" << std::endl;
     if (_filestream.is_open())
     {
         _filestream.close();
@@ -125,7 +124,6 @@ const std::string Response::get()
         _message = "OK";
     }
 	std::string path = getPath();
-    // std::cout << "PATH=" << path << std::endl;
 	if (std::filesystem::is_regular_file(path) && std::filesystem::exists(path))
 		return load_file(path);
 	std::string _index = _srv.config.getBestValues(_index_virt, _target, "index", DEFAULT_INDEX)[0];
@@ -135,9 +133,7 @@ const std::string Response::get()
 	bool autoindex = _srv.config.getBestValues(_index_virt, _target, "autoindex", {"off"})[0] == "on";
 	if (autoindex && std::filesystem::is_directory(path)) 
 		return load_directory_listing(path);
-	return _target == "/" ? (STATUS_LINE_200 + contentLength(0))
-		: getErrorPage(404);
-	// return getErrorPage(404);
+	return getErrorPage(404);
 }
 
 const std::string Response::post()
@@ -250,7 +246,6 @@ const std::string Response::runCGI()
 			if (pfd.fd == _cgi->get_writefd())
 			{
 				pfd.events = POLLOUT;
-				// std::cout << "CGI_write_fd set to POLLOUT" << std::endl;
 				haswritten = 1;
 				break;
 			}
@@ -619,7 +614,7 @@ int Response::deleteFile(const std::string &file)
         else
             decodedFileName.append(1, file[i]);
     }
-    std::cout << "[INFO] Decoded name: \"" << decodedFileName << "\"" << std::endl;
+    // std::cout << "[INFO] Decoded name: \"" << decodedFileName << "\"" << std::endl;
     if (std::remove(decodedFileName.c_str()) < 0)
 	{
         perror("remove");

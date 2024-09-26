@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:41 by fshields          #+#    #+#             */
-/*   Updated: 2024/09/26 14:34:42 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/26 15:36:51 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,10 +53,10 @@ class Request
         void 	resetBody();
         int 	setCGIflag();
         bool	isWholeHeader();
-	public:
-		Request(Server *srv);
 		Request(const Request&);
 		Request& operator=(const Request&);
+	public:
+		Request(Server *srv);
 		~Request();
 		
 		int		read(int _fd);
