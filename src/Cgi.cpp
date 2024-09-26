@@ -6,11 +6,12 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/06 13:41:04 by apimikov          #+#    #+#             */
-/*   Updated: 2024/09/26 11:36:51 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/26 15:20:32 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Cgi.hpp"
+#define DEBUG 1
 
 //Cgi::Cgi();
 

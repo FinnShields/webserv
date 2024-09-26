@@ -6,11 +6,12 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/26 11:40:27 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/26 15:04:30 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Response.hpp"
+#define DEBUG 0
 
 const std::string Response::ABSOLUTE_PATH = Response::setAbsolutePath();
 
@@ -24,26 +25,27 @@ Response::Response(int fd, Request &req, Server &srv, Client &client) : _fd(fd),
 	_cgi_response = STATUS_LINE_200;
 }
 
-Response::Response(const Response &copy) : _req(copy._req), _srv(copy._srv), _client(copy._client)
-{
-    *this = copy;
-}
+// Response::Response(const Response &copy) : _req(copy._req), _srv(copy._srv), _client(copy._client)
+// {
+//     *this = copy;
+// }
 
-Response& Response::operator=(const Response &assign)
-{
-    _fd = assign._fd;
-    _file = assign._file;
-    _code = assign._code;
-    _message = assign._message;
-    _fileName = assign._fileName;
-    _fileCurrentSize = assign._fileCurrentSize;
-    _bodyMaxSize = assign._bodyMaxSize;
-    _boundary = assign._boundary;
-    _target = assign._target;
-    _index_virt = assign._index_virt;
-    _response = assign._response;
-    return (*this);
-}
+// Response& Response::operator=(const Response &assign)
+// {
+//     _fd = assign._fd;
+//     _file = assign._file;
+//     _code = assign._code;
+//     _message = assign._message;
+//     _fileName = assign._fileName;
+//     _fileCurrentSize = assign._fileCurrentSize;
+//     _bodyMaxSize = assign._bodyMaxSize;
+//     _boundary = assign._boundary;
+//     _target = assign._target;
+//     _index_virt = assign._index_virt;
+//     _response = assign._response;
+// 	_cgi_response = assign._cgi_response;
+//     return (*this);
+// }
 
 Response::~Response() 
 {
@@ -60,21 +62,6 @@ Response::~Response()
     }
 }
 
-/* Supported status codes
-200 OK
-204 No Content
-404 "PATH NOT FOUND" 
-403 "PERMISSION DENIED"
-405 method not allowed
-500 unknown cgi problem 
-501 method/extention is not implemented. Response (method) and Cgi (ext)
-502 cgi execution problem 
-504 time out
-
-not implemented
-418 "TEAPOT" 
-*/
-
 /* File status
 -1 = File failure
 0 = no file
@@ -82,47 +69,6 @@ not implemented
 2 = file is opened in appending mode
 3 = has more chunks to upload
 */
-
-const std::string Response::getTimeOutErrorPage()
-{
-	return getErrorPage(504);
-}
-const std::string Response::getNextChunk()
-{
-    char buffer[MAX_BUFFER_SIZE] = {0};
-    if (!_filestream_read.is_open())
-    {
-        _file = -1;
-        std::cerr << "[ERROR] File is not open" << std::endl;
-        return getErrorPage(500);
-    }
-    if (_filestream_read.eof() || _filestream_read.peek() == std::ifstream::traits_type::eof())
-    {
-        std::cout << "[INFO] EOF reached" << std::endl;
-        _file = 0;
-        _filestream_read.close();
-        return "0\r\n\r\n";
-    }
-    _filestream_read.read(buffer, MAX_BUFFER_SIZE);
-    std::streamsize bytesRead = _filestream_read.gcount();
-    
-    if (_filestream_read.bad() || (_filestream_read.fail() && !_filestream_read.eof()))
-    {
-        _file = -1;
-        std::cerr << "[ERROR] File read error" << std::endl;
-        return getErrorPage(500);
-    }
-    std::stringstream hexStream;
-    hexStream << std::hex << bytesRead;
-    std::string chunk = hexStream.str() + "\r\n" + std::string(buffer, bytesRead) + "\r\n";
-    return chunk;
-}
-
-bool Response::hasMoreChunks() const
-{
-    return _file == 3 ? true : false;
-}
-
 const std::string Response::run()
 {
 	if (_file != 0)
@@ -130,8 +76,6 @@ const std::string Response::run()
     std::string method = _req.get("method");
 	_target = _req.get("target");
 	_index_virt = _srv.getVirtHostIndex(_req.get("host"));
-	if (_srv.index != _index_virt)
-		std::cout << "[INFO] Request is readdressed to virtual server " << _index_virt << "\n";
     if(!check_body_size()) 
     {
 		_req.getBodyRawBytes().clear();
@@ -152,34 +96,10 @@ const std::string Response::appendHeadersAndBody(std::string &response)
 {
 	if (response.empty())
 		return "";
-	setCookie();
+	setCookie(response);
 	response += "\r\n";
 	response += (_req.get("method").compare("HEAD") && !_body.empty()) ? _body : "";
 	return response;
-}
-void Response::setCookie()
-{
-    if (_client.getSessionID() != -1) {
-        return ;
-    }
-	if (_req.get("cookie").empty() || _req.get("cookie").find("session-id") == std::string::npos) {
-        _response += createCookie();
-    }
-    else {
-        std::string cookie = _req.getRef("cookie");
-        _srv.saveCookieInfo(cookie);
-        _client.setSessionID(std::atoi(cookie.c_str() + cookie.find("session-id=") + 11));
-    }
-}
-
-bool Response::isCGI()
-{
-    return _req.isCGIflag();
-    //if (_srv.config.getBestValues(_index_virt, _target, "cgi_ext", {""})[0] != "")
-    //     return true;
-    //if (_target.size() > 9 && _target.substr(0, 9).compare("/cgi-bin/") == 0)
-    //    return true;
-    return false;
 }
 
 const std::string Response::redirect()
@@ -220,10 +140,6 @@ const std::string Response::get()
 	// return getErrorPage(404);
 }
 
-std::string Response::contentLength(size_t len)
-{
-	return "Content-Length: " + std::to_string(len) + "\r\n";
-}
 const std::string Response::post()
 {
     try
@@ -313,19 +229,18 @@ const std::string Response::deleteResp()
 
 const std::string Response::runCGI()
 {
-	// if (_srv.config.selectLocation(_target) != "/cgi-bin")
-	// {
-	// 	std::cerr << "CGI is not configured.\n";
-	// 	return (getErrorPage(500));
-	// }
 	if (_cgi.get() == nullptr)
 	{
-		std::cerr << "------- CGI ----------\n";
+		if (DEBUG)
+			std::cerr << "------- CGI ----------\n";
         _cgi = std::make_unique<Cgi>(_req, _srv, _index_virt, getPath());
 		_cgi->start();
 		_code = _cgi->getStatus();
-		std::cerr << "CGI status = " << _code << "\n";
-		std::cout << "------- END ----------" << std::endl;
+		if (DEBUG)
+		{
+			std::cerr << "CGI status = " << _code << "\n";
+			std::cout << "------- END ----------" << std::endl;
+		}
 		writeToCgi();
 	}
 	else
@@ -352,43 +267,24 @@ int Response::writeToCgi()
 {
 	int bytesWritten;
 	std::vector<char> &bodyraw = _req.getBodyRawBytes();
-	// std::cout << "[INFO] Writes to CGI. Body size: " << bodyraw.size() << std::endl;
 	if ((bytesWritten = _cgi->writeToPipe(_req.getBodyRawBytes().data(), _req.getBodyRawBytes().size())) > 0)
 		bodyraw.erase(bodyraw.begin(), bodyraw.begin() + bytesWritten);
-	// std::cout << "[INFO] Body size after write: " << bodyraw.size() << std::endl;
 	return bodyraw.size();
 }
+
 size_t Response::readfromCGI()
 {
 	std::string tmp = _cgi->readFromPipe();
-	// std::cout << "tmp from cgi: " << tmp.size() << "\n" << tmp << std::endl;
 	if (tmp.find("Status: 500 Internal Server Error") != std::string::npos)
 	{
 		_cgi_response = getErrorPage(500);
 		_cgi_response = appendHeadersAndBody(_cgi_response);
-		// _cgi_response = STATUS_LINE_200 + tmp + "\r\n\r\n";
 		_code = 500;
 		return _cgi_response.size();
 	}
 	_code = _cgi->getStatus();
 	_cgi_response.append(tmp);
-	std::cout << "_response size: " << _cgi_response.size() << std::endl;
-    // std::cout << "CGI STATUS: " << _cgi->getStatus() << std::endl;
 	return tmp.size();
-}
-std::string &Response::getCgiResponse()
-{
-	return _cgi_response;
-}
-
-int Response::getCGIreadfd()
-{
-	return _cgi->get_pipereadfd();
-}
-
-int Response::getCGIwritefd()
-{
-	return _cgi->get_writefd();
 }
 
 const std::string Response::load_file(std::string filepath)
@@ -454,6 +350,39 @@ const std::string Response::load_directory_listing(std::string directoryPath)
     return (res);
 }
 
+void Response::setCookie(std::string &response)
+{
+    if (_client.getSessionID() != -1) {
+        return ;
+    }
+	if (_req.get("cookie").empty() || _req.get("cookie").find("session-id") == std::string::npos) {
+        response += createCookie();
+    }
+    else {
+        std::string cookie = _req.getRef("cookie");
+        _srv.saveCookieInfo(cookie);
+        _client.setSessionID(std::atoi(cookie.c_str() + cookie.find("session-id=") + 11));
+    }
+}
+
+std::string Response::createCookie()
+{
+	size_t newSessionId;
+
+	srand((size_t) time(NULL));
+	newSessionId = (size_t) rand();
+	while (_srv.checkCookieExist(newSessionId))
+		newSessionId = (size_t) rand();
+	_srv.setNewCookie(newSessionId);
+    _client.setSessionID(newSessionId);
+	return ("Set-Cookie: session-id=" + std::to_string(newSessionId) + "\r\n");
+}
+
+bool Response::isCGI()
+{
+    return _req.isCGIflag();
+}
+
 bool Response::check_body_size()
 {
     const std::string max_body_size_str = _srv.config.getBestValues(_index_virt, _target, "client_max_body_size", {DEFAULT_MAX_BODY_SIZE})[0];
@@ -462,16 +391,12 @@ bool Response::check_body_size()
     size_t curr_body_size = _req.getBodyTotalSize();
 	size_t max_body_size = std::stol(max_body_size_str);
 	if (curr_body_size > max_body_size)
-	{
-		std::cout << "[INFO] Current Body: " << curr_body_size << "\nMax Body: " << max_body_size << std::endl;
 		return false;
-	}
     const std::string contentlength_str = _req.get("content-length");
     if (contentlength_str.empty())
         return true;
     _bodyMaxSize = max_body_size;
     size_t contentlength = std::stol(contentlength_str);
-    std::cout << "check_body_size: \nbody:" << contentlength_str << "\nmax: " << max_body_size << std::endl;
     return contentlength > max_body_size ? false : true;
 }
 
@@ -621,13 +546,49 @@ const std::string Response::appendfile()
 		bodyRaw.clear();
         std::cout << "[INFO] File appended " << _req.getBodyTotalSize() << "/" << _req.getHeader("content-length") << std::endl;
         _response = STATUS_LINE_201;
-		setCookie();
+		setCookie(_response);
 		return _response + std::string("\r\n");
     }
     _file = -1;
     std::cerr << "[ERROR] File is not open" << std::endl;
     deleteFile(_fileName);
     return getErrorPage(500);
+}
+
+const std::string Response::getNextChunk()
+{
+    char buffer[MAX_BUFFER_SIZE] = {0};
+    if (!_filestream_read.is_open())
+    {
+        _file = -1;
+        std::cerr << "[ERROR] File is not open" << std::endl;
+        return getErrorPage(500);
+    }
+    if (_filestream_read.eof() || _filestream_read.peek() == std::ifstream::traits_type::eof())
+    {
+        std::cout << "[INFO] EOF reached" << std::endl;
+        _file = 0;
+        _filestream_read.close();
+        return "0\r\n\r\n";
+    }
+    _filestream_read.read(buffer, MAX_BUFFER_SIZE);
+    std::streamsize bytesRead = _filestream_read.gcount();
+    
+    if (_filestream_read.bad() || (_filestream_read.fail() && !_filestream_read.eof()))
+    {
+        _file = -1;
+        std::cerr << "[ERROR] File read error" << std::endl;
+        return getErrorPage(500);
+    }
+    std::stringstream hexStream;
+    hexStream << std::hex << bytesRead;
+    std::string chunk = hexStream.str() + "\r\n" + std::string(buffer, bytesRead) + "\r\n";
+    return chunk;
+}
+
+bool Response::hasMoreChunks() const
+{
+    return _file == 3 ? true : false;
 }
 
 size_t  Response::findString(std::vector<char> bodyRaw, std::string str, size_t offset)
@@ -666,19 +627,6 @@ int Response::deleteFile(const std::string &file)
 	}
     std::cout << "[INFO] Deleted " << file << std::endl;
 	return 204;
-}
-
-std::string Response::createCookie()
-{
-	size_t newSessionId;
-
-	srand((size_t) time(NULL));
-	newSessionId = (size_t) rand();
-	while (_srv.checkCookieExist(newSessionId))
-		newSessionId = (size_t) rand();
-	_srv.setNewCookie(newSessionId);
-    _client.setSessionID(newSessionId);
-	return ("Set-Cookie: session-id=" + std::to_string(newSessionId) + "\r\n");
 }
 
 bool Response::isMethodValid(std::string method)
@@ -772,6 +720,11 @@ bool Response::load_directory_entries(const std::string directoryPath, t_vector_
     return false;
 }
 
+std::string Response::contentLength(size_t len)
+{
+	return "Content-Length: " + std::to_string(len) + "\r\n";
+}
+
 void Response::display() const
 {
     if (!_code)
@@ -784,4 +737,24 @@ void Response::display() const
 int Response::  getcode() const
 {
     return _code;
+}
+
+const std::string Response::getTimeOutErrorPage()
+{
+	return getErrorPage(504);
+}
+
+std::string &Response::getCgiResponse()
+{
+	return _cgi_response;
+}
+
+int Response::getCGIreadfd()
+{
+	return _cgi->get_pipereadfd();
+}
+
+int Response::getCGIwritefd()
+{
+	return _cgi->get_writefd();
 }

@@ -17,7 +17,6 @@
 //#define STDOUT_FILENO  1
 //#define STDIN_FILENO  0
 #define CGI_TIMEOUT	 10
-#define DEBUG 1
 
 class Server;
 class Request;

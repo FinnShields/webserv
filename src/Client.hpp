@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:36 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/23 23:50:37 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/26 14:35:36 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,21 +33,20 @@ class Response;
 class Client
 {
     private:
-        int _fd;
-        Server *_server;
-        std::unique_ptr<Request> _request;
-        std::string _response;
-        std::unique_ptr<Response> _res;
-        bool _responseSent;
-		size_t _totalBytesSent;
-		//void clean_socket_fd();
-		time_t _starttime;
-		pollfd *_cgireadpfd;
-		bool _force_closeconnection;
-		int resets;
-        int _sessionID;
+        int		_fd;
+        Server	*_server;
+        std::unique_ptr<Request>	_request;
+        std::unique_ptr<Response>	_res;
+        std::string	_response;
+		size_t	_totalBytesSent;
+		time_t	_starttime;
+		pollfd	*_cgireadpfd;
+        bool	_responseSent;
+		bool	_force_closeconnection;
+		int		_resets;
+        int		_sessionID;
+		int		send_cgi_response();
 		
-		int send_cgi_response();
         Client();
         Client(const Client &copy);
         Client &operator=(const Client &assign);
@@ -55,22 +54,21 @@ class Client
         Client(int socket_fd, Server *srv);
         ~Client();
         
-		void setcgiireadpfd(pollfd *pfd);
-        int handle_request();
-        int send_response();
-        void close_connection();
-        int get_socket_fd();
-        bool responseReady();
-		int get_cgi_fd();
-		int getCGIwritefd();
-		int readFromCGI();
-		int writeToCgi();
 		bool timeout(unsigned int seconds);
 		bool isRequestComplete();
-		int shouldCloseConnection();
+		void setcgiireadpfd(pollfd *pfd);
+        void close_connection();
 		void resetForNextRequest();
-        int getSessionID();
         void setSessionID(int id);
+        int	handle_request();
+        int send_response();
+		int readFromCGI();
+		int writeToCgi();
+		int shouldCloseConnection();
+        int getSessionID();
+        int get_socket_fd();
+		int get_cgi_fd();
+		int getCGIwritefd();
 };
 
 #endif
