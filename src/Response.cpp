@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/25 16:08:56 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/26 10:29:11 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -145,12 +145,17 @@ const std::string Response::run()
                     (method == "PUT") ? put() :
                     (method == "DELETE") ? deleteResp() : 
                     getErrorPage(501);
-	if (_response.empty())
+	return appendHeadersAndBody(_response);
+}
+
+const std::string Response::appendHeadersAndBody(std::string &response)
+{
+	if (response.empty())
 		return "";
 	setCookie();
-	_response += "\r\n";
-	_response += (_req.get("method").compare("HEAD") && !_body.empty()) ? _body : "";
-    return _response;
+	response += "\r\n";
+	response += (_req.get("method").compare("HEAD") && !_body.empty()) ? _body : "";
+	return response;
 }
 void Response::setCookie()
 {
@@ -352,6 +357,7 @@ size_t Response::readfromCGI()
 	if (tmp.find("Status: 500 Internal Server Error") != std::string::npos)
 	{
 		_cgi_response = getErrorPage(500);
+		_cgi_response = appendHeadersAndBody(_cgi_response);
 		// _cgi_response = STATUS_LINE_200 + tmp + "\r\n\r\n";
 		_code = 500;
 		return _cgi_response.size();
