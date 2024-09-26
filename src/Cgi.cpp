@@ -441,13 +441,12 @@ void Cgi::setEnvMap(){
         std::transform(envName.begin(), envName.end(), envName.begin(), ::toupper);
         _env_map[envName.c_str()] = header.second.c_str();
     }
-    /*
+
     for (auto it = _env_map.begin(); it != _env_map.end();) {
         if (it->second.empty()) {
             it = _env_map.erase(it);
         } else
             ++it;
     }
-    */
 }  
 
