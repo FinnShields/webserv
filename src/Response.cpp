@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/26 10:29:11 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/26 11:31:30 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -208,8 +208,9 @@ const std::string Response::get()
 	bool autoindex = _srv.config.getBestValues(_index_virt, _target, "autoindex", {"off"})[0] == "on";
 	if (autoindex && std::filesystem::is_directory(path)) 
 		return load_directory_listing(path);
-	return _srv.config.selectLocation(_target) == "main" ? (STATUS_LINE_200 + contentLength(0))
+	return _target == "/" ? (STATUS_LINE_200 + contentLength(0))
 		: getErrorPage(404);
+	// return getErrorPage(404);
 }
 
 std::string Response::contentLength(size_t len)
