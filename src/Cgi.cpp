@@ -6,7 +6,7 @@
 /*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/06 13:41:04 by apimikov          #+#    #+#             */
-/*   Updated: 2024/09/26 15:32:10 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/09/26 15:36:48 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -290,6 +290,7 @@ std::string Cgi::readFromFd(int fd) {
 }
 
 int Cgi::_access(){
+	return 0;
 	const char* file_path = _env_map["SCRIPT_FILENAME"].c_str();
     if (DEBUG)
 			std::cout << "CGI: access for ->" << file_path << "<-\n";

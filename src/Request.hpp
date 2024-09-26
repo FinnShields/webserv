@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:41 by fshields          #+#    #+#             */
-/*   Updated: 2024/09/22 23:18:48 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/26 14:34:42 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,50 +27,49 @@ class Server;
 class Request
 {
 	private:
-		Server *_srv;
+		Server		*_srv;
 		std::string _method;
 		std::string _target;
-		std::string _version;
-		std::map<std::string, std::string> _headers;
-		std::vector<char> _bodyRawBytes;
-		std::vector<char> _reqRaw;
-		std::vector<char> _currentChunkBytes;
-		ssize_t _recvReturnTotal;
-        ssize_t _bodyTotalSize;
-        int _status;
-		int _currentChunkSize;
-		// size_t _currentChunkBytesDone;
-		bool _chunkedReqComplete;
-		bool _cgi_flag = false;
-		void parse();
-		bool extractMethod(std::string& input);
-		void extractTarget(std::string& input);
-		void extractVersion(std::string& input);
-		void extractHeaders(std::string& input);
-		void extractBody();
-		int chunkExtractNumber(char *reqArray, size_t &i, size_t max_size);
-		void handleChunks(char *reqArray, size_t i, size_t max_size);
-		void chunkExtractBody(char *reqArray, size_t i, size_t max_size);
-        void resetBody();
-        int readContentLength(int);
-        int setCGIflag();
-        bool    isWholeHeader();
+		std::string	_version;
+		std::map<std::string, std::string>	_headers;
+		std::vector<char>	_bodyRawBytes;
+		std::vector<char>	_reqRaw;
+		std::vector<char>	_currentChunkBytes;
+		ssize_t	_recvReturnTotal;
+        ssize_t	_bodyTotalSize;
+        int		_status;
+		int		_currentChunkSize;
+		bool	_chunkedReqComplete;
+		bool	_cgi_flag;
+		void	parse();
+		bool	extractMethod(std::string& input);
+		void	extractTarget(std::string& input);
+		void	extractVersion(std::string& input);
+		void	extractHeaders(std::string& input);
+		void	extractBody();
+		int		chunkExtractNumber(char *reqArray, size_t &i, size_t max_size);
+		void	handleChunks(char *reqArray, size_t i, size_t max_size);
+		void 	chunkExtractBody(char *reqArray, size_t i, size_t max_size);
+        void 	resetBody();
+        int 	setCGIflag();
+        bool	isWholeHeader();
 	public:
 		Request(Server *srv);
 		Request(const Request&);
 		Request& operator=(const Request&);
 		~Request();
-		int read(int _fd);
+		
+		int		read(int _fd);
 		const std::string get(std::string toGet);
 		const std::string getHeader(std::string toGet);
+		std::map<std::string, std::string> getHeaders();
 		std::string& getRef(std::string toGet);
 		std::vector<char> &getBodyRawBytes();
-        ssize_t getBodyTotalSize();
-		void display();
-		int getStatus();
-		bool isCGIflag();
-		bool IsBodyIncomplete();
-		std::map<std::string, std::string> getHeaders();
+        ssize_t	getBodyTotalSize();
+		void	display();
+		bool	isCGIflag();
+		bool	IsBodyIncomplete();
+		int		getStatus();
 };
 
 #endif

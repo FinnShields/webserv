@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:19 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/24 00:50:16 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/26 15:19:54 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,8 +31,6 @@
 #define SOCKETTIMEOUT 180
 #define POLLTIMEOUT 10000
 
-
-
 class WebServer
 {
 	private:
@@ -45,33 +43,27 @@ class WebServer
 		std::map<int, pollfd *> _cgi_readfd_clients;
 		std::map<int, pollfd *> _cgi__writefd_clients;
 
-		void setServers();
-		//void parse_file(std::string filename);
-		bool fd_is_server(int fd);
-		int fd_is_client(pollfd &pfd);
-		int fd_is_cgi(pollfd pfd);
-		int fd_is_cgiwrite(pollfd &pfd);
-		//std::vector<size_t>  virtualHostIndices;
-		void setRealToVirt();
+		bool	fd_is_server(int fd);
+		int		fd_is_client(pollfd &pfd);
+		int		fd_is_cgi(pollfd pfd);
+		int		fd_is_cgiwrite(pollfd &pfd);
+		void	setRealToVirt();
 		std::vector<size_t>  extractVirtualHostsIndices();
-		bool checkTimer(int timeout_seconds);
-		bool eraseAndContinue(std::vector<pollfd>::iterator &it, std::string from);
-		void iterateAndRunActiveFD();
-		int iterateAndCheckIncomingConnections();
-		void cleanexit();
+		bool	checkTimer(int timeout_seconds);
+		void	iterateAndRunActiveFD();
+		int		iterateAndCheckIncomingConnections();
+		void	cleanexit();
 		
 		WebServer();
 		WebServer(const WebServer &copy);
 		WebServer &operator=(const WebServer &assignment);
 	public:
+		const Config config;
+		
 		~WebServer();
 		WebServer(std::vector<t_server>&);
 		
-		//void setup(std::string filename);
-		void setup();
-		void run();
-		
-		const Config config;
+		void	setup();
+		void	run();
 };
-
 #endif

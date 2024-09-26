@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:06:10 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/26 10:28:56 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/26 14:43:37 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,25 +46,25 @@ class Response
         static const std::string ABSOLUTE_PATH;
         static const std::string setAbsolutePath();
 
-		int	_fd;
-		Request &_req;
-		Server &_srv;
-		Client &_client;
-        int _file;
-		int	_code;
-		std::string _message;
-        std::ofstream _filestream;
-        std::ifstream _filestream_read;
-        std::string _fileName;
-		size_t _fileCurrentSize;
-		size_t _bodyMaxSize;
-        std::string _boundary;
-		std::string _target;
-		size_t _index_virt;
-        std::string _response;
-		std::unique_ptr<Cgi> _cgi;
-		std::string _cgi_response;
-		std::string _body;
+		int		_fd;
+		Request	&_req;
+		Server	&_srv;
+		Client	&_client;
+        int		_file;
+		int		_code;
+		size_t	_fileCurrentSize;
+		size_t	_bodyMaxSize;
+		size_t	_index_virt;
+        std::string		_response;
+		std::string		_cgi_response;
+		std::string		_body;
+		std::string		_message;
+        std::ofstream	_filestream;
+        std::ifstream	_filestream_read;
+        std::string		_fileName;
+        std::string		_boundary;
+		std::string		_target;
+		std::unique_ptr<Cgi>	_cgi;
 
 		const std::string redirect();
 		const std::string runCGI();
@@ -77,29 +77,29 @@ class Response
 		const std::string getErrorPage(int code);
 		const std::string appendfile();
 		const std::string appendHeadersAndBody(std::string&);
-
-		int createFile(int);      
-        int deleteFile(const std::string &);
 		std::string createCookie();
-		bool isMethodValid(std::string method);
-		bool isCGI();
-		void setCookie();
+
+		int		createFile(int);
+        int		deleteFile(const std::string &);
+		bool 	isMethodValid(std::string method);
+		bool 	isCGI();
+		void 	setCookie(std::string &);
 
         //Helper functions
-		std::string contentLength(size_t len);
-        bool check_body_size();
+		std::string	contentLength(size_t len);
         std::string getPath();
-        bool isHtml(const std::string fileName);
-        bool load_directory_entries(const std::string directoryPath, t_vector_str &directories, t_vector_str &files);
         std::string getFileName(const std::string filepath);
-        int setFileName(std::vector<char> &bodyRaw, int);
-        void setDirectoryToFileName();
-        void RenameIfFileExists();
-        void checkOtherBoundary(std::vector<char> &bodyRaw, size_t &end, size_t offset);
-        int checkBodySize(std::vector<char> &bodyRaw);
-        std::string htmlEscape(const std::string& s);
-		size_t  findString(std::vector<char> bodyRaw, std::string str, size_t offset);
-        char decodeChar(const char *ch);
+        std::string	htmlEscape(const std::string& s);
+        bool	check_body_size();
+        bool	isHtml(const std::string fileName);
+        bool	load_directory_entries(const std::string directoryPath, t_vector_str &directories, t_vector_str &files);
+        void	setDirectoryToFileName();
+        void	RenameIfFileExists();
+        void	checkOtherBoundary(std::vector<char> &bodyRaw, size_t &end, size_t offset);
+        int		setFileName(std::vector<char> &bodyRaw, int);
+        int		checkBodySize(std::vector<char> &bodyRaw);
+		size_t	findString(std::vector<char> bodyRaw, std::string str, size_t offset);
+        char	decodeChar(const char *ch);
 
 	public:
 		// Response();
@@ -108,16 +108,16 @@ class Response
 		Response &operator=(const Response &assign);
 		~Response();
 		
-		const std::string run();
-        const std::string getNextChunk();
-        bool hasMoreChunks() const;
-		void display() const;
-        int getcode() const;
-		int getCGIreadfd();
-		int getCGIwritefd();
-		size_t readfromCGI();
-		int writeToCgi();
-		const std::string getTimeOutErrorPage();
-		std::string &getCgiResponse();
+		const std::string	run();
+        const std::string	getNextChunk();
+		const std::string	getTimeOutErrorPage();
+		std::string			&getCgiResponse();
+        bool	hasMoreChunks() const;
+		void	display() const;
+        int		getcode() const;
+		int		getCGIreadfd();
+		int		getCGIwritefd();
+		int		writeToCgi();
+		size_t	readfromCGI();
 };
 #endif
