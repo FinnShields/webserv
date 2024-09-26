@@ -36,6 +36,7 @@
 
 class Request;
 class Server;
+class Client;
 using t_vector_str = std::vector<std::string>;
 
 
@@ -48,6 +49,7 @@ class Response
 		int	_fd;
 		Request &_req;
 		Server &_srv;
+		Client &_client;
         int _file;
 		int	_code;
 		std::string _message;
@@ -101,7 +103,7 @@ class Response
 
 	public:
 		// Response();
-		Response(int fd, Request &req, Server &srv);
+		Response(int fd, Request &req, Server &srv, Client &client);
 		Response(const Response &copy);
 		Response &operator=(const Response &assign);
 		~Response();
