@@ -21,7 +21,8 @@ Client::Client(int fd, Server *server) : _fd(fd), _server(server), _request(null
 	_force_closeconnection = false;
 	resets = 0;
 	_request = std::make_unique<Request>(_server);
-	_res = std::make_unique<Response>(_fd, *_request, *_server);
+	_res = std::make_unique<Response>(_fd, *_request, *_server, *this);
+	_sessionID = -1;
 }
 Client::Client(const Client &copy)
 {
@@ -44,6 +45,7 @@ Client& Client::operator=(const Client &assign)
 	_totalBytesSent = assign._totalBytesSent;
 	_force_closeconnection = assign._force_closeconnection;
 	resets = assign.resets;
+	_sessionID = assign._sessionID;
     return (*this);
 }
 Client::~Client() {}
@@ -55,7 +57,7 @@ bool Client::timeout(unsigned int timeout)
 	{
 		std::cout << "[INFO] Client timed out" << std::endl;
 		if (!_res)
-			_res = std::make_unique<Response>(_fd, *_request, *_server);
+			_res = std::make_unique<Response>(_fd, *_request, *_server, *this);
 		_response = _res->getTimeOutErrorPage();
 		_force_closeconnection = true;
 		_starttime = std::time(NULL);
@@ -97,7 +99,7 @@ void Client::resetForNextRequest()
 {
 	std::cout << "[INFO] Resetting client for next request: " << ++resets << std::endl;
 	_request = std::make_unique<Request>(_server);
-	_res = std::make_unique<Response>(_fd, *_request, *_server);
+	_res = std::make_unique<Response>(_fd, *_request, *_server, *this);
 	_responseSent = false;
 	_starttime = std::time(NULL);
 	_totalBytesSent = 0;
@@ -233,4 +235,14 @@ void Client::close_connection()
     std::cout << "[INFO] Closing connection" << std::endl;
     close(_fd);
     _server->remove_client(_fd);
+}
+
+int Client::getSessionID()
+{
+	return (this->_sessionID);
+}
+
+void Client::setSessionID(int id)
+{
+	this->_sessionID = id;
 }
