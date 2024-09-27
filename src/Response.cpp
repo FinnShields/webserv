@@ -22,7 +22,6 @@ const std::string Response::setAbsolutePath()
 }
 
 Response::Response(int fd, Request &req, Server &srv, Client &client) : _fd(fd), _req(req), _srv(srv), _client(client), _file(0), _code(0){
-	_cgi_response = STATUS_LINE_200;
 }
 
 // Response::Response(const Response &copy) : _req(copy._req), _srv(copy._srv), _client(copy._client)
@@ -237,6 +236,8 @@ const std::string Response::runCGI()
 			std::cerr << "CGI status = " << _code << "\n";
 			std::cout << "------- END ----------" << std::endl;
 		}
+        _cgi_response = STATUS_LINE_200;
+        setCookie(_cgi_response);
 		writeToCgi();
 	}
 	else
