@@ -41,7 +41,7 @@ class WebServer
 		std::vector<Server> _servers;
 		std::map<size_t, std::vector<size_t>> _real_to_virt;
 		std::map<int, pollfd *> _cgi_readfd_clients;
-		std::map<int, pollfd *> _cgi__writefd_clients;
+		std::map<int, pollfd *> _cgi_writefd_clients;
 
 		bool	fd_is_server(int fd);
 		int		fd_is_client(pollfd &pfd);
