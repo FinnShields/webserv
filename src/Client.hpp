@@ -48,9 +48,9 @@ class Client
 		int		send_cgi_response();
 		
         Client();
+    public:
         Client(const Client &copy);
         Client &operator=(const Client &assign);
-    public:
         Client(int socket_fd, Server *srv);
         ~Client();
         
