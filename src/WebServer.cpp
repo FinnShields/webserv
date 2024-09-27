@@ -73,7 +73,7 @@ void WebServer::run()
 {
 	while (running)
 	{
-		std::cout << "Waiting for action... - size of pollfd vector: " << _fds.size() << "\r" << std::flush;
+		std::cout << "Waiting for action - polls: " << _fds.size() << "\r" << std::flush;
 		int poll_result = poll(_fds.data(), _fds.size(), POLLTIMEOUT);
 		// for (pollfd &pfd : _fds)
 		// 	std::cout << "fd: " << pfd.fd << " events: " << pfd.events << " revents: " << pfd.revents << " Address of object: " << &pfd << std::endl;

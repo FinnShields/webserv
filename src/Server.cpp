@@ -67,6 +67,7 @@ void Server::start(std::vector<pollfd> &fds)
     server.events = POLLIN;
     fds.push_back(server);
 	_fds = &fds;
+	_clients.reserve(300);
 	
 }
 
