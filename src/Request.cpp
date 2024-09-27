@@ -26,30 +26,6 @@ Request::Request(Server *srv) : _srv(srv)
 Request::~Request()
 {}
 
-// Request& Request::operator=(const Request& r) 
-// {
-// 	_srv = r._srv;
-// 	_method = r._method;
-// 	_target = r._target;
-// 	_version = r._version;
-// 	_headers = r._headers;
-// 	_bodyRawBytes = r._bodyRawBytes;
-// 	_reqRaw = r._reqRaw;
-// 	_currentChunkBytes = r._currentChunkBytes;
-//     _recvReturnTotal = r._recvReturnTotal;
-// 	_bodyTotalSize = r._bodyTotalSize;
-// 	_status = r._status;
-// 	_currentChunkSize = r._currentChunkSize;
-// 	_chunkedReqComplete = r._chunkedReqComplete;
-// 	_cgi_flag = r._cgi_flag;
-// 	return (*this);
-// }
-
-// Request::Request(const Request& r)
-// {
-// 	*this = r;
-// }
-
 //Return -1: Error or peer disconnected
 //Return 0: No content-length or fully read
 //Return 1: Body is not fully read

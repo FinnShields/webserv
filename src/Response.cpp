@@ -24,28 +24,6 @@ const std::string Response::setAbsolutePath()
 Response::Response(int fd, Request &req, Server &srv, Client &client) : _fd(fd), _req(req), _srv(srv), _client(client), _file(0), _code(0){
 }
 
-// Response::Response(const Response &copy) : _req(copy._req), _srv(copy._srv), _client(copy._client)
-// {
-//     *this = copy;
-// }
-
-// Response& Response::operator=(const Response &assign)
-// {
-//     _fd = assign._fd;
-//     _file = assign._file;
-//     _code = assign._code;
-//     _message = assign._message;
-//     _fileName = assign._fileName;
-//     _fileCurrentSize = assign._fileCurrentSize;
-//     _bodyMaxSize = assign._bodyMaxSize;
-//     _boundary = assign._boundary;
-//     _target = assign._target;
-//     _index_virt = assign._index_virt;
-//     _response = assign._response;
-// 	_cgi_response = assign._cgi_response;
-//     return (*this);
-// }
-
 Response::~Response() 
 {
     if (_filestream.is_open())

@@ -25,28 +25,6 @@ Client::Client(int fd, Server *server) : _fd(fd), _server(server),
 		_sessionID(-1) 
 {}
 
-Client::Client(const Client &copy)
-{
-    *this = copy;
-}
-
-Client& Client::operator=(const Client &assign)
-{
-    _request = std::make_unique<Request>(_server);
-    _res = std::make_unique<Response>(_fd, *_request, *_server, *this);
-    _fd = assign._fd;
-    _server = assign._server;
-    _response = assign._response;
-    _responseSent = assign._responseSent;
-	_cgireadpfd = assign._cgireadpfd;
-	_starttime = assign._starttime;
-	_totalBytesSent = assign._totalBytesSent;
-	_force_closeconnection = assign._force_closeconnection;
-	_resets = assign._resets;
-	_sessionID = assign._sessionID;
-    return (*this);
-}
-
 Client::~Client() {}
 
 //return -1 = empty request
