@@ -33,9 +33,9 @@ Client::Client(const Client &copy)
 Client& Client::operator=(const Client &assign)
 {
     _request = std::make_unique<Request>(_server);
+    _res = std::make_unique<Response>(_fd, *_request, *_server, *this);
     _fd = assign._fd;
     _server = assign._server;
-    _res = std::make_unique<Response>(_fd, *_request, *_server, *this);
     _response = assign._response;
     _responseSent = assign._responseSent;
 	_cgireadpfd = assign._cgireadpfd;
@@ -153,10 +153,11 @@ void Client::resetForNextRequest()
 	std::cout << "[INFO] Resetting client for next request: " << ++_resets << std::endl;
 	_request = std::make_unique<Request>(_server);
 	_res = std::make_unique<Response>(_fd, *_request, *_server, *this);
-	_responseSent = false;
-	_starttime = std::time(NULL);
-	_totalBytesSent = 0;
 	_response.clear();
+	_totalBytesSent = 0;
+	_starttime = std::time(NULL);
+	_cgireadpfd = nullptr;
+	_responseSent = false;
 	_force_closeconnection = false;
 }
 
