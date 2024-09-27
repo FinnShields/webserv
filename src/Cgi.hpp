@@ -1,10 +1,20 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   Cgi.hpp                                            :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2024/09/26 14:04:53 by apimikov          #+#    #+#             */
+/*   Updated: 2024/09/26 15:35:34 by apimikov         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #ifndef CGI_HPP
 #define CGI_HPP
 
 #include <iostream>
 #include <cstring>
-//#include <unistd.h> 
-//#include <fcntl.h>  
 #include <ctime>
 #include <algorithm>
 #include <sys/wait.h>
@@ -13,11 +23,6 @@
 
 #include "Server.hpp"
 #include "Request.hpp"
-
-//#define STDOUT_FILENO  1
-//#define STDIN_FILENO  0
-#define CGI_TIMEOUT	 10
-#define DEBUG 1
 
 class Server;
 class Request;
