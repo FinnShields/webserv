@@ -229,7 +229,7 @@ int WebServer::fd_is_client_write(pollfd &pfd, Client* client)
 		client->resetForNextRequest();
 		pfd.events = POLLIN;
 	}
-	return ret;
+	return 0;
 }
 
 int WebServer::fd_is_cgi(pollfd pfd)
