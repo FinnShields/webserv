@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/26 14:30:44 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/29 16:00:17 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,12 +62,11 @@ int Client::send_response()
 	if (_response.empty() && _request->isCGIflag())
 		return send_cgi_response();
 	if ((bytesSent = send(_fd, _response.c_str(), std::min((size_t) 10000, _response.size()), 0)) < 0)
-    {
-        _force_closeconnection = 1;
-        return 1;
-    }
+        return (_force_closeconnection = 1);
 	_totalBytesSent += bytesSent;
 	std::cout << "Bytes sent: " << bytesSent << " TotalSent: " << _totalBytesSent << std::endl;
+	if (bytesSent == 0)
+		return (_force_closeconnection = 1);
 	if (bytesSent < (ssize_t)  _response.size())
 	{
 		_response = _response.substr(bytesSent);
