@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/09/29 17:39:18 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/29 18:07:44 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,7 @@ Request::Request(Server *srv) : _srv(srv)
 	_chunkedReqComplete = true;
 	_cgi_flag = false;
 	_badrequest = false;
+	_headerComplete = false;
 }
 
 Request::~Request()
@@ -72,6 +73,7 @@ void	Request::parse()
 	extractHeaders(input);
 	if (!get("transfer-encoding").compare("chunked"))
 		_chunkedReqComplete = false;
+	std::cout << "chunkedReqComplete: " << _chunkedReqComplete << std::endl;
 	extractBody();
 	if (DEBUG)
     	display();
@@ -148,6 +150,7 @@ void	Request::extractBody()
     auto it = std::search(_reqRaw.begin(), _reqRaw.end(), headerEnd, headerEnd + 4);
 	if (it == _reqRaw.end())
 		return ;
+	_headerComplete = true;
 	it += 4;
 	_reqRaw.erase(_reqRaw.begin(), it);
 	if (!get("transfer-encoding").compare("chunked"))
@@ -275,7 +278,9 @@ bool Request::isCGIflag(){
 
 bool Request::isWholeHeader()
 {
- 	const char headerEnd[] = "\r\n\r\n";
+ 	if (_headerComplete)
+		return _headerComplete;
+	const char headerEnd[] = "\r\n\r\n";
     auto it = std::search(_reqRaw.begin(), _reqRaw.end(), headerEnd, headerEnd + 4);
     return it != _reqRaw.end();
 }
