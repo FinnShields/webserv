@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/26 15:49:57 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/29 17:39:37 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,20 +52,27 @@ const std::string Response::run()
     std::string method = _req.get("method");
 	_target = _req.get("target");
 	_index_virt = _srv.getVirtHostIndex(_req.get("host"));
-    if(!check_body_size()) 
-    {
-		_req.getBodyRawBytes().clear();
-        _response = getErrorPage(413);
-    }
-	else if(isMethodValid(method))
-    	_response = _srv.config.getBestValues(_index_virt, _target, "return", {""})[0] != "" ? redirect() :
-    	            isCGI() ? runCGI() :
-                    (method == "GET" || method == "HEAD") ? get() : 
-                    (method == "POST") ? post() :
-                    (method == "PUT") ? put() :
-                    (method == "DELETE") ? deleteResp() : 
-                    getErrorPage(501);
+    
+	if (_req.isBadRequest())
+		return invalidRequest(getErrorPage(400));
+	if(!check_body_size()) 
+		return invalidRequest(getErrorPage(413));
+	if(!isMethodValid(method))
+		return invalidRequest(_response);
+
+	_response = _srv.config.getBestValues(_index_virt, _target, "return", {""})[0] != "" ? redirect() :
+				isCGI() ? runCGI() :
+				(method == "GET" || method == "HEAD") ? get() : 
+				(method == "POST") ? post() :
+				(method == "PUT") ? put() :
+				(method == "DELETE") ? deleteResp() : 
+				getErrorPage(501);
 	return appendHeadersAndBody(_response);
+}
+const std::string Response::invalidRequest(std::string response)
+{
+	_req.getBodyRawBytes().clear();
+	return appendHeadersAndBody(response);
 }
 
 const std::string Response::appendHeadersAndBody(std::string &response)

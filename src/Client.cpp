@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/29 16:00:17 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/29 17:38:33 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,6 +35,7 @@ Client::~Client() {}
 int Client::handle_request()
 { 
     int ret = _request->read(_fd);
+	std::cout << "Request return: " << ret << std::endl;
 	if (ret == -1)
 	{
 		std::cerr << "[INFO] Client disconnected" << std::endl;
@@ -42,13 +43,15 @@ int Client::handle_request()
 	}
 	if (ret == 3 || ret == -1)
         return ret;
-	if (_responseSent && _request->IsBodyIncomplete())
-	{
-		_request->getBodyRawBytes().clear();
-		return 3;
-	}
 	if (_responseSent)
+	{
+		if (_request->IsBodyIncomplete())
+		{
+			_request->getBodyRawBytes().clear();
+			return 3;
+		}
 		return -1;
+	}
     _response = _res->run();
     return ret;
 }

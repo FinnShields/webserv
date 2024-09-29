@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/09/26 15:36:59 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/29 17:39:18 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,7 @@ Request::Request(Server *srv) : _srv(srv)
 	_currentChunkSize = -1;
 	_chunkedReqComplete = true;
 	_cgi_flag = false;
+	_badrequest = false;
 }
 
 Request::~Request()
@@ -55,7 +56,7 @@ int	Request::read(int _fd)
 	if (_status == 3 || _status == -1)
 		return _status;
     _status = !_headers["transfer-encoding"].empty() ? 2 :
-        !_headers["content-length"].empty() ? 1 : 0; 
+        !_headers["content-length"].empty() ? 1 : 0;
 	return _cgi_flag ? 2 : IsBodyIncomplete() ? 1 : 0;
 }
 
@@ -103,6 +104,7 @@ void Request::extractVersion(std::string& input)
 	size_t start = input.find("HTTP");
 	if (start == std::string::npos)
 	{
+		_badrequest = true;	
 		std::cerr << "[INFO] No http version" << std::endl;
 		return ;
 	}
@@ -237,7 +239,7 @@ void Request::chunkExtractBody(char *reqArray, size_t i, size_t max_size)
 bool Request::IsBodyIncomplete()
 {
 	if (_status == 0)
-		return isWholeHeader();
+		return !isWholeHeader();
 	if (_status == 1)
         return std::stol(_headers["content-length"]) > _bodyTotalSize ? 1 : 0;
 	return !_chunkedReqComplete ? 1 : 0;
@@ -354,4 +356,8 @@ void	Request::display()
 		std::cout << std::endl;
 	}
 	std::cout << "---------------------\n" << std::endl;
+}
+bool Request::isBadRequest()
+{
+	return _badrequest;
 }

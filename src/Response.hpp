@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:06:10 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/26 15:35:33 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/29 16:43:22 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -77,6 +77,7 @@ class Response
 		const std::string getErrorPage(int code);
 		const std::string appendfile();
 		const std::string appendHeadersAndBody(std::string&);
+		const std::string invalidRequest(std::string);
 		std::string createCookie();
 
 		int		createFile(int);
@@ -84,6 +85,7 @@ class Response
 		bool 	isMethodValid(std::string method);
 		bool 	isCGI();
 		void 	setCookie(std::string &);
+
 
         //Helper functions
 		std::string	contentLength(size_t len);
