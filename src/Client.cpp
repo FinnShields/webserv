@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/30 11:52:48 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/30 14:38:39 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,7 +33,8 @@ Client::~Client() {}
 //Return 2 == CGI - Add CGI fds to pollfd and read response there.
 //Return 3 == Headers not fully read / Chunk not fully
 int Client::handle_request()
-{ 
+{
+	_starttime = std::time(NULL);
     int ret = _request->read(_fd);
 	std::cout << "Request return: " << ret << std::endl;
 	if (ret == -1)
@@ -61,6 +62,7 @@ int Client::handle_request()
 //Return 2 = Response finished but request is incomplete
 int Client::send_response()
 {
+	_starttime = std::time(NULL);
     ssize_t bytesSent;
 	if (_response.empty() && _request->isCGIflag())
 		return send_cgi_response();
@@ -179,11 +181,13 @@ int Client::getCGIwritefd()
 
 int Client::readFromCGI()
 {
+	_starttime = std::time(NULL);
 	return _res->readfromCGI();
 }
 
 int Client::writeToCgi()
 {
+	_starttime = std::time(NULL);
 	return _res->writeToCgi();
 }
 

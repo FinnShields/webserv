@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:19 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/26 16:11:44 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/30 14:37:20 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,7 +28,7 @@
 #include "Config.hpp"
 #include "Response.hpp"
 
-#define SOCKETTIMEOUT 180 //Seconds before a socket times out
+#define SOCKETTIMEOUT 30 //Seconds before a socket times out
 #define POLLTIMEOUT 30000 //Miliseconds without actions before checking if some has timed out 
 
 class WebServer

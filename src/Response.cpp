@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/30 14:27:33 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/30 14:47:55 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -746,7 +746,7 @@ int Response::  getcode() const
 
 const std::string Response::getTimeOutErrorPage()
 {
-	return getErrorPage(504);
+	return invalidRequest(getErrorPage(504));
 }
 
 std::string &Response::getCgiResponse()

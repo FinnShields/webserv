@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/26 16:18:19 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/30 14:59:41 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -79,7 +79,8 @@ void WebServer::run()
 		// 	std::cout << "fd: " << pfd.fd << " events: " << pfd.events << " revents: " << pfd.revents << " Address of object: " << &pfd << std::endl;
 		if (poll_result == -1)
 			return (perror("poll"));
-		if (!checkTimer(SOCKETTIMEOUT) && poll_result == 0)
+		checkTimer(SOCKETTIMEOUT);
+		if (poll_result == 0)
 			continue;
 		try
 		{
@@ -296,8 +297,12 @@ bool WebServer::checkTimer(int timeout_seconds)
 	bool timedout = false;
 	static time_t lastCheck = std::time(NULL);
 	
-	if (std::difftime(lastCheck, std::time(NULL)) < 30)
+	std::cout << "[INFO] TIMER lastCheck: " << std::difftime(std::time(NULL), lastCheck) << "s ago" << std::endl;
+	if (std::difftime(std::time(NULL), lastCheck) < 30)
+	{
+		// std::cout << "[INFO] TIMER less than 30 sec since last, wont check" << std::endl;
 		return false;
+	}
 	for (std::vector<pollfd>::iterator it = _fds.begin(); it != _fds.end(); it++)
 		if (it->revents == 0)
 			for (Server &srv : _servers)
