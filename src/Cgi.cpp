@@ -359,7 +359,7 @@ void Cgi::_runChildCgi(){
 	write(1, "Status: 500 Internal Server Error", 34);
 	close(0);
     close(1);
-	exit(0);
+	std::exit(0);
 }
 
 void Cgi::setEnv(){
