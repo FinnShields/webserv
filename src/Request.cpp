@@ -43,7 +43,7 @@ int	Request::read(int _fd)
 	_recvReturnTotal += recvReturn;
     std::cout << " read bytes: " << recvReturn << " total bytes:" << _recvReturnTotal << std::endl;
 	if (recvReturn < 0)
-        throw std::runtime_error("Client read error: " + std::string(strerror(errno)));
+        throw std::runtime_error("Client read error");
 	if (recvReturn == 0)
 		return -1;
     for (size_t i = 0; i < (size_t) recvReturn; i++)
