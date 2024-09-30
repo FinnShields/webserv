@@ -48,6 +48,7 @@ class Request
 		bool	extractTarget(std::string& input);
 		bool	extractVersion(std::string& input);
 		void	extractHeaders(std::string& input);
+		bool	headerInvalidChar(char c, int nameOrContent);
 		void	extractBody();
 		int		chunkExtractNumber(char *reqArray, size_t &i, size_t max_size);
 		void	handleChunks(char *reqArray, size_t i, size_t max_size);

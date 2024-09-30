@@ -64,8 +64,6 @@ int	Request::read(int _fd)
 void	Request::parse()
 {
 	std::string	input(_reqRaw.data(), _reqRaw.size());
-	// for (size_t i = 0; i < _reqRaw.size(); i++)
-	// 	input.append(1, _reqRaw[i]);
 	if (!extractVersion(input))
 		return ;
 	if (!extractMethod(input))
@@ -131,6 +129,13 @@ bool Request::extractVersion(std::string& input)
 	return true;
 }
 
+bool	Request::headerInvalidChar(char c, int nameOrContent)
+{
+	if (nameOrContent == 0)
+		return !(std::isalnum(c) || c == '-' || c == '_');
+	else
+		return !(c >= 33 && c <= 126);
+}
 
 void	Request::extractHeaders(std::string& input)
 {
@@ -138,22 +143,41 @@ void	Request::extractHeaders(std::string& input)
 	std::string second;
 	size_t	len;
 
-	if(input.find('\n') == std::string::npos)
+	if(input.find("\r\n\r\n") == std::string::npos) {
+		_badrequest = true;
 		return ;
-	for (size_t i = input.find('\n') + 1; i < input.size(); i++)
+	}
+	for (size_t i = input.find("\r\n") + 2; i < input.size(); i++)
 	{
 		len = 0;
-		while (input.size() > (i + len) && input.at(i + len) != ':')
-			if (i + (++len) == input.size() || input.at(i + len) == '\n')
+		if (i == input.size() - 2 && input[i] == '\r' && input[i + 1] == '\n')
+			return ;
+		while (input.size() > (i + len) && input.at(i + len) != ':') {
+			if (headerInvalidChar(input[i + (len++)], 0)) {
+				_badrequest = true;
 				return ;
+			}
+		}
 		first = input.substr(i, len);
 		for (size_t i = 0; i < first.size(); i++)
 			first[i] = std::tolower(first[i]);
 		i += len + 2;
+		if (i >= input.size()) {
+			_badrequest = true;
+			return;
+		}
 		len = 0;
-		while (input.size() > (i + len) && input.at(i + len) != '\r')
-			len ++;
+		while (input.size() > (i + len) && input.at(i + len) != '\r') {
+			if (headerInvalidChar(input[i + (len++)], 1)) {
+				_badrequest = true;
+				return ;
+			}
+		}
 		second = input.substr(std::min((size_t) i, input.size()), len);
+		if (first.empty() || second.empty()) {
+			_badrequest = true;
+			return ;
+		}
 		_headers[first] = second;
 		i += len + 1;
 	}
