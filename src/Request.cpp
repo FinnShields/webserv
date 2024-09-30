@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/09/30 10:58:46 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/30 14:33:21 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -92,7 +92,7 @@ bool Request::extractMethod(std::string& input, size_t *pos)
 		return (false);
 	}
 	*pos += _method.size();
-	std::cout << "METHOD: " << _method << std::endl;
+	// std::cout << "METHOD: " << _method << std::endl;
 	return (true);
 }
 
@@ -113,19 +113,14 @@ bool Request::extractTarget(std::string& input, size_t *pos)
 	}
 	_target = input.substr(start + 1, end - start - 1);
 	*pos += _target.size() + 1;
-	std::cout << "TARGET: " << _target << std::endl;
+	// std::cout << "TARGET: " << _target << std::endl;
 	return true;
 }
 
 bool Request::extractVersion(std::string& input, size_t *pos)
 {
 	size_t start = *pos + 1;
-	if (input.compare(start, 5, "HTTP/"))
-	{
-		_badrequest = true;
-		return false;
-	}
-	if (start >= input.size())
+	if (input.compare(start, 5, "HTTP/") || start >= input.size())
 	{
 		_badrequest = true;	
 		std::cerr << "[BAD REQUEST] No http version" << std::endl;
@@ -135,8 +130,8 @@ bool Request::extractVersion(std::string& input, size_t *pos)
 	while (start + end < input.size() && input.at(start + end) != '\r')
 		end++;
 	_version = input.substr(start, end);
-	std::cout << "VERSION: " << _version << std::endl;
-	input.erase(start, end);
+	// std::cout << "VERSION: " << _version << std::endl;
+	// input.erase(start, end);
 	return true;
 }
 

@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/30 10:55:06 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/30 14:27:33 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,7 +59,7 @@ const std::string Response::run()
 		return invalidRequest(getErrorPage(400));
 	if (!supportHTTPversion())
 		return invalidRequest(getErrorPage(_code));
-	if(!check_body_size()) 
+	if(!validateContentLength()) 
 		return invalidRequest(getErrorPage(413));
 
 	_response = _srv.config.getBestValues(_index_virt, _target, "return", {""})[0] != "" ? redirect() :
@@ -381,7 +381,7 @@ bool Response::isCGI()
     return _req.isCGIflag();
 }
 
-bool Response::check_body_size()
+bool Response::validateContentLength()
 {
     const std::string max_body_size_str = _srv.config.getBestValues(_index_virt, _target, "client_max_body_size", {DEFAULT_MAX_BODY_SIZE})[0];
 	if (max_body_size_str == "0")
