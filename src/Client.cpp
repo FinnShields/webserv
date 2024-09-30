@@ -100,7 +100,7 @@ int Client::send_cgi_response()
 	std::string &response = _res->getCgiResponse();
 	if ((bytesSent = send(_fd, response.c_str(), std::min((size_t) 10000, response.size()), 0)) < 0)
 	{
-		std::cerr << "[ERROR] Send error: " << strerror(errno) << std::endl;
+		std::cerr << "[ERROR] Send error" << std::endl;
 		return (_force_closeconnection = 1);
 	}
 	if (bytesSent == 0)
