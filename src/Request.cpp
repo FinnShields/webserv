@@ -92,7 +92,6 @@ bool Request::extractMethod(std::string& input, size_t *pos)
 		return (false);
 	}
 	*pos += _method.size();
-	// std::cout << "METHOD: " << _method << std::endl;
 	return (true);
 }
 
@@ -113,14 +112,20 @@ bool Request::extractTarget(std::string& input, size_t *pos)
 	}
 	_target = input.substr(start + 1, end - start - 1);
 	*pos += _target.size() + 1;
-	// std::cout << "TARGET: " << _target << std::endl;
 	return true;
 }
 
 bool Request::extractVersion(std::string& input, size_t *pos)
 {
 	size_t start = *pos + 1;
-	if (input.compare(start, 5, "HTTP/") || start >= input.size())
+
+	if (input.compare(start, 5, "HTTP/"))
+	{
+		_badrequest = true;
+		std::cerr << "[BAD REQUEST] http version invalid" << std::endl;
+		return false;
+	}
+	if (start >= input.size())
 	{
 		_badrequest = true;	
 		std::cerr << "[BAD REQUEST] No http version" << std::endl;
@@ -130,8 +135,6 @@ bool Request::extractVersion(std::string& input, size_t *pos)
 	while (start + end < input.size() && input.at(start + end) != '\r')
 		end++;
 	_version = input.substr(start, end);
-	// std::cout << "VERSION: " << _version << std::endl;
-	// input.erase(start, end);
 	return true;
 }
 
@@ -149,10 +152,6 @@ void	Request::extractHeaders(std::string& input)
 	std::string second;
 	size_t	len;
 
-	if(input.find("\r\n\r\n") == std::string::npos) {
-		_badrequest = true;
-		return ;
-	}
 	for (size_t i = input.find("\r\n") + 2; i < input.size(); i++)
 	{
 		len = 0;
@@ -161,6 +160,7 @@ void	Request::extractHeaders(std::string& input)
 		while (input.size() > (i + len) && input.at(i + len) != ':') {
 			if (headerInvalidChar(input[i + (len++)], 0)) {
 				_badrequest = true;
+				std::cerr << "[BAD REQUEST] Invalid char in header name" << std::endl;
 				return ;
 			}
 		}
@@ -170,18 +170,21 @@ void	Request::extractHeaders(std::string& input)
 		i += len + 2;
 		if (i >= input.size()) {
 			_badrequest = true;
+			std::cerr << "[BAD REQUEST] Invalid header syntax" << std::endl;
 			return;
 		}
 		len = 0;
 		while (input.size() > (i + len) && input.at(i + len) != '\r') {
 			if (headerInvalidChar(input[i + (len++)], 1)) {
 				_badrequest = true;
+				std::cerr << "[BAD REQUEST] Invalid char in header content" << std::endl;
 				return ;
 			}
 		}
 		second = input.substr(std::min((size_t) i, input.size()), len);
 		if (first.empty() || second.empty()) {
 			_badrequest = true;
+			std::cerr << "[BAD REQUEST] Header name or content empty" << std::endl;
 			return ;
 		}
 		_headers[first] = second;
