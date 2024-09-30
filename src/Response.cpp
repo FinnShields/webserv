@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/30 10:54:33 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/30 10:55:06 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,7 +55,7 @@ const std::string Response::run()
     
 	if (_req.isBadRequest())
 		return invalidRequest(getErrorPage(400));
-	if (!supportHTTPversion)
+	if (!supportHTTPversion())
 		return invalidRequest(getErrorPage(505));
 	if(!check_body_size()) 
 		return invalidRequest(getErrorPage(413));
