@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/30 10:26:44 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/30 10:54:33 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,6 +55,8 @@ const std::string Response::run()
     
 	if (_req.isBadRequest())
 		return invalidRequest(getErrorPage(400));
+	if (!supportHTTPversion)
+		return invalidRequest(getErrorPage(505));
 	if(!check_body_size()) 
 		return invalidRequest(getErrorPage(413));
 	if(!isMethodValid(method))
@@ -68,6 +70,12 @@ const std::string Response::run()
 				(method == "DELETE") ? deleteResp() : 
 				getErrorPage(501);
 	return appendHeadersAndBody(_response);
+}
+
+bool Response::supportHTTPversion()
+{
+	std::string version = _req.get("version");
+	return version == "HTTP/1.1";;
 }
 const std::string Response::invalidRequest(std::string response)
 {
