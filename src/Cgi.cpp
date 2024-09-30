@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/06 13:41:04 by apimikov          #+#    #+#             */
-/*   Updated: 2024/09/30 10:49:27 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/30 11:47:39 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -154,6 +154,12 @@ std::string Cgi::readFromPipe()
 	std::cout << "[CGI] Read from pipe " << size << " bytes" << std::endl;
     if (size < 0) 
 		throw std::runtime_error("readFromFd: read error occured!");
+	if (size == 0)
+	{
+		close(_fd_from_cgi[0]);
+		_status = 200;
+		return "";
+	}
 	if (waitpid(_pid, &_status, WNOHANG) != 0)
 		_status = 200;
     return std::string(buffer, size);
@@ -280,17 +286,6 @@ bool Cgi::isImplemented()
     }
     _cgi_path = _server.config.getValues(_index_virt, _target, "cgi_path", {""})[_cgi_type];
     return true;
-}
-
-std::string Cgi::readFromFd(int fd) {
-    std::string result;
-    char buffer[MAX_BUFFER_SIZE];
-    ssize_t size;
-    while ((size = read(fd, buffer, sizeof(buffer))) > 0)
-        result.append(buffer, size);
-    if (size < 0) 
-        throw std::runtime_error("readFromFd: read error occured!");
-    return result;
 }
 
 int Cgi::_access(){
