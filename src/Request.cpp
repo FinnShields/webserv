@@ -155,14 +155,15 @@ void	Request::extractHeaders(std::string& input)
 	for (size_t i = input.find("\r\n") + 2; i < input.size(); i++)
 	{
 		len = 0;
-		if (i == input.size() - 2 && input[i] == '\r' && input[i + 1] == '\n')
+		if (i <= input.size() - 2 && input[i] == '\r' && input[i + 1] == '\n')
 			return ;
 		while (input.size() > (i + len) && input.at(i + len) != ':') {
-			if (headerInvalidChar(input[i + (len++)], 0)) {
+			if (headerInvalidChar(input[i + (len)], 0)) {
 				_badrequest = true;
-				std::cerr << "[BAD REQUEST] Invalid char in header name" << std::endl;
+				std::cerr << "[BAD REQUEST] Invalid char in header name: \'" << input.at(i + len) << "\'" << std::endl;
 				return ;
 			}
+			len ++;
 		}
 		first = input.substr(i, len);
 		for (size_t i = 0; i < first.size(); i++)
@@ -177,7 +178,7 @@ void	Request::extractHeaders(std::string& input)
 		while (input.size() > (i + len) && input.at(i + len) != '\r') {
 			if (headerInvalidChar(input[i + (len++)], 1)) {
 				_badrequest = true;
-				std::cerr << "[BAD REQUEST] Invalid char in header content" << std::endl;
+				std::cerr << "[BAD REQUEST] Invalid char in header content" << input.at(i + len) << "\'" << std::endl;
 				return ;
 			}
 		}
