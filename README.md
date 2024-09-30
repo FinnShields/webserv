@@ -1,5 +1,5 @@
 # FAB server
-HTTP server in C++
+HTTP server in C++ (Project at School 42)
 
 Server created by [@FinnShields](https://github.com/FinnShields), [@dnapi](https://github.com/dnapi) and [@Moridar](https://github.com/Moridar)
 

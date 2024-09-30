@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/09/30 10:58:46 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/30 14:33:21 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -118,6 +118,7 @@ bool Request::extractTarget(std::string& input, size_t *pos)
 bool Request::extractVersion(std::string& input, size_t *pos)
 {
 	size_t start = *pos + 1;
+
 	if (input.compare(start, 5, "HTTP/"))
 	{
 		_badrequest = true;

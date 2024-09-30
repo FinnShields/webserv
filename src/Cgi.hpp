@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Cgi.hpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/26 14:04:53 by apimikov          #+#    #+#             */
-/*   Updated: 2024/09/26 15:35:34 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/09/30 11:44:17 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,7 +65,6 @@ class Cgi
         void setEnvMap();
         void setEnv();
         void cleanEnv();
-        std::string readFromFd(int);
         int _access();
         void _runChildCgi();
         bool _wait();

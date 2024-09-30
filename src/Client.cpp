@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/30 09:36:00 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/30 11:52:48 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -96,14 +96,13 @@ int Client::send_cgi_response()
 {
 	ssize_t bytesSent;
 	std::string &response = _res->getCgiResponse();
-	if (response.empty())
-		_force_closeconnection = true;
 	if ((bytesSent = send(_fd, response.c_str(), std::min((size_t) 10000, response.size()), 0)) < 0)
 	{
 		std::cerr << "[ERROR] Send error: " << strerror(errno) << std::endl;
-		_force_closeconnection = 1;
-		return 1;
+		return (_force_closeconnection = 1);
 	}
+	if (bytesSent == 0)
+		return (_force_closeconnection = 1);
 	_res->getCgiResponse().erase(0, bytesSent);
 	_totalBytesSent += bytesSent;
 	std::cout << "Bytes sent: " << bytesSent << " TotalSent: " << _totalBytesSent << std::endl;
