@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/26 14:30:44 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/30 09:36:00 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,28 +25,6 @@ Client::Client(int fd, Server *server) : _fd(fd), _server(server),
 		_sessionID(-1) 
 {}
 
-Client::Client(const Client &copy)
-{
-    *this = copy;
-}
-
-Client& Client::operator=(const Client &assign)
-{
-    _request = std::make_unique<Request>(_server);
-    _res = std::make_unique<Response>(_fd, *_request, *_server, *this);
-    _fd = assign._fd;
-    _server = assign._server;
-    _response = assign._response;
-    _responseSent = assign._responseSent;
-	_cgireadpfd = assign._cgireadpfd;
-	_starttime = assign._starttime;
-	_totalBytesSent = assign._totalBytesSent;
-	_force_closeconnection = assign._force_closeconnection;
-	_resets = assign._resets;
-	_sessionID = assign._sessionID;
-    return (*this);
-}
-
 Client::~Client() {}
 
 //return -1 = empty request
@@ -57,6 +35,7 @@ Client::~Client() {}
 int Client::handle_request()
 { 
     int ret = _request->read(_fd);
+	std::cout << "Request return: " << ret << std::endl;
 	if (ret == -1)
 	{
 		std::cerr << "[INFO] Client disconnected" << std::endl;
@@ -64,13 +43,15 @@ int Client::handle_request()
 	}
 	if (ret == 3 || ret == -1)
         return ret;
-	if (_responseSent && _request->IsBodyIncomplete())
-	{
-		_request->getBodyRawBytes().clear();
-		return 3;
-	}
 	if (_responseSent)
+	{
+		if (_request->IsBodyIncomplete())
+		{
+			_request->getBodyRawBytes().clear();
+			return 3;
+		}
 		return -1;
+	}
     _response = _res->run();
     return ret;
 }
@@ -84,12 +65,11 @@ int Client::send_response()
 	if (_response.empty() && _request->isCGIflag())
 		return send_cgi_response();
 	if ((bytesSent = send(_fd, _response.c_str(), std::min((size_t) 10000, _response.size()), 0)) < 0)
-    {
-        _force_closeconnection = 1;
-        return 1;
-    }
+        return (_force_closeconnection = 1);
 	_totalBytesSent += bytesSent;
 	std::cout << "Bytes sent: " << bytesSent << " TotalSent: " << _totalBytesSent << std::endl;
+	if (bytesSent == 0)
+		return (_force_closeconnection = 1);
 	if (bytesSent < (ssize_t)  _response.size())
 	{
 		_response = _response.substr(bytesSent);
@@ -97,6 +77,7 @@ int Client::send_response()
 	}
     if (_res->hasMoreChunks())
     {
+		std::cout << "[INFO] has more chunks" << std::endl;
         _response = _res->getNextChunk();
         return 0;
     }

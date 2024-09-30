@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/09/26 15:36:59 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/30 10:58:46 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,34 +21,12 @@ Request::Request(Server *srv) : _srv(srv)
 	_currentChunkSize = -1;
 	_chunkedReqComplete = true;
 	_cgi_flag = false;
+	_badrequest = false;
+	_headerComplete = false;
 }
 
 Request::~Request()
 {}
-
-// Request& Request::operator=(const Request& r) 
-// {
-// 	_srv = r._srv;
-// 	_method = r._method;
-// 	_target = r._target;
-// 	_version = r._version;
-// 	_headers = r._headers;
-// 	_bodyRawBytes = r._bodyRawBytes;
-// 	_reqRaw = r._reqRaw;
-// 	_currentChunkBytes = r._currentChunkBytes;
-//     _recvReturnTotal = r._recvReturnTotal;
-// 	_bodyTotalSize = r._bodyTotalSize;
-// 	_status = r._status;
-// 	_currentChunkSize = r._currentChunkSize;
-// 	_chunkedReqComplete = r._chunkedReqComplete;
-// 	_cgi_flag = r._cgi_flag;
-// 	return (*this);
-// }
-
-// Request::Request(const Request& r)
-// {
-// 	*this = r;
-// }
 
 //Return -1: Error or peer disconnected
 //Return 0: No content-length or fully read
@@ -79,22 +57,25 @@ int	Request::read(int _fd)
 	if (_status == 3 || _status == -1)
 		return _status;
     _status = !_headers["transfer-encoding"].empty() ? 2 :
-        !_headers["content-length"].empty() ? 1 : 0; 
+        !_headers["content-length"].empty() ? 1 : 0;
 	return _cgi_flag ? 2 : IsBodyIncomplete() ? 1 : 0;
 }
 
 void	Request::parse()
 {
-	std::string	input = "";
-	for (size_t i = 0; i < _reqRaw.size(); i++)
-		input.append(1, _reqRaw[i]);
+	std::string	input(_reqRaw.data(), _reqRaw.size());
+	// for (size_t i = 0; i < _reqRaw.size(); i++)
+	// 	input.append(1, _reqRaw[i]);
+	if (!extractVersion(input))
+		return ;
 	if (!extractMethod(input))
 		return ;
-	extractTarget(input);
-	extractVersion(input);
+	if (!extractTarget(input))
+		return ;
 	extractHeaders(input);
 	if (!get("transfer-encoding").compare("chunked"))
 		_chunkedReqComplete = false;
+	std::cout << "chunkedReqComplete: " << _chunkedReqComplete << std::endl;
 	extractBody();
 	if (DEBUG)
     	display();
@@ -106,34 +87,48 @@ bool Request::extractMethod(std::string& input)
 	_method = input.substr(0, input.find_first_of(' '));
 	t_vector_str mtd_default = DEFAULT_METHOD;
 	if (find(mtd_default.begin(), mtd_default.end(), _method) == mtd_default.end())
+	{
+		_badrequest = true;
+		std::cerr << "[BAD REQUEST] Unknown method" << std::endl;
 		return (false);
+	}
 	return (true);
 }
 
-void Request::extractTarget(std::string& input)
+bool Request::extractTarget(std::string& input)
 {
 	size_t start;
 	size_t end;
 
-	start = input.find_first_of(' ') + 1;
-	end = 0;
-	while ((start + end) < input.size() && input.at(start + end) != ' ')
-		end++;
-	_target = input.substr(start, end);
+	start = input.find_first_of(' ');
+	end = input.find_first_of(' ', start + 1);
+	size_t lineend = input.find_first_of('\r');
+
+	if (start == std::string::npos || end == std::string::npos || lineend == std::string::npos || end > lineend || start + 1 == end)
+	{
+		_badrequest = true;
+		std::cerr << "[BAD REQUEST] No target" << std::endl;
+		return false;
+	}
+	_target = input.substr(start + 1, end - start - 1);
+	return true;
 }
 
-void Request::extractVersion(std::string& input)
+bool Request::extractVersion(std::string& input)
 {
-	size_t start = input.find("HTTP");
+	size_t start = input.find("HTTP/");
 	if (start == std::string::npos)
 	{
-		std::cerr << "[INFO] No http version" << std::endl;
-		return ;
+		_badrequest = true;	
+		std::cerr << "[BAD REQUEST] No http version" << std::endl;
+		return false;
 	}
 	size_t end = 0;
 	while (start + end < input.size() && input.at(start + end) != '\r')
 		end++;
 	_version = input.substr(start, end);
+	input.erase(start, end);
+	return true;
 }
 
 
@@ -170,6 +165,7 @@ void	Request::extractBody()
     auto it = std::search(_reqRaw.begin(), _reqRaw.end(), headerEnd, headerEnd + 4);
 	if (it == _reqRaw.end())
 		return ;
+	_headerComplete = true;
 	it += 4;
 	_reqRaw.erase(_reqRaw.begin(), it);
 	if (!get("transfer-encoding").compare("chunked"))
@@ -261,7 +257,7 @@ void Request::chunkExtractBody(char *reqArray, size_t i, size_t max_size)
 bool Request::IsBodyIncomplete()
 {
 	if (_status == 0)
-		return isWholeHeader();
+		return !isWholeHeader();
 	if (_status == 1)
         return std::stol(_headers["content-length"]) > _bodyTotalSize ? 1 : 0;
 	return !_chunkedReqComplete ? 1 : 0;
@@ -297,7 +293,9 @@ bool Request::isCGIflag(){
 
 bool Request::isWholeHeader()
 {
- 	const char headerEnd[] = "\r\n\r\n";
+ 	if (_headerComplete)
+		return _headerComplete;
+	const char headerEnd[] = "\r\n\r\n";
     auto it = std::search(_reqRaw.begin(), _reqRaw.end(), headerEnd, headerEnd + 4);
     return it != _reqRaw.end();
 }
@@ -378,4 +376,8 @@ void	Request::display()
 		std::cout << std::endl;
 	}
 	std::cout << "---------------------\n" << std::endl;
+}
+bool Request::isBadRequest()
+{
+	return _badrequest;
 }

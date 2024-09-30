@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/26 15:49:57 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/30 10:55:06 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,30 +22,7 @@ const std::string Response::setAbsolutePath()
 }
 
 Response::Response(int fd, Request &req, Server &srv, Client &client) : _fd(fd), _req(req), _srv(srv), _client(client), _file(0), _code(0){
-	_cgi_response = STATUS_LINE_200;
 }
-
-// Response::Response(const Response &copy) : _req(copy._req), _srv(copy._srv), _client(copy._client)
-// {
-//     *this = copy;
-// }
-
-// Response& Response::operator=(const Response &assign)
-// {
-//     _fd = assign._fd;
-//     _file = assign._file;
-//     _code = assign._code;
-//     _message = assign._message;
-//     _fileName = assign._fileName;
-//     _fileCurrentSize = assign._fileCurrentSize;
-//     _bodyMaxSize = assign._bodyMaxSize;
-//     _boundary = assign._boundary;
-//     _target = assign._target;
-//     _index_virt = assign._index_virt;
-//     _response = assign._response;
-// 	_cgi_response = assign._cgi_response;
-//     return (*this);
-// }
 
 Response::~Response() 
 {
@@ -75,20 +52,35 @@ const std::string Response::run()
     std::string method = _req.get("method");
 	_target = _req.get("target");
 	_index_virt = _srv.getVirtHostIndex(_req.get("host"));
-    if(!check_body_size()) 
-    {
-		_req.getBodyRawBytes().clear();
-        _response = getErrorPage(413);
-    }
-	else if(isMethodValid(method))
-    	_response = _srv.config.getBestValues(_index_virt, _target, "return", {""})[0] != "" ? redirect() :
-    	            isCGI() ? runCGI() :
-                    (method == "GET" || method == "HEAD") ? get() : 
-                    (method == "POST") ? post() :
-                    (method == "PUT") ? put() :
-                    (method == "DELETE") ? deleteResp() : 
-                    getErrorPage(501);
+    
+	if (_req.isBadRequest())
+		return invalidRequest(getErrorPage(400));
+	if (!supportHTTPversion())
+		return invalidRequest(getErrorPage(505));
+	if(!check_body_size()) 
+		return invalidRequest(getErrorPage(413));
+	if(!isMethodValid(method))
+		return invalidRequest(_response);
+
+	_response = _srv.config.getBestValues(_index_virt, _target, "return", {""})[0] != "" ? redirect() :
+				isCGI() ? runCGI() :
+				(method == "GET" || method == "HEAD") ? get() : 
+				(method == "POST") ? post() :
+				(method == "PUT") ? put() :
+				(method == "DELETE") ? deleteResp() : 
+				getErrorPage(501);
 	return appendHeadersAndBody(_response);
+}
+
+bool Response::supportHTTPversion()
+{
+	std::string version = _req.get("version");
+	return version == "HTTP/1.1";;
+}
+const std::string Response::invalidRequest(std::string response)
+{
+	_req.getBodyRawBytes().clear();
+	return appendHeadersAndBody(response);
 }
 
 const std::string Response::appendHeadersAndBody(std::string &response)
@@ -123,7 +115,7 @@ const std::string Response::get()
         _code = 200;
         _message = "OK";
     }
-	std::string path = getPath();
+	std::string path = decodePath(getPath());	
 	if (std::filesystem::is_regular_file(path) && std::filesystem::exists(path))
 		return load_file(path);
 	std::string _index = _srv.config.getBestValues(_index_virt, _target, "index", DEFAULT_INDEX)[0];
@@ -193,7 +185,8 @@ const std::string Response::put()
 const std::string Response::getErrorPage(int code)
 {
     _code = code;
-    _message = code == 405 ? "Not Allowed" :
+    _message = 	code == 400 ? "Bad Request" : 
+				code == 405 ? "Not Allowed" :
                 code == 413 ? "Content Too Large" :
                 code == 500 ? "Internal Server Error" :
                 code == 501 ? "Not Implemented" :
@@ -237,6 +230,8 @@ const std::string Response::runCGI()
 			std::cerr << "CGI status = " << _code << "\n";
 			std::cout << "------- END ----------" << std::endl;
 		}
+        _cgi_response = STATUS_LINE_200;
+        setCookie(_cgi_response);
 		writeToCgi();
 	}
 	else
@@ -393,6 +388,23 @@ bool Response::check_body_size()
     _bodyMaxSize = max_body_size;
     size_t contentlength = std::stol(contentlength_str);
     return contentlength > max_body_size ? false : true;
+}
+
+std::string Response::decodePath(const std::string path)
+{
+	std::string decodedFileName = "";
+	const char *pathptr = path.c_str();
+    for (size_t i = 0; i < path.size(); i ++)
+    {
+        if (path[i] == '%')
+        {
+            decodedFileName.append(1, decodeChar(pathptr + i));
+            i += 2;
+        }
+        else
+            decodedFileName.append(1, path[i]);
+    }
+	return decodedFileName;
 }
 
 char Response::decodeChar(const char *ch)
@@ -603,17 +615,7 @@ size_t  Response::findString(std::vector<char> bodyRaw, std::string str, size_t 
 
 int Response::deleteFile(const std::string &file)
 {
-    std::string decodedFileName = "";
-    for (size_t i = 0; i < file.size(); i ++)
-    {
-        if (file[i] == '%')
-        {
-            decodedFileName.append(1, decodeChar(&file.c_str()[i]));
-            i += 2;
-        }
-        else
-            decodedFileName.append(1, file[i]);
-    }
+    std::string decodedFileName = decodePath(file);
     // std::cout << "[INFO] Decoded name: \"" << decodedFileName << "\"" << std::endl;
     if (std::remove(decodedFileName.c_str()) < 0)
 	{

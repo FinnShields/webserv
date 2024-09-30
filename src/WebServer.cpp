@@ -73,10 +73,10 @@ void WebServer::run()
 {
 	while (running)
 	{
-		std::cout << "Waiting for action... - size of pollfd vector: " << _fds.size() << "\r" << std::flush;
+		std::cout << "Waiting for action - polls: " << _fds.size() << "\r" << std::flush;
 		int poll_result = poll(_fds.data(), _fds.size(), POLLTIMEOUT);
-		for (pollfd &pfd : _fds)
-			std::cout << "fd: " << pfd.fd << " events: " << pfd.events << " revents: " << pfd.revents << " Address of object: " << &pfd << std::endl;
+		// for (pollfd &pfd : _fds)
+		// 	std::cout << "fd: " << pfd.fd << " events: " << pfd.events << " revents: " << pfd.revents << " Address of object: " << &pfd << std::endl;
 		if (poll_result == -1)
 			return (perror("poll"));
 		if (!checkTimer(SOCKETTIMEOUT) && poll_result == 0)
@@ -174,7 +174,6 @@ int WebServer::fd_is_client(pollfd &pfd)
 int WebServer::fd_is_client_read(pollfd &pfd, Client *client)
 {
 	int ret = client->handle_request();
-	std::cout << "handle return: " << ret << std::endl;
 	if (ret == 2)
 	{
 		if (client->get_cgi_fd() == -1)

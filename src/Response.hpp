@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:06:10 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/26 15:35:33 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/30 10:54:16 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -77,13 +77,16 @@ class Response
 		const std::string getErrorPage(int code);
 		const std::string appendfile();
 		const std::string appendHeadersAndBody(std::string&);
+		const std::string invalidRequest(std::string);
 		std::string createCookie();
 
 		int		createFile(int);
         int		deleteFile(const std::string &);
 		bool 	isMethodValid(std::string method);
+		bool	supportHTTPversion();
 		bool 	isCGI();
 		void 	setCookie(std::string &);
+
 
         //Helper functions
 		std::string	contentLength(size_t len);
@@ -99,7 +102,8 @@ class Response
         int		setFileName(std::vector<char> &bodyRaw, int);
         int		checkBodySize(std::vector<char> &bodyRaw);
 		size_t	findString(std::vector<char> bodyRaw, std::string str, size_t offset);
-        char	decodeChar(const char *ch);
+        std::string	decodePath(const std::string path);
+		char	decodeChar(const char *ch);
 
 		Response(const Response &copy);
 		Response &operator=(const Response &assign);

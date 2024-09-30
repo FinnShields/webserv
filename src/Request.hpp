@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:41 by fshields          #+#    #+#             */
-/*   Updated: 2024/09/26 15:36:51 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/30 10:07:39 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,10 +41,12 @@ class Request
 		int		_currentChunkSize;
 		bool	_chunkedReqComplete;
 		bool	_cgi_flag;
+		bool	_badrequest;
+		bool	_headerComplete;
 		void	parse();
 		bool	extractMethod(std::string& input);
-		void	extractTarget(std::string& input);
-		void	extractVersion(std::string& input);
+		bool	extractTarget(std::string& input);
+		bool	extractVersion(std::string& input);
 		void	extractHeaders(std::string& input);
 		void	extractBody();
 		int		chunkExtractNumber(char *reqArray, size_t &i, size_t max_size);
@@ -70,6 +72,7 @@ class Request
 		bool	isCGIflag();
 		bool	IsBodyIncomplete();
 		int		getStatus();
+		bool 	isBadRequest();
 };
 
 #endif
