@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/06 13:41:04 by apimikov          #+#    #+#             */
-/*   Updated: 2024/09/29 15:52:50 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/30 10:49:27 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -129,13 +129,17 @@ void Cgi::runCmd(){
 
 ssize_t Cgi::writeToPipe(const void *buf, size_t count)
 {
-	int bytesWritten = count <= 0 ? count : write(_fd_to_cgi[1], buf, std::min(count, (size_t)10000));
-	std::cout << "[CGI] Wrote to pipe " << bytesWritten << " bytes" << std::endl;
-	if (bytesWritten == 0)
-		return 0;
-	if (bytesWritten < 0 || (!_request.IsBodyIncomplete() && (size_t) bytesWritten == count))
+	if (count > 0)
+	{
+		int bytesWritten = write(_fd_to_cgi[1], buf, std::min(count, (size_t)10000));
+		std::cout << "[CGI] Wrote to pipe " << bytesWritten << " bytes" << std::endl;
+		if (bytesWritten < 0 || bytesWritten == 0 ||  (!_request.IsBodyIncomplete() && (size_t) bytesWritten == count))
 		std::cerr << (close(_fd_to_cgi[1]) == -1 ? "[CGI] Failure close cgi topipe\n" : "[CGI] closed write Pipe\n");
-	return bytesWritten;	
+		return bytesWritten;	
+	}
+	if (!_request.IsBodyIncomplete())
+		std::cerr << (close(_fd_to_cgi[1]) == -1 ? "[CGI] Failure close cgi topipe\n" : "[CGI] closed write Pipe\n");
+	return 0;
 }
 
 void Cgi::closeWritePipe()

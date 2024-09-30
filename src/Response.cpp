@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/30 09:47:00 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/30 10:26:44 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -177,7 +177,8 @@ const std::string Response::put()
 const std::string Response::getErrorPage(int code)
 {
     _code = code;
-    _message = code == 405 ? "Not Allowed" :
+    _message = 	code == 400 ? "Bad Request" : 
+				code == 405 ? "Not Allowed" :
                 code == 413 ? "Content Too Large" :
                 code == 500 ? "Internal Server Error" :
                 code == 501 ? "Not Implemented" :
