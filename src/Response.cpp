@@ -53,14 +53,14 @@ const std::string Response::run()
 	_target = _req.get("target");
 	_index_virt = _srv.getVirtHostIndex(_req.get("host"));
     
+    if(!isMethodValid(method))
+		return invalidRequest(_response);
 	if (_req.isBadRequest())
 		return invalidRequest(getErrorPage(400));
 	if (!supportHTTPversion())
-		return invalidRequest(getErrorPage(505));
+		return invalidRequest(getErrorPage(_code));
 	if(!check_body_size()) 
 		return invalidRequest(getErrorPage(413));
-	if(!isMethodValid(method))
-		return invalidRequest(_response);
 
 	_response = _srv.config.getBestValues(_index_virt, _target, "return", {""})[0] != "" ? redirect() :
 				isCGI() ? runCGI() :
@@ -75,7 +75,15 @@ const std::string Response::run()
 bool Response::supportHTTPversion()
 {
 	std::string version = _req.get("version");
-	return version == "HTTP/1.1";;
+    if (!version.compare("HTTP/1.1")) {
+        return true;
+    }
+	if (!version.compare("HTTP/0.9") || !version.compare("HTTP/1.0") ||
+    !version.compare("HTTP/2") || !version.compare("HTTP/3"))
+        _code = 505;
+    else
+        _code = 400;
+    return false;
 }
 const std::string Response::invalidRequest(std::string response)
 {
