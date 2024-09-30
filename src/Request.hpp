@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:41 by fshields          #+#    #+#             */
-/*   Updated: 2024/09/29 18:07:06 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/30 10:07:39 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,8 +45,8 @@ class Request
 		bool	_headerComplete;
 		void	parse();
 		bool	extractMethod(std::string& input);
-		void	extractTarget(std::string& input);
-		void	extractVersion(std::string& input);
+		bool	extractTarget(std::string& input);
+		bool	extractVersion(std::string& input);
 		void	extractHeaders(std::string& input);
 		void	extractBody();
 		int		chunkExtractNumber(char *reqArray, size_t &i, size_t max_size);

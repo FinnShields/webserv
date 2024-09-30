@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/29 17:39:37 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/30 09:47:00 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -107,7 +107,7 @@ const std::string Response::get()
         _code = 200;
         _message = "OK";
     }
-	std::string path = getPath();
+	std::string path = decodePath(getPath());	
 	if (std::filesystem::is_regular_file(path) && std::filesystem::exists(path))
 		return load_file(path);
 	std::string _index = _srv.config.getBestValues(_index_virt, _target, "index", DEFAULT_INDEX)[0];
@@ -381,6 +381,23 @@ bool Response::check_body_size()
     return contentlength > max_body_size ? false : true;
 }
 
+std::string Response::decodePath(const std::string path)
+{
+	std::string decodedFileName = "";
+	const char *pathptr = path.c_str();
+    for (size_t i = 0; i < path.size(); i ++)
+    {
+        if (path[i] == '%')
+        {
+            decodedFileName.append(1, decodeChar(pathptr + i));
+            i += 2;
+        }
+        else
+            decodedFileName.append(1, path[i]);
+    }
+	return decodedFileName;
+}
+
 char Response::decodeChar(const char *ch)
 {
     char    rtn = 0;
@@ -589,17 +606,7 @@ size_t  Response::findString(std::vector<char> bodyRaw, std::string str, size_t 
 
 int Response::deleteFile(const std::string &file)
 {
-    std::string decodedFileName = "";
-    for (size_t i = 0; i < file.size(); i ++)
-    {
-        if (file[i] == '%')
-        {
-            decodedFileName.append(1, decodeChar(&file.c_str()[i]));
-            i += 2;
-        }
-        else
-            decodedFileName.append(1, file[i]);
-    }
+    std::string decodedFileName = decodePath(file);
     // std::cout << "[INFO] Decoded name: \"" << decodedFileName << "\"" << std::endl;
     if (std::remove(decodedFileName.c_str()) < 0)
 	{
