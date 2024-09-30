@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/30 14:59:41 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/30 15:12:39 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -113,7 +113,8 @@ void WebServer::iterateAndRunActiveFD()
 {
 	static std::vector<pollfd>::iterator it = _fds.begin();
 	int status = -1;
-	while (1)
+	auto lastElement = it == _fds.begin() ? _fds.end() : it - 1;
+	while (it != lastElement)
 	{
 		if (it == _fds.end())
 			it = _fds.begin();
