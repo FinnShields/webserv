@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:06:10 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/29 16:43:22 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/30 09:45:29 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -101,7 +101,8 @@ class Response
         int		setFileName(std::vector<char> &bodyRaw, int);
         int		checkBodySize(std::vector<char> &bodyRaw);
 		size_t	findString(std::vector<char> bodyRaw, std::string str, size_t offset);
-        char	decodeChar(const char *ch);
+        std::string	decodePath(const std::string path);
+		char	decodeChar(const char *ch);
 
 		Response(const Response &copy);
 		Response &operator=(const Response &assign);

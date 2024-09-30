@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/09/29 18:07:44 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/30 10:18:54 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,13 +63,15 @@ int	Request::read(int _fd)
 
 void	Request::parse()
 {
-	std::string	input = "";
-	for (size_t i = 0; i < _reqRaw.size(); i++)
-		input.append(1, _reqRaw[i]);
+	std::string	input(_reqRaw.data(), _reqRaw.size());
+	// for (size_t i = 0; i < _reqRaw.size(); i++)
+	// 	input.append(1, _reqRaw[i]);
+	if (!extractVersion(input))
+		return ;
 	if (!extractMethod(input))
 		return ;
-	extractTarget(input);
-	extractVersion(input);
+	if (!extractTarget(input))
+		return ;
 	extractHeaders(input);
 	if (!get("transfer-encoding").compare("chunked"))
 		_chunkedReqComplete = false;
@@ -89,31 +91,40 @@ bool Request::extractMethod(std::string& input)
 	return (true);
 }
 
-void Request::extractTarget(std::string& input)
+bool Request::extractTarget(std::string& input)
 {
 	size_t start;
 	size_t end;
 
-	start = input.find_first_of(' ') + 1;
-	end = 0;
-	while ((start + end) < input.size() && input.at(start + end) != ' ')
-		end++;
-	_target = input.substr(start, end);
+	start = input.find_first_of(' ');
+	end = input.find_first_of(' ', start + 1);
+	size_t lineend = input.find_first_of('\r');
+
+	if (start == std::string::npos || end == std::string::npos || lineend == std::string::npos || end > lineend || start + 1 == end)
+	{
+		_badrequest = true;
+		std::cerr << "[INFO] No target" << std::endl;
+		return false;
+	}
+	_target = input.substr(start + 1, end - start - 1);
+	return true;
 }
 
-void Request::extractVersion(std::string& input)
+bool Request::extractVersion(std::string& input)
 {
-	size_t start = input.find("HTTP");
+	size_t start = input.find("HTTP/");
 	if (start == std::string::npos)
 	{
 		_badrequest = true;	
 		std::cerr << "[INFO] No http version" << std::endl;
-		return ;
+		return false;
 	}
 	size_t end = 0;
 	while (start + end < input.size() && input.at(start + end) != '\r')
 		end++;
 	_version = input.substr(start, end);
+	input.erase(start, end);
+	return true;
 }
 
 

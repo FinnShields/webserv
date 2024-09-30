@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:21:16 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/29 17:38:33 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/30 09:36:00 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -77,6 +77,7 @@ int Client::send_response()
 	}
     if (_res->hasMoreChunks())
     {
+		std::cout << "[INFO] has more chunks" << std::endl;
         _response = _res->getNextChunk();
         return 0;
     }
