@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/09/30 10:18:54 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/30 10:58:46 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -87,7 +87,11 @@ bool Request::extractMethod(std::string& input)
 	_method = input.substr(0, input.find_first_of(' '));
 	t_vector_str mtd_default = DEFAULT_METHOD;
 	if (find(mtd_default.begin(), mtd_default.end(), _method) == mtd_default.end())
+	{
+		_badrequest = true;
+		std::cerr << "[BAD REQUEST] Unknown method" << std::endl;
 		return (false);
+	}
 	return (true);
 }
 
@@ -103,7 +107,7 @@ bool Request::extractTarget(std::string& input)
 	if (start == std::string::npos || end == std::string::npos || lineend == std::string::npos || end > lineend || start + 1 == end)
 	{
 		_badrequest = true;
-		std::cerr << "[INFO] No target" << std::endl;
+		std::cerr << "[BAD REQUEST] No target" << std::endl;
 		return false;
 	}
 	_target = input.substr(start + 1, end - start - 1);
@@ -116,7 +120,7 @@ bool Request::extractVersion(std::string& input)
 	if (start == std::string::npos)
 	{
 		_badrequest = true;	
-		std::cerr << "[INFO] No http version" << std::endl;
+		std::cerr << "[BAD REQUEST] No http version" << std::endl;
 		return false;
 	}
 	size_t end = 0;
