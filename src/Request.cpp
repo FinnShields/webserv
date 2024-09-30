@@ -64,11 +64,12 @@ int	Request::read(int _fd)
 void	Request::parse()
 {
 	std::string	input(_reqRaw.data(), _reqRaw.size());
-	if (!extractVersion(input))
+	size_t pos = 0;
+	if (!extractMethod(input, &pos))
 		return ;
-	if (!extractMethod(input))
+	if (!extractTarget(input, &pos))
 		return ;
-	if (!extractTarget(input))
+	if (!extractVersion(input, &pos))
 		return ;
 	extractHeaders(input);
 	if (!get("transfer-encoding").compare("chunked"))
@@ -80,7 +81,7 @@ void	Request::parse()
 	setCGIflag();
 }
 
-bool Request::extractMethod(std::string& input)
+bool Request::extractMethod(std::string& input, size_t *pos)
 {
 	_method = input.substr(0, input.find_first_of(' '));
 	t_vector_str mtd_default = DEFAULT_METHOD;
@@ -90,32 +91,41 @@ bool Request::extractMethod(std::string& input)
 		std::cerr << "[BAD REQUEST] Unknown method" << std::endl;
 		return (false);
 	}
+	*pos += _method.size();
+	std::cout << "METHOD: " << _method << std::endl;
 	return (true);
 }
 
-bool Request::extractTarget(std::string& input)
+bool Request::extractTarget(std::string& input, size_t *pos)
 {
 	size_t start;
 	size_t end;
 
-	start = input.find_first_of(' ');
+	start = *pos;
 	end = input.find_first_of(' ', start + 1);
 	size_t lineend = input.find_first_of('\r');
 
-	if (start == std::string::npos || end == std::string::npos || lineend == std::string::npos || end > lineend || start + 1 == end)
+	if (start >= input.size() || end == std::string::npos || lineend == std::string::npos || end > lineend || start + 1 == end)
 	{
 		_badrequest = true;
 		std::cerr << "[BAD REQUEST] No target" << std::endl;
 		return false;
 	}
 	_target = input.substr(start + 1, end - start - 1);
+	*pos += _target.size() + 1;
+	std::cout << "TARGET: " << _target << std::endl;
 	return true;
 }
 
-bool Request::extractVersion(std::string& input)
+bool Request::extractVersion(std::string& input, size_t *pos)
 {
-	size_t start = input.find("HTTP/");
-	if (start == std::string::npos)
+	size_t start = *pos + 1;
+	if (input.compare(start, 5, "HTTP/"))
+	{
+		_badrequest = true;
+		return false;
+	}
+	if (start >= input.size())
 	{
 		_badrequest = true;	
 		std::cerr << "[BAD REQUEST] No http version" << std::endl;
@@ -125,6 +135,7 @@ bool Request::extractVersion(std::string& input)
 	while (start + end < input.size() && input.at(start + end) != '\r')
 		end++;
 	_version = input.substr(start, end);
+	std::cout << "VERSION: " << _version << std::endl;
 	input.erase(start, end);
 	return true;
 }
@@ -134,7 +145,7 @@ bool	Request::headerInvalidChar(char c, int nameOrContent)
 	if (nameOrContent == 0)
 		return !(std::isalnum(c) || c == '-' || c == '_');
 	else
-		return !(c >= 33 && c <= 126);
+		return !(c >= 32 && c <= 126);
 }
 
 void	Request::extractHeaders(std::string& input)

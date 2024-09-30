@@ -44,9 +44,9 @@ class Request
 		bool	_badrequest;
 		bool	_headerComplete;
 		void	parse();
-		bool	extractMethod(std::string& input);
-		bool	extractTarget(std::string& input);
-		bool	extractVersion(std::string& input);
+		bool	extractMethod(std::string& input, size_t *pos);
+		bool	extractTarget(std::string& input, size_t *pos);
+		bool	extractVersion(std::string& input, size_t *pos);
 		void	extractHeaders(std::string& input);
 		bool	headerInvalidChar(char c, int nameOrContent);
 		void	extractBody();
