@@ -88,14 +88,16 @@ void Cgi::start(){
 		std::cout << "Target =>" << _target << "<=\n";
 	}
     setExtension();
+    analizeTarget();
+    setEnvMap();
+    setEnv();
+    if (_access() != 0)
+        return ;
     if (!isImplemented())
     {
         _status = 501;
         return ;
     }
-    analizeTarget();
-    setEnvMap();
-    setEnv();
     try{
         runCmd();
     }
@@ -110,8 +112,6 @@ void Cgi::start(){
 }
 
 void Cgi::runCmd(){
-    if (_access() != 0)
-        return ;
     if (pipe(_fd_to_cgi) == -1)
         throw std::runtime_error("pipe error occurred!");
     if (pipe(_fd_from_cgi) == -1){
@@ -291,7 +291,6 @@ bool Cgi::isImplemented()
 }
 
 int Cgi::_access(){
-	return 0;
 	const char* file_path = _env_map["SCRIPT_FILENAME"].c_str();
     if (DEBUG)
 			std::cout << "CGI: access for ->" << file_path << "<-\n";
@@ -330,9 +329,9 @@ void Cgi::_runChildCgi(){
     }
     _argv[2] = nullptr;
     if (DEBUG)
-			std::cout << "CGI: cgi_path=" << _cgi_path << "<-\n";
+			std::cout << "CGI: cgi_path=" << _cgi_path << "<-" << std::endl;
     if (DEBUG)
-			std::cout << "CGI: execve for ->" << _argv[0] << "<- ->" << _argv[1] << "<- \n";
+			std::cout << "CGI: execve for ->" << _argv[0] << "<- ->" << _argv[1] << "<- " << std::endl;
     if (close(_fd_to_cgi[1]) == -1 || close(_fd_from_cgi[0]) == -1)
         throw std::runtime_error("close 	 error occurred!");
     if (dup2(_fd_to_cgi[0], 0) == -1 || dup2(_fd_from_cgi[1], 1) == -1)
@@ -344,12 +343,12 @@ void Cgi::_runChildCgi(){
 		close(i);
 	if (DEBUG)
 	{
-		std::cerr << "CGI: chdir to " << _target_foldername << "\n";
-		std::cerr << "CGI: execve for ->" << _argv[0] << "<- ->" << _argv[1] << "<- \n";
+		std::cerr << "CGI: chdir to " << _target_foldername << std::endl;;
+		std::cerr << "CGI: execve for ->" << _argv[0] << "<- ->" << _argv[1] << "<-" << std::endl;
 	}
     std::string path = _target_foldername;
 	if (DEBUG)
-			 std::cerr << "CGI: chdir to " << path << "\n";
+			 std::cerr << "CGI: chdir to " << path  << std::endl;
     std::cerr << "chdir returns: " << chdir(path.c_str()) << std::endl;
     execve(_argv[0], _argv, _envp);
     std::cerr << ("CGI: execve error occurred!") << std::endl;
