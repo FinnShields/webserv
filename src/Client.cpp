@@ -36,7 +36,6 @@ int Client::handle_request()
 {
 	_starttime = std::time(NULL);
     int ret = _request->read(_fd);
-	std::cout << "Request return: " << ret << std::endl;
 	if (ret == -1)
 	{
 		std::cerr << "[INFO] Client disconnected" << std::endl;

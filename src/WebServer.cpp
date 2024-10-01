@@ -186,7 +186,6 @@ int WebServer::fd_is_client_read(pollfd &pfd, Client *client)
 		else if (_cgi_readfd_clients.find(client->get_cgi_fd()) == _cgi_readfd_clients.end())
 		{
 			addCGItoPollfd(pfd, client);
-			std::cout << "Added to poll" << std::endl;
 			return 2;
 		}
 	}

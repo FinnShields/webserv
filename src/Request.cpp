@@ -74,7 +74,6 @@ void	Request::parse()
 	extractHeaders(input);
 	if (!get("transfer-encoding").compare("chunked"))
 		_chunkedReqComplete = false;
-	std::cout << "chunkedReqComplete: " << _chunkedReqComplete << std::endl;
 	extractBody();
 	if (DEBUG)
     	display();
