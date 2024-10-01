@@ -21,7 +21,10 @@ const std::string Response::setAbsolutePath()
     return exePath.parent_path().string() + '/';
 }
 
-Response::Response(int fd, Request &req, Server &srv, Client &client) : _fd(fd), _req(req), _srv(srv), _client(client), _file(0), _code(0){
+Response::Response(int fd, Request &req, Server &srv, Client &client) : _fd(fd), _req(req), _srv(srv), _client(client), _file(0), _code(0)
+{
+	_target = _req.get("target");
+	_index_virt = _srv.getVirtHostIndex(_req.get("host"));
 }
 
 Response::~Response() 
@@ -50,8 +53,6 @@ const std::string Response::run()
 	if (_file != 0)
     	return _file == -1 ? getErrorPage(500) : appendfile();
     std::string method = _req.get("method");
-	_target = _req.get("target");
-	_index_virt = _srv.getVirtHostIndex(_req.get("host"));
     
     if(!isMethodValid(method))
 		return invalidRequest(_response);

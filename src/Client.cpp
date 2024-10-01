@@ -83,7 +83,7 @@ int Client::send_response()
         _response = _res->getNextChunk();
         return 0;
     }
-	if (!isRequestComplete())
+	if (!_force_closeconnection && !isRequestComplete())
 	{
 		_responseSent = true;
 		return 2;
@@ -119,7 +119,7 @@ bool Client::timeout(unsigned int timeout)
 {
 	if (difftime(std::time(NULL), _starttime) > timeout)
 	{
-		std::cout << "Client fd: " << _fd << " timed out" << std::endl;
+		std::cout << "[TIMER] Client fd: " << _fd << " timed out" << std::endl;
 		if (!_res)
 			_res = std::make_unique<Response>(_fd, *_request, *_server, *this);
 		_response = _res->getTimeOutErrorPage();

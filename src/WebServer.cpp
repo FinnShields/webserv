@@ -303,7 +303,6 @@ bool WebServer::checkTimer(int timeout_seconds)
 		// std::cout << "[INFO] TIMER less than 30 sec since last, wont check" << std::endl;
 		return false;
 	}
-	std::cout << "[INFO] TIMER Check: ";
 	for (std::vector<pollfd>::iterator it = _fds.begin(); it != _fds.end(); it++)
 		if (it->revents == 0)
 			for (Server &srv : _servers)
@@ -317,7 +316,7 @@ bool WebServer::checkTimer(int timeout_seconds)
 					break;
 				}
 	if (!timedout)
-		std::cout << "Noone timed out" << std::endl;
+		std::cout << "[TIMER] Noone timed out" << std::endl;
 	lastCheck = std::time(NULL);
 	return timedout;
 }
