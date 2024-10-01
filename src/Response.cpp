@@ -584,7 +584,7 @@ const std::string Response::appendfile()
         std::cout << "[INFO] File appended " << _req.getBodyTotalSize() << "/" << _req.getHeader("content-length") << std::endl;
         _response = STATUS_LINE_201;
 		setCookie(_response);
-		return _response + std::string("\r\n");
+		return _response + contentLength(0) + std::string("\r\n");
     }
     _file = -1;
     std::cerr << "[ERROR] File is not open" << std::endl;
