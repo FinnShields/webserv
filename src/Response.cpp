@@ -261,7 +261,6 @@ const std::string Response::runCGI()
         {
             _cgi_response = STATUS_LINE_200;
             setCookie(_cgi_response);
-            writeToCgi();
         }
 	}
 	else
