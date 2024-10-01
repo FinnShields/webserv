@@ -248,7 +248,6 @@ int WebServer::fd_is_cgi(pollfd pfd)
 			else if (pfd.revents & (POLLNVAL | POLLHUP))
 			{
 				it->second->events |= POLLOUT;
-				close(pfd.fd);
 				_cgi_readfd_clients.erase(pfd.fd);
 				return 1;
 			}
@@ -256,7 +255,6 @@ int WebServer::fd_is_cgi(pollfd pfd)
 		}
 	if (!client)
 	{
-		close(pfd.fd);
 		_cgi_readfd_clients.erase(pfd.fd);
 		return 1;
 	}
@@ -280,14 +278,12 @@ int WebServer::fd_is_cgiwrite(pollfd &pfd)
 			if (client->isRequestComplete() || pfd.revents & POLLHUP || pfd.revents & POLLNVAL)
 			{
 				_cgi_writefd_clients.erase(pfd.fd);
-				close(pfd.fd);
 				return 1;
 			}
 			return 0;
 		}
 	std::cout << "[ERROR] client is not found, deleting the fd" << std::endl;
 	_cgi_writefd_clients.erase(pfd.fd);
-	close(pfd.fd);
 	return 1;
 }
 
