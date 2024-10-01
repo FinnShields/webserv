@@ -56,6 +56,7 @@ class WebServer
 		void	iterateAndRunActiveFD();
 		int		iterateAndCheckIncomingConnections();
 		void	cleanexit();
+		void 	deletecgifrompollfd(int);
 		
 		WebServer();
 		WebServer(const WebServer &copy);

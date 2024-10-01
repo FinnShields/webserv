@@ -75,6 +75,8 @@ void WebServer::run()
 	{
 		std::cout << "Waiting for action - polls: " << _fds.size() << "\r" << std::flush;
 		int poll_result = poll(_fds.data(), _fds.size(), POLLTIMEOUT);
+		if (!running)
+			break;
 		// for (pollfd &pfd : _fds)
 		// 	std::cout << "fd: " << pfd.fd << " events: " << pfd.events << " revents: " << pfd.revents << " Address of object: " << &pfd << std::endl;
 		if (poll_result == -1)
@@ -124,7 +126,9 @@ void WebServer::iterateAndRunActiveFD()
 			{
 				if ((status = fd_is_cgi(*it)) < 0)
 					if ((status = fd_is_cgiwrite(*it)) < 0)
-						status = fd_is_client(*it);
+						if ((status = fd_is_client(*it) < 0))
+							if (!fd_is_server(it->fd))
+								status = 1;
 				it = (status == 1) ? _fds.erase(it) : it + 1;
 				return;
 			}
@@ -148,6 +152,14 @@ bool WebServer::fd_is_server(int fd)
 		}
 	return (false);
 }
+// void WebServer::deletecgifrompollfd(int client_fd)
+// {
+// 	for(auto it : _cgi_readfd_clients)
+// 		if (it.second->fd == client_fd)
+// 		{
+// 			_cgi_readfd_clients.erase(it);
+// 		} 
+// }
 
 int WebServer::fd_is_client(pollfd &pfd)
 {
@@ -166,6 +178,7 @@ int WebServer::fd_is_client(pollfd &pfd)
 			if (pfd.revents & (POLLNVAL | POLLHUP))
 			{
 				client->close_connection();
+				// deletecgifrompollfd(client->get_socket_fd());
 				return 1;
 			}
 			return 0;
@@ -299,17 +312,18 @@ bool WebServer::checkTimer(int timeout_seconds)
 		return false;
 	}
 	for (std::vector<pollfd>::iterator it = _fds.begin(); it != _fds.end(); it++)
-		if (it->revents == 0)
-			for (Server &srv : _servers)
-				if ((client = srv.get_client(it->fd)))
+	{
+		for (Server &srv : _servers)
+			if ((client = srv.get_client(it->fd)))
+			{
+				if (client->timeout(timeout_seconds))
 				{
-					if (client->timeout(timeout_seconds))
-					{
-						timedout = true;
-						it->events = POLLOUT;
-					}
-					break;
+					timedout = true;
+					it->events = POLLOUT;
 				}
+				break;
+			}
+	}
 	if (!timedout)
 		std::cout << "[TIMER] Noone timed out" << std::endl;
 	lastCheck = std::time(NULL);
@@ -318,6 +332,8 @@ bool WebServer::checkTimer(int timeout_seconds)
 
 void WebServer::cleanexit()
 {
+	std::cerr << "[INFO] Clean exit" << std::endl;
+	
 	for (std::vector<pollfd>::iterator it = _fds.begin(); it != _fds.end();)
 	{
 		for (Server &srv : _servers)
