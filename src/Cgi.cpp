@@ -18,7 +18,10 @@ Cgi::Cgi(const Cgi& other):
     _request(other._request),
     _server(other._server),
     _target(other._target),
-    _index_virt(other._index_virt)
+    _index_virt(other._index_virt),
+    _fd_from_cgi{ other._fd_from_cgi[0], other._fd_from_cgi[1]},
+    _fd_to_cgi{ other._fd_to_cgi[0], other._fd_to_cgi[1]},
+    _pid(0)
 {
     _argv = new char*[4] {nullptr};
     _envp = nullptr;
@@ -29,7 +32,10 @@ Cgi::Cgi(Request& r, const Server& s, const size_t virt_index, std::string path)
     _server(s),
     _target(r.get("target")),
     _index_virt(virt_index),
-    _path(path)
+    _path(path),
+    _fd_from_cgi{-1, -1},
+    _fd_to_cgi{-1, -1},
+    _pid(0)
 {
     _argv = new char*[4] {nullptr};
     _envp = nullptr;
@@ -45,10 +51,9 @@ Cgi::~Cgi(){
     for (int i = 0; _argv[i] != nullptr; i++)
         delete[] _argv[i];
     delete[](_argv);
-	close(_fd_to_cgi[1]);
-	// if (close(_fd_to_cgi[1]) == -1)
-		// std::cerr << "[CGI Destructor] Failure close cgi topipe\n";
-	if (close(_fd_from_cgi[0]) == -1)
+	if (_fd_to_cgi[1] != -1 && close(_fd_to_cgi[1]) == -1)
+		std::cerr << "[CGI Destructor] Failure close cgi topipe\n";
+	if (_fd_from_cgi[0] != -1 && close(_fd_from_cgi[0]) == -1)
         std::cerr << "[CGI Destructor] Failure close cgi frompipe\n";
 	if (_pid > 0)
 	{
@@ -135,16 +140,12 @@ ssize_t Cgi::writeToPipe(const void *buf, size_t count)
 		std::cout << "[CGI] Wrote to pipe " << bytesWritten << " bytes" << std::endl;
 		if (bytesWritten < 0 || bytesWritten == 0 ||  (!_request.IsBodyIncomplete() && (size_t) bytesWritten == count))
 		std::cerr << (close(_fd_to_cgi[1]) == -1 ? "[CGI] Failure close cgi topipe\n" : "[CGI] closed write Pipe\n");
+        _fd_to_cgi[1] = -1;
 		return bytesWritten;	
 	}
 	if (!_request.IsBodyIncomplete())
 		std::cerr << (close(_fd_to_cgi[1]) == -1 ? "[CGI] Failure close cgi topipe\n" : "[CGI] closed write Pipe\n");
 	return 0;
-}
-
-void Cgi::closeWritePipe()
-{
-	close(_fd_to_cgi[1]);
 }
 
 std::string Cgi::readFromPipe()
@@ -157,6 +158,7 @@ std::string Cgi::readFromPipe()
 	if (size == 0)
 	{
 		close(_fd_from_cgi[0]);
+        _fd_from_cgi[0] = -1;
 		_status = 200;
 		return "";
 	}

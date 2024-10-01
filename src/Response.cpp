@@ -21,7 +21,8 @@ const std::string Response::setAbsolutePath()
     return exePath.parent_path().string() + '/';
 }
 
-Response::Response(int fd, Request &req, Server &srv, Client &client) : _fd(fd), _req(req), _srv(srv), _client(client), _file(0), _code(0){
+Response::Response(int fd, Request &req, Server &srv, Client &client) : _fd(fd), _req(req), _srv(srv), _client(client), _file(0), _code(0)
+{
 }
 
 Response::~Response() 
@@ -50,7 +51,7 @@ const std::string Response::run()
 	if (_file != 0)
     	return _file == -1 ? getErrorPage(500) : appendfile();
     std::string method = _req.get("method");
-	_target = _req.get("target");
+    _target = _req.get("target");
 	_index_virt = _srv.getVirtHostIndex(_req.get("host"));
     if (!checkRequestIsValid())
     {
@@ -256,9 +257,12 @@ const std::string Response::runCGI()
 			std::cerr << "CGI status = " << _code << "\n";
 			std::cout << "------- END ----------" << std::endl;
 		}
-        _cgi_response = STATUS_LINE_200;
-        setCookie(_cgi_response);
-		writeToCgi();
+        if (_code == 0)
+        {
+            _cgi_response = STATUS_LINE_200;
+            setCookie(_cgi_response);
+            writeToCgi();
+        }
 	}
 	else
 	{
@@ -599,7 +603,7 @@ const std::string Response::getNextChunk()
     }
     if (_filestream_read.eof() || _filestream_read.peek() == std::ifstream::traits_type::eof())
     {
-        std::cout << "[INFO] EOF reached" << std::endl;
+        // std::cout << "[INFO] EOF reached" << std::endl;
         _file = 0;
         _filestream_read.close();
         return "0\r\n\r\n";
@@ -764,6 +768,8 @@ int Response::  getcode() const
 
 const std::string Response::getTimeOutErrorPage()
 {
+    _target = _req.get("target");
+    _index_virt = _srv.getVirtHostIndex(_req.get("host"));
 	return invalidRequest(getErrorPage(504));
 }
 

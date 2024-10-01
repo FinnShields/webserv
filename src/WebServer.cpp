@@ -186,7 +186,6 @@ int WebServer::fd_is_client_read(pollfd &pfd, Client *client)
 		else if (_cgi_readfd_clients.find(client->get_cgi_fd()) == _cgi_readfd_clients.end())
 		{
 			addCGItoPollfd(pfd, client);
-			std::cout << "Added to poll" << std::endl;
 			return 2;
 		}
 	}
@@ -298,7 +297,6 @@ bool WebServer::checkTimer(int timeout_seconds)
 	bool timedout = false;
 	static time_t lastCheck = std::time(NULL);
 	
-	std::cout << "[INFO] TIMER lastCheck: " << std::difftime(std::time(NULL), lastCheck) << "s ago" << std::endl;
 	if (std::difftime(std::time(NULL), lastCheck) < 30)
 	{
 		// std::cout << "[INFO] TIMER less than 30 sec since last, wont check" << std::endl;
@@ -316,6 +314,8 @@ bool WebServer::checkTimer(int timeout_seconds)
 					}
 					break;
 				}
+	if (!timedout)
+		std::cout << "[TIMER] Noone timed out" << std::endl;
 	lastCheck = std::time(NULL);
 	return timedout;
 }
