@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:06:10 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/30 10:54:16 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/30 14:27:34 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -93,7 +93,7 @@ class Response
         std::string getPath();
         std::string getFileName(const std::string filepath);
         std::string	htmlEscape(const std::string& s);
-        bool	check_body_size();
+        bool	validateContentLength();
         bool	isHtml(const std::string fileName);
         bool	load_directory_entries(const std::string directoryPath, t_vector_str &directories, t_vector_str &files);
         void	setDirectoryToFileName();
@@ -104,6 +104,7 @@ class Response
 		size_t	findString(std::vector<char> bodyRaw, std::string str, size_t offset);
         std::string	decodePath(const std::string path);
 		char	decodeChar(const char *ch);
+		bool 	checkRequestIsValid();
 
 		Response(const Response &copy);
 		Response &operator=(const Response &assign);

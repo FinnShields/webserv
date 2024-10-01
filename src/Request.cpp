@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/12 08:43:48 by fshields          #+#    #+#             */
-/*   Updated: 2024/09/30 10:58:46 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/30 14:33:21 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,6 +36,8 @@ Request::~Request()
 //Status 0: No content-length or transfer-encoding
 //Status 1: Content-length (Webkitforms)
 //Status 2: Transfer-encoding (chunked)
+//Status 4: Target too long
+
 int	Request::read(int _fd)
 {
 	char buffer[MAX_BUFFER_SIZE] = {0};
@@ -43,7 +45,7 @@ int	Request::read(int _fd)
 	_recvReturnTotal += recvReturn;
     std::cout << " read bytes: " << recvReturn << " total bytes:" << _recvReturnTotal << std::endl;
 	if (recvReturn < 0)
-        throw std::runtime_error("Client read error: " + std::string(strerror(errno)));
+        throw std::runtime_error("Client read error");
 	if (recvReturn == 0)
 		return -1;
     for (size_t i = 0; i < (size_t) recvReturn; i++)
@@ -56,6 +58,8 @@ int	Request::read(int _fd)
 		: parse();
 	if (_status == 3 || _status == -1)
 		return _status;
+	if (_status == 4)
+		return 0;
     _status = !_headers["transfer-encoding"].empty() ? 2 :
         !_headers["content-length"].empty() ? 1 : 0;
 	return _cgi_flag ? 2 : IsBodyIncomplete() ? 1 : 0;
@@ -64,25 +68,23 @@ int	Request::read(int _fd)
 void	Request::parse()
 {
 	std::string	input(_reqRaw.data(), _reqRaw.size());
-	// for (size_t i = 0; i < _reqRaw.size(); i++)
-	// 	input.append(1, _reqRaw[i]);
-	if (!extractVersion(input))
+	size_t pos = 0;
+	if (!extractMethod(input, &pos))
 		return ;
-	if (!extractMethod(input))
+	if (!extractTarget(input, &pos))
 		return ;
-	if (!extractTarget(input))
+	if (!extractVersion(input, &pos))
 		return ;
 	extractHeaders(input);
 	if (!get("transfer-encoding").compare("chunked"))
 		_chunkedReqComplete = false;
-	std::cout << "chunkedReqComplete: " << _chunkedReqComplete << std::endl;
 	extractBody();
 	if (DEBUG)
     	display();
 	setCGIflag();
 }
 
-bool Request::extractMethod(std::string& input)
+bool Request::extractMethod(std::string& input, size_t *pos)
 {
 	_method = input.substr(0, input.find_first_of(' '));
 	t_vector_str mtd_default = DEFAULT_METHOD;
@@ -92,32 +94,49 @@ bool Request::extractMethod(std::string& input)
 		std::cerr << "[BAD REQUEST] Unknown method" << std::endl;
 		return (false);
 	}
+	*pos += _method.size();
 	return (true);
 }
 
-bool Request::extractTarget(std::string& input)
+bool Request::extractTarget(std::string& input, size_t *pos)
 {
 	size_t start;
 	size_t end;
 
-	start = input.find_first_of(' ');
+	start = *pos;
 	end = input.find_first_of(' ', start + 1);
+	std::cout << "Start: " << start << " End: " << end << std::endl;
+	if (end - start >= TARGET_MAX_LENGTH)
+	{
+		_badrequest = true;
+		_status = 4;
+		std::cerr << "[BAD REQUEST] URI too long" << std::endl;
+		return false;
+	}
 	size_t lineend = input.find_first_of('\r');
 
-	if (start == std::string::npos || end == std::string::npos || lineend == std::string::npos || end > lineend || start + 1 == end)
+	if (start >= input.size() || end == std::string::npos || lineend == std::string::npos || end > lineend || start + 1 == end)
 	{
 		_badrequest = true;
 		std::cerr << "[BAD REQUEST] No target" << std::endl;
 		return false;
 	}
 	_target = input.substr(start + 1, end - start - 1);
+	*pos += _target.size() + 1;
 	return true;
 }
 
-bool Request::extractVersion(std::string& input)
+bool Request::extractVersion(std::string& input, size_t *pos)
 {
-	size_t start = input.find("HTTP/");
-	if (start == std::string::npos)
+	size_t start = *pos + 1;
+
+	if (input.compare(start, 5, "HTTP/"))
+	{
+		_badrequest = true;
+		std::cerr << "[BAD REQUEST] http version invalid" << std::endl;
+		return false;
+	}
+	if (start >= input.size())
 	{
 		_badrequest = true;	
 		std::cerr << "[BAD REQUEST] No http version" << std::endl;
@@ -127,10 +146,16 @@ bool Request::extractVersion(std::string& input)
 	while (start + end < input.size() && input.at(start + end) != '\r')
 		end++;
 	_version = input.substr(start, end);
-	input.erase(start, end);
 	return true;
 }
 
+bool	Request::headerInvalidChar(char c, int nameOrContent)
+{
+	if (nameOrContent == 0)
+		return !(std::isalnum(c) || c == '-' || c == '_');
+	else
+		return !(c >= 32 && c <= 126);
+}
 
 void	Request::extractHeaders(std::string& input)
 {
@@ -138,22 +163,42 @@ void	Request::extractHeaders(std::string& input)
 	std::string second;
 	size_t	len;
 
-	if(input.find('\n') == std::string::npos)
-		return ;
-	for (size_t i = input.find('\n') + 1; i < input.size(); i++)
+	for (size_t i = input.find("\r\n") + 2; i < input.size(); i++)
 	{
 		len = 0;
-		while (input.size() > (i + len) && input.at(i + len) != ':')
-			if (i + (++len) == input.size() || input.at(i + len) == '\n')
+		if (i <= input.size() - 2 && input[i] == '\r' && input[i + 1] == '\n')
+			return ;
+		while (input.size() > (i + len) && input.at(i + len) != ':') {
+			if (headerInvalidChar(input[i + (len)], 0)) {
+				_badrequest = true;
+				std::cerr << "[BAD REQUEST] Invalid char in header name: \'" << input.at(i + len) << "\'" << std::endl;
 				return ;
+			}
+			len ++;
+		}
 		first = input.substr(i, len);
 		for (size_t i = 0; i < first.size(); i++)
 			first[i] = std::tolower(first[i]);
 		i += len + 2;
+		if (i >= input.size()) {
+			_badrequest = true;
+			std::cerr << "[BAD REQUEST] Invalid header syntax" << std::endl;
+			return;
+		}
 		len = 0;
-		while (input.size() > (i + len) && input.at(i + len) != '\r')
-			len ++;
+		while (input.size() > (i + len) && input.at(i + len) != '\r') {
+			if (headerInvalidChar(input[i + (len++)], 1)) {
+				_badrequest = true;
+				std::cerr << "[BAD REQUEST] Invalid char in header content" << input.at(i + len) << "\'" << std::endl;
+				return ;
+			}
+		}
 		second = input.substr(std::min((size_t) i, input.size()), len);
+		if (first.empty() || second.empty()) {
+			_badrequest = true;
+			std::cerr << "[BAD REQUEST] Header name or content empty" << std::endl;
+			return ;
+		}
 		_headers[first] = second;
 		i += len + 1;
 	}

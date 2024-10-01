@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 13:05:15 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/30 10:55:06 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/30 14:47:55 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,8 @@ const std::string Response::setAbsolutePath()
     return exePath.parent_path().string() + '/';
 }
 
-Response::Response(int fd, Request &req, Server &srv, Client &client) : _fd(fd), _req(req), _srv(srv), _client(client), _file(0), _code(0){
+Response::Response(int fd, Request &req, Server &srv, Client &client) : _fd(fd), _req(req), _srv(srv), _client(client), _file(0), _code(0)
+{
 }
 
 Response::~Response() 
@@ -50,18 +51,13 @@ const std::string Response::run()
 	if (_file != 0)
     	return _file == -1 ? getErrorPage(500) : appendfile();
     std::string method = _req.get("method");
-	_target = _req.get("target");
+    _target = _req.get("target");
 	_index_virt = _srv.getVirtHostIndex(_req.get("host"));
-    
-	if (_req.isBadRequest())
-		return invalidRequest(getErrorPage(400));
-	if (!supportHTTPversion())
-		return invalidRequest(getErrorPage(505));
-	if(!check_body_size()) 
-		return invalidRequest(getErrorPage(413));
-	if(!isMethodValid(method))
-		return invalidRequest(_response);
-
+    if (!checkRequestIsValid())
+    {
+        _req.getBodyRawBytes().clear();
+	    return appendHeadersAndBody(_response);
+    }
 	_response = _srv.config.getBestValues(_index_virt, _target, "return", {""})[0] != "" ? redirect() :
 				isCGI() ? runCGI() :
 				(method == "GET" || method == "HEAD") ? get() : 
@@ -72,10 +68,41 @@ const std::string Response::run()
 	return appendHeadersAndBody(_response);
 }
 
+bool Response::checkRequestIsValid()
+{
+    if(!isMethodValid(_req.get("method")))
+        return false;
+    if (_req.isBadRequest())
+    {
+        _req.getStatus() == 4 ? (_code = 414) : (_code = 400);
+        _response = getErrorPage(_code);
+        return false;
+    }
+    if (!supportHTTPversion())
+    {
+        _response = getErrorPage(_code);
+        return false;
+    }
+    if(!validateContentLength())
+    {
+        _response = getErrorPage(413);
+        return false;
+    }
+    return true;
+}
+
 bool Response::supportHTTPversion()
 {
 	std::string version = _req.get("version");
-	return version == "HTTP/1.1";;
+    if (!version.compare("HTTP/1.1")) {
+        return true;
+    }
+	if (!version.compare("HTTP/0.9") || !version.compare("HTTP/1.0") ||
+    !version.compare("HTTP/2") || !version.compare("HTTP/3"))
+        _code = 505;
+    else
+        _code = 400;
+    return false;
 }
 const std::string Response::invalidRequest(std::string response)
 {
@@ -230,9 +257,12 @@ const std::string Response::runCGI()
 			std::cerr << "CGI status = " << _code << "\n";
 			std::cout << "------- END ----------" << std::endl;
 		}
-        _cgi_response = STATUS_LINE_200;
-        setCookie(_cgi_response);
-		writeToCgi();
+        if (_code == 0)
+        {
+            _cgi_response = STATUS_LINE_200;
+            setCookie(_cgi_response);
+            writeToCgi();
+        }
 	}
 	else
 	{
@@ -373,7 +403,7 @@ bool Response::isCGI()
     return _req.isCGIflag();
 }
 
-bool Response::check_body_size()
+bool Response::validateContentLength()
 {
     const std::string max_body_size_str = _srv.config.getBestValues(_index_virt, _target, "client_max_body_size", {DEFAULT_MAX_BODY_SIZE})[0];
 	if (max_body_size_str == "0")
@@ -573,7 +603,7 @@ const std::string Response::getNextChunk()
     }
     if (_filestream_read.eof() || _filestream_read.peek() == std::ifstream::traits_type::eof())
     {
-        std::cout << "[INFO] EOF reached" << std::endl;
+        // std::cout << "[INFO] EOF reached" << std::endl;
         _file = 0;
         _filestream_read.close();
         return "0\r\n\r\n";
@@ -738,7 +768,9 @@ int Response::  getcode() const
 
 const std::string Response::getTimeOutErrorPage()
 {
-	return getErrorPage(504);
+    _target = _req.get("target");
+    _index_virt = _srv.getVirtHostIndex(_req.get("host"));
+	return invalidRequest(getErrorPage(504));
 }
 
 std::string &Response::getCgiResponse()

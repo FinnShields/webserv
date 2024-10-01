@@ -6,7 +6,7 @@
 /*   By: bsyvasal <bsyvasal@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/14 12:22:14 by bsyvasal          #+#    #+#             */
-/*   Updated: 2024/09/26 16:18:19 by bsyvasal         ###   ########.fr       */
+/*   Updated: 2024/09/30 15:12:39 by bsyvasal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -79,7 +79,8 @@ void WebServer::run()
 		// 	std::cout << "fd: " << pfd.fd << " events: " << pfd.events << " revents: " << pfd.revents << " Address of object: " << &pfd << std::endl;
 		if (poll_result == -1)
 			return (perror("poll"));
-		if (!checkTimer(SOCKETTIMEOUT) && poll_result == 0)
+		checkTimer(SOCKETTIMEOUT);
+		if (poll_result == 0)
 			continue;
 		try
 		{
@@ -112,7 +113,8 @@ void WebServer::iterateAndRunActiveFD()
 {
 	static std::vector<pollfd>::iterator it = _fds.begin();
 	int status = -1;
-	while (1)
+	auto lastElement = it == _fds.begin() ? _fds.end() : it - 1;
+	while (it != lastElement)
 	{
 		if (it == _fds.end())
 			it = _fds.begin();
@@ -184,7 +186,6 @@ int WebServer::fd_is_client_read(pollfd &pfd, Client *client)
 		else if (_cgi_readfd_clients.find(client->get_cgi_fd()) == _cgi_readfd_clients.end())
 		{
 			addCGItoPollfd(pfd, client);
-			std::cout << "Added to poll" << std::endl;
 			return 2;
 		}
 	}
@@ -296,8 +297,11 @@ bool WebServer::checkTimer(int timeout_seconds)
 	bool timedout = false;
 	static time_t lastCheck = std::time(NULL);
 	
-	if (std::difftime(lastCheck, std::time(NULL)) < 30)
+	if (std::difftime(std::time(NULL), lastCheck) < 30)
+	{
+		// std::cout << "[INFO] TIMER less than 30 sec since last, wont check" << std::endl;
 		return false;
+	}
 	for (std::vector<pollfd>::iterator it = _fds.begin(); it != _fds.end(); it++)
 		if (it->revents == 0)
 			for (Server &srv : _servers)
@@ -310,6 +314,8 @@ bool WebServer::checkTimer(int timeout_seconds)
 					}
 					break;
 				}
+	if (!timedout)
+		std::cout << "[TIMER] Noone timed out" << std::endl;
 	lastCheck = std::time(NULL);
 	return timedout;
 }

@@ -21,6 +21,8 @@
 # include "Cgi.hpp"
 # include "Server.hpp"
 
+# define TARGET_MAX_LENGTH 2048
+
 class Cgi;
 class Server;
 
@@ -44,10 +46,11 @@ class Request
 		bool	_badrequest;
 		bool	_headerComplete;
 		void	parse();
-		bool	extractMethod(std::string& input);
-		bool	extractTarget(std::string& input);
-		bool	extractVersion(std::string& input);
+		bool	extractMethod(std::string& input, size_t *pos);
+		bool	extractTarget(std::string& input, size_t *pos);
+		bool	extractVersion(std::string& input, size_t *pos);
 		void	extractHeaders(std::string& input);
+		bool	headerInvalidChar(char c, int nameOrContent);
 		void	extractBody();
 		int		chunkExtractNumber(char *reqArray, size_t &i, size_t max_size);
 		void	handleChunks(char *reqArray, size_t i, size_t max_size);
