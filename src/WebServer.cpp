@@ -126,7 +126,7 @@ void WebServer::iterateAndRunActiveFD()
 			{
 				if ((status = fd_is_cgi(*it)) < 0)
 					if ((status = fd_is_cgiwrite(*it)) < 0)
-						if ((status = fd_is_client(*it) < 0))
+						if ((status = fd_is_client(*it)) < 0)
 							if (!fd_is_server(it->fd))
 								status = 1;
 				it = (status == 1) ? _fds.erase(it) : it + 1;
