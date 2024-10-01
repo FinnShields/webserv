@@ -21,6 +21,8 @@
 # include "Cgi.hpp"
 # include "Server.hpp"
 
+# define TARGET_MAX_LENGTH 2048
+
 class Cgi;
 class Server;
 

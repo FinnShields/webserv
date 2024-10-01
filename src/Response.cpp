@@ -52,16 +52,11 @@ const std::string Response::run()
     std::string method = _req.get("method");
 	_target = _req.get("target");
 	_index_virt = _srv.getVirtHostIndex(_req.get("host"));
-    
-    if(!isMethodValid(method))
-		return invalidRequest(_response);
-	if (_req.isBadRequest())
-		return invalidRequest(getErrorPage(400));
-	if (!supportHTTPversion())
-		return invalidRequest(getErrorPage(_code));
-	if(!validateContentLength()) 
-		return invalidRequest(getErrorPage(413));
-
+    if (!checkRequestIsValid())
+    {
+        _req.getBodyRawBytes().clear();
+	    return appendHeadersAndBody(_response);
+    }
 	_response = _srv.config.getBestValues(_index_virt, _target, "return", {""})[0] != "" ? redirect() :
 				isCGI() ? runCGI() :
 				(method == "GET" || method == "HEAD") ? get() : 
@@ -70,6 +65,29 @@ const std::string Response::run()
 				(method == "DELETE") ? deleteResp() : 
 				getErrorPage(501);
 	return appendHeadersAndBody(_response);
+}
+
+bool Response::checkRequestIsValid()
+{
+    if(!isMethodValid(_req.get("method")))
+        return false;
+    if (_req.isBadRequest())
+    {
+        _req.getStatus() == 4 ? (_code = 414) : (_code = 400);
+        _response = getErrorPage(_code);
+        return false;
+    }
+    if (!supportHTTPversion())
+    {
+        _response = getErrorPage(_code);
+        return false;
+    }
+    if(!validateContentLength())
+    {
+        _response = getErrorPage(413);
+        return false;
+    }
+    return true;
 }
 
 bool Response::supportHTTPversion()
