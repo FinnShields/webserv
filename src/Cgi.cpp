@@ -134,7 +134,9 @@ void Cgi::runCmd(){
 
 ssize_t Cgi::writeToPipe(const void *buf, size_t count)
 {
-	if (count > 0)
+	if (_fd_to_cgi[1] == -1)
+        return 0;
+    if (count > 0)
 	{
 		int bytesWritten = write(_fd_to_cgi[1], buf, std::min(count, (size_t)10000));
 		std::cout << "[CGI] Wrote to pipe " << bytesWritten << " bytes" << std::endl;
@@ -150,6 +152,8 @@ ssize_t Cgi::writeToPipe(const void *buf, size_t count)
 
 std::string Cgi::readFromPipe()
 {
+    if (_fd_from_cgi[0] == -1)
+        return "";
     char buffer[MAX_BUFFER_SIZE];
 	ssize_t size = read(_fd_from_cgi[0], buffer, sizeof(buffer));
 	std::cout << "[CGI] Read from pipe " << size << " bytes" << std::endl;
