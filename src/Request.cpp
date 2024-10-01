@@ -36,6 +36,8 @@ Request::~Request()
 //Status 0: No content-length or transfer-encoding
 //Status 1: Content-length (Webkitforms)
 //Status 2: Transfer-encoding (chunked)
+//Status 4: Target too long
+
 int	Request::read(int _fd)
 {
 	char buffer[MAX_BUFFER_SIZE] = {0};
@@ -56,6 +58,8 @@ int	Request::read(int _fd)
 		: parse();
 	if (_status == 3 || _status == -1)
 		return _status;
+	if (_status == 4)
+		return 0;
     _status = !_headers["transfer-encoding"].empty() ? 2 :
         !_headers["content-length"].empty() ? 1 : 0;
 	return _cgi_flag ? 2 : IsBodyIncomplete() ? 1 : 0;
@@ -101,6 +105,14 @@ bool Request::extractTarget(std::string& input, size_t *pos)
 
 	start = *pos;
 	end = input.find_first_of(' ', start + 1);
+	std::cout << "Start: " << start << " End: " << end << std::endl;
+	if (end - start >= TARGET_MAX_LENGTH)
+	{
+		_badrequest = true;
+		_status = 4;
+		std::cerr << "[BAD REQUEST] URI too long" << std::endl;
+		return false;
+	}
 	size_t lineend = input.find_first_of('\r');
 
 	if (start >= input.size() || end == std::string::npos || lineend == std::string::npos || end > lineend || start + 1 == end)

@@ -104,6 +104,7 @@ class Response
 		size_t	findString(std::vector<char> bodyRaw, std::string str, size_t offset);
         std::string	decodePath(const std::string path);
 		char	decodeChar(const char *ch);
+		bool 	checkRequestIsValid();
 
 		Response(const Response &copy);
 		Response &operator=(const Response &assign);
