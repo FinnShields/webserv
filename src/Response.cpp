@@ -630,9 +630,11 @@ bool Response::hasMoreChunks() const
 
 size_t  Response::findString(std::vector<char> bodyRaw, std::string str, size_t offset)
 {
+    if (offset >= bodyRaw.size())
+        return (std::string::npos);
     for (size_t i = offset; i < bodyRaw.size(); i++)
     {
-        for (size_t j = 0; j < str.size(); j++)
+        for (size_t j = 0; j < str.size() && i + j < bodyRaw.size(); j++)
         {
             if (bodyRaw[i + j] != str[j])
                 break ;
