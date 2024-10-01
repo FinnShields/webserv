@@ -73,12 +73,12 @@ void WebServer::run()
 {
 	while (running)
 	{
-		std::cout << "Waiting for action - polls: " << _fds.size() << "\r" << std::flush;
+		std::cout << "Waiting for action - polls: " << _fds.size() << std::endl;
 		int poll_result = poll(_fds.data(), _fds.size(), SOCKETTIMEOUT * 1000);
 		if (!running)
 			break;
-		for (pollfd &pfd : _fds)
-			std::cout << "fd: " << pfd.fd << " events: " << pfd.events << " revents: " << pfd.revents << " Address of object: " << &pfd << std::endl;
+		// for (pollfd &pfd : _fds)
+		// 	std::cout << "fd: " << pfd.fd << " events: " << pfd.events << " revents: " << pfd.revents << " Address of object: " << &pfd << std::endl;
 		if (poll_result == -1)
 			return (perror("poll"));
 		checkTimer(SOCKETTIMEOUT);
@@ -88,7 +88,7 @@ void WebServer::run()
 		{
 			if (iterateAndCheckIncomingConnections() == 0)
 				iterateAndRunActiveFD();
-			usleep(1000);
+			usleep(500);
 		}
 		catch (std::vector<pollfd>::iterator &it)
 		{
@@ -160,7 +160,7 @@ int WebServer::fd_is_client(pollfd &pfd)
 	for (Server &srv : _servers)
 		if ((client = srv.get_client(pfd.fd)))
 		{
-			std::cout << "[INFO] Client fd: " << pfd.fd << " : " << pfd.revents << " ";
+			std::cout << "[INFO] Client fd: " << pfd.fd << " : " << pfd.revents << " " << std::flush;
             if (pfd.revents & POLLOUT)
 				if (fd_is_client_write(pfd, client) == 1)
 					return 1;
@@ -169,6 +169,7 @@ int WebServer::fd_is_client(pollfd &pfd)
 					return 1;
 			if (pfd.revents & (POLLNVAL | POLLHUP))
 			{
+				std::cout << "trying to close client" << std::endl;
 				client->close_connection();
 				return 1;
 			}
@@ -241,7 +242,7 @@ int WebServer::fd_is_cgi(pollfd pfd)
 	auto it = _cgi_readfd_clients.find(pfd.fd);
 	if (it == _cgi_readfd_clients.end())
 		return -1;
-	std::cout << "[INFO] CGI read fd: " << pfd.fd << " : " << pfd.revents << " :";
+	std::cout << "[INFO] CGI read fd: " << pfd.fd << " : " << pfd.revents << " :" << std::flush;
 	Client *client = nullptr;
     
 	for (Server &srv : _servers)
@@ -272,7 +273,7 @@ int WebServer::fd_is_cgiwrite(pollfd &pfd)
 	auto it = _cgi_writefd_clients.find(pfd.fd);
 	if (it == _cgi_writefd_clients.end())
 		return -1;
-	std::cout << "[INFO] CGI write fd: " << pfd.fd << " : " << pfd.revents << " : ";
+	std::cout << "[INFO] CGI write fd: " << pfd.fd << " : " << pfd.revents << " : " << std::flush;
 	Client *client = nullptr;
 
 	for (Server &srv : _servers)
@@ -283,6 +284,7 @@ int WebServer::fd_is_cgiwrite(pollfd &pfd)
 					pfd.events = 0;
 			if (client->isRequestComplete() || pfd.revents & POLLHUP || pfd.revents & POLLNVAL)
 			{
+				std::cout << "closed cgi write_fd" << std::endl;
 				close(pfd.fd);
 				_cgi_writefd_clients.erase(pfd.fd);
 				return 1;

@@ -119,8 +119,7 @@ bool Client::timeout(unsigned int timeout)
 	if (difftime(std::time(NULL), _starttime) > timeout)
 	{
 		std::cout << "[TIMER] Client fd: " << _fd << " timed out" << std::endl;
-		if (!_res)
-			_res = std::make_unique<Response>(_fd, *_request, *_server, *this);
+		_res = std::make_unique<Response>(_fd, *_request, *_server, *this);
 		_response = _res->getTimeOutErrorPage();
 		_force_closeconnection = true;
 		_starttime = std::time(NULL);
@@ -181,6 +180,8 @@ int Client::getCGIwritefd()
 int Client::readFromCGI()
 {
 	_starttime = std::time(NULL);
+	if (!_res)
+		return 0;
 	return _res->readfromCGI();
 }
 

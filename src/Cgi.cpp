@@ -136,12 +136,16 @@ ssize_t Cgi::writeToPipe(const void *buf, size_t count)
 	{
 		int bytesWritten = write(_fd_to_cgi[1], buf, std::min(count, (size_t)10000));
 		std::cout << "[CGI] Wrote to pipe " << bytesWritten << " bytes" << std::endl;
-		if (bytesWritten < 0 || bytesWritten == 0 ||  (!_request.IsBodyIncomplete() && (size_t) bytesWritten == count))
+		if (bytesWritten < 0)
         {
+            close(_fd_to_cgi[1]);
+            kill(_pid, SIGKILL);
+            throw std::runtime_error("Write to cgi");
+        }
+        if (bytesWritten == 0)
             return 0;
             // std::cerr << (close(_fd_to_cgi[1]) == -1 ? "[CGI] Failure close cgi topipe\n" : "[CGI] closed write Pipe\n");
             // _fd_to_cgi[1] = -1;
-        }
 		return bytesWritten;	
 	}
 	// if (!_request.IsBodyIncomplete())
@@ -159,8 +163,11 @@ std::string Cgi::readFromPipe()
     char buffer[MAX_BUFFER_SIZE];
 	ssize_t size = read(_fd_from_cgi[0], buffer, sizeof(buffer));
 	std::cout << "[CGI] Read from pipe " << size << " bytes" << std::endl;
-    if (size < 0) 
-		throw std::runtime_error("readFromFd: read error occured!");
+    if (size < 0)
+    {
+        kill(_pid, SIGKILL);
+        return ("Status: 500 Internal Server Error");
+    }
 	if (size == 0)
 	{
 		// close(_fd_from_cgi[0]);
@@ -357,7 +364,7 @@ void Cgi::_runChildCgi(){
     std::string path = _target_foldername;
 	if (DEBUG)
 			 std::cerr << "CGI: chdir to " << path  << std::endl;
-    std::cerr << "chdir returns: " << chdir(path.c_str()) << std::endl;
+    chdir(path.c_str());
     execve(_argv[0], _argv, _envp);
     std::cerr << ("CGI: execve error occurred!") << std::endl;
 	write(1, "Status: 500 Internal Server Error", 34);

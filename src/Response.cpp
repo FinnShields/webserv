@@ -293,15 +293,14 @@ int Response::writeToCgi()
 
 size_t Response::readfromCGI()
 {
-	std::string tmp = _cgi->readFromPipe();
+	if (!_cgi)
+        return 0;
+    std::string tmp = _cgi->readFromPipe();
 	if (tmp.find("Status: 500 Internal Server Error") != std::string::npos)
 	{
-		_cgi_response = getErrorPage(500);
-		_cgi_response = appendHeadersAndBody(_cgi_response);
-		_code = 500;
-		return _cgi_response.size();
+		_cgi_response = invalidRequest(getErrorPage(500));
+		return 0;
 	}
-	_code = _cgi->getStatus();
 	_cgi_response.append(tmp);
 	return tmp.size();
 }
