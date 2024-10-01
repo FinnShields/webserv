@@ -238,9 +238,12 @@ const std::string Response::runCGI()
 			std::cerr << "CGI status = " << _code << "\n";
 			std::cout << "------- END ----------" << std::endl;
 		}
-        _cgi_response = STATUS_LINE_200;
-        setCookie(_cgi_response);
-		writeToCgi();
+        if (_code == 0)
+        {
+            _cgi_response = STATUS_LINE_200;
+            setCookie(_cgi_response);
+            writeToCgi();
+        }
 	}
 	else
 	{
@@ -581,7 +584,7 @@ const std::string Response::getNextChunk()
     }
     if (_filestream_read.eof() || _filestream_read.peek() == std::ifstream::traits_type::eof())
     {
-        std::cout << "[INFO] EOF reached" << std::endl;
+        // std::cout << "[INFO] EOF reached" << std::endl;
         _file = 0;
         _filestream_read.close();
         return "0\r\n\r\n";

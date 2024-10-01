@@ -79,7 +79,7 @@ int Client::send_response()
 	}
     if (_res->hasMoreChunks())
     {
-		std::cout << "[INFO] has more chunks" << std::endl;
+		// std::cout << "[INFO] has more chunks" << std::endl;
         _response = _res->getNextChunk();
         return 0;
     }
@@ -119,7 +119,7 @@ bool Client::timeout(unsigned int timeout)
 {
 	if (difftime(std::time(NULL), _starttime) > timeout)
 	{
-		std::cout << "[INFO] Client timed out" << std::endl;
+		std::cout << "Client fd: " << _fd << " timed out" << std::endl;
 		if (!_res)
 			_res = std::make_unique<Response>(_fd, *_request, *_server, *this);
 		_response = _res->getTimeOutErrorPage();
