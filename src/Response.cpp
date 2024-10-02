@@ -37,11 +37,16 @@ Response::~Response()
         _filestream_read.close();
         std::cout << "[INFO] File read closed" << std::endl;
     }
+	if (_file == 1 || _file == 2)
+	{
+		std::remove(_fileName.c_str());
+		std::cerr << "[FILE] Deleted due to interruption" << std::endl;
+	}
 }
 
 /* File status
 -1 = File failure
-0 = no file
+0 = no file / Upload succesfully.
 1 = file created and closed
 2 = file is opened in appending mode
 3 = has more chunks to upload
@@ -557,6 +562,8 @@ int Response::createFile(int type)
     _fileCurrentSize = end - start;
     _file = 1;
     std::cout << "[INFO] File created  " << _req.getBodyTotalSize() << "/" << _req.getHeader("content-length") << std::endl;
+	if (_req.getBodyTotalSize() == std::stol(_req.getHeader("content-length")))
+			_file = 0;
     return 201;
 }
 
@@ -580,6 +587,8 @@ const std::string Response::appendfile()
         _fileCurrentSize += end;
 		bodyRaw.clear();
         std::cout << "[INFO] File appended " << _req.getBodyTotalSize() << "/" << _req.getHeader("content-length") << std::endl;
+		if (_req.getBodyTotalSize() == std::stol(_req.getHeader("content-length")))
+			_file = 0;
         _response = STATUS_LINE_201;
 		setCookie(_response);
 		return _response + contentLength(0) + std::string("\r\n");
