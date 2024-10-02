@@ -46,7 +46,7 @@ Cgi& Cgi::operator=(const Cgi&){
 }
 
 Cgi::~Cgi(){
-    std::cerr << "[INFO] Cgi destructor call\n";
+    std::cerr << "[INFO] CGI destructor call\n";
     cleanEnv();
     for (int i = 0; _argv[i] != nullptr; i++)
         delete[] _argv[i];
@@ -56,8 +56,6 @@ Cgi::~Cgi(){
 		kill(_pid, SIGKILL);
 		std::cerr << "[CGI Destructor] Child process killed\n";
 	}
-	else
-		std::cerr << "[CGI Destructor] Child process already terminated\n";
 }
 
 void Cgi::cleanEnv(){
@@ -144,15 +142,8 @@ ssize_t Cgi::writeToPipe(const void *buf, size_t count)
         }
         if (bytesWritten == 0)
             return 0;
-            // std::cerr << (close(_fd_to_cgi[1]) == -1 ? "[CGI] Failure close cgi topipe\n" : "[CGI] closed write Pipe\n");
-            // _fd_to_cgi[1] = -1;
 		return bytesWritten;	
 	}
-	// if (!_request.IsBodyIncomplete())
-    // {
-	// 	std::cerr << (close(_fd_to_cgi[1]) == -1 ? "[CGI] Failure close cgi topipe\n" : "[CGI] closed write Pipe\n");
-    //     _fd_to_cgi[1] = -1;
-    // }
 	return 0;
 }
 
@@ -170,8 +161,6 @@ std::string Cgi::readFromPipe()
     }
 	if (size == 0)
 	{
-		// close(_fd_from_cgi[0]);
-        // _fd_from_cgi[0] = -1;
 		_status = 200;
 		return "";
 	}
@@ -194,8 +183,7 @@ int Cgi::get_writefd()
 
 void Cgi::setExtension()
 {
-    //_pos_cgi = 9;   //  for old version staring from /cgi-bin/
-    _pos_cgi = 0;   //    for new verstion strating form begining /
+    _pos_cgi = 0;
     _pos_dot = _path.find('.', _pos_cgi);
     if (_pos_dot == std::string::npos)
         return ;

@@ -340,29 +340,26 @@ const std::string Response::load_directory_listing(std::string directoryPath)
     t_vector_str        directories;
     t_vector_str        files;
     std::string         res;
+    std::ostringstream  oss;
 
     if (!load_directory_entries(directoryPath, directories, files))
         return (getErrorPage(403));
 
     if (_target == "/")
         _target = "";
-    _body = "<html><head><title>Directory Listing</title></head><body>\
-			<h2>Directory Listing of " + htmlEscape(directoryPath) + "</h2><ul>\
-    		<li><a href=\"../\">..</a>";
+    oss << "<html><head><title>Directory Listing</title></head><body>"
+		<< "<h2>Directory Listing of " << htmlEscape(directoryPath) << "</h2><ul>"
+    	<<"<li><a href=\"../\">..</a>";
     for (const auto& dirName : directories) 
-        _body += "<li id=\"" + dirName + "\"><a href=\"" + _target + "/" + dirName + "\">" + dirName + "</a>"
-                + "<button type=\"button\" onclick=\"deleteFile('" + dirName + "')\">Delete</button></li>";
-    for (const auto& fileName : files) {
-        _body += "<li id=\"" + fileName + "\"><a href=\"" + _target + "/" + fileName + "\" download>" + fileName + "</a>"
-                + "<button type=\"button\" onclick=\"deleteFile('" + fileName + "')\">Delete</button></li>";
-        _body += "</ul><script>\
-        	function deleteFile(fileName) {\
-        	fetch('" + _target + "/' + encodeURIComponent(fileName), { method: 'DELETE' })\
-        	    .then(response => { if (response.ok) document.getElementById(fileName).remove(); })\
-        	    .catch(error => console.error('Error:', error));\
-        	}</script>\
-        	</body></html>";
-    }
+        oss << "<li id=\"" << dirName << "\"><a href=\"" << _target << "/" << dirName << "\">" << dirName << "</a>"
+                << "<button type=\"button\" onclick=\"deleteFile('" << dirName << "')\">Delete</button></li>";
+    for (const auto& fileName : files)
+        oss << "<li id=\"" << fileName << "\"><a href=\"" << _target << "/" << fileName << "\" download>" << fileName << "</a>"
+                << "<button type=\"button\" onclick=\"deleteFile('" << fileName << "')\">Delete</button></li>";
+    oss << "</ul><script>function deleteFile(fileName) {fetch('" << _target << "/' + encodeURIComponent(fileName), { method: 'DELETE' })\
+            .then(response => { if (response.ok) document.getElementById(fileName).remove(); })\
+            .catch(error => console.error('Error:', error));}</script></body></html>";
+    _body = oss.str();
     res = _code == 201 ? STATUS_LINE_201 : STATUS_LINE_200 ;
     res += "Content-Type: text/html\r\n" + contentLength(_body.size());
     return (res);
