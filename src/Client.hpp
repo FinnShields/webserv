@@ -60,6 +60,7 @@ class Client
         void close_connection();
 		void resetForNextRequest();
         void setSessionID(int id);
+        void set_closeconnection();
         int	handle_request();
         int send_response();
 		int readFromCGI();

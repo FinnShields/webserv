@@ -56,7 +56,8 @@ const std::string Response::run()
     if (!checkRequestIsValid())
     {
         _req.getBodyRawBytes().clear();
-	    return appendHeadersAndBody(_response);
+		_client.set_closeconnection();
+	    return appendHeadersAndBody(_response, true);
     }
 	_response = _srv.config.getBestValues(_index_virt, _target, "return", {""})[0] != "" ? redirect() :
 				isCGI() ? runCGI() :
@@ -65,7 +66,7 @@ const std::string Response::run()
 				(method == "PUT") ? put() :
 				(method == "DELETE") ? deleteResp() : 
 				getErrorPage(501);
-	return appendHeadersAndBody(_response);
+	return appendHeadersAndBody(_response, false);
 }
 
 bool Response::checkRequestIsValid()
@@ -107,14 +108,16 @@ bool Response::supportHTTPversion()
 const std::string Response::invalidRequest(std::string response)
 {
 	_req.getBodyRawBytes().clear();
-	return appendHeadersAndBody(response);
+	return appendHeadersAndBody(response, true);
 }
 
-const std::string Response::appendHeadersAndBody(std::string &response)
+const std::string Response::appendHeadersAndBody(std::string &response, bool closeConnection)
 {
 	if (response.empty())
 		return "";
 	setCookie(response);
+    if (closeConnection)
+		response += "Connection: close\r\n";
 	response += "\r\n";
 	response += (_req.get("method").compare("HEAD") && !_body.empty()) ? _body : "";
 	return response;
@@ -567,7 +570,7 @@ const std::string Response::appendfile()
     }
     std::vector<char> &bodyRaw = _req.getBodyRawBytes();
     if (int status = checkBodySize(bodyRaw) != 0)
-        return getErrorPage(status);
+        return invalidRequest(getErrorPage(status));
     size_t end = findString(bodyRaw, _boundary + "--", 0);
     checkOtherBoundary(bodyRaw, end, 0);
     end = end == std::string::npos ? bodyRaw.size() : end - 5;

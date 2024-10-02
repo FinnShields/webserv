@@ -76,7 +76,7 @@ class Response
 		const std::string load_directory_listing(std::string directoryPath);
 		const std::string getErrorPage(int code);
 		const std::string appendfile();
-		const std::string appendHeadersAndBody(std::string&);
+		const std::string appendHeadersAndBody(std::string& response, bool closeConnection);
 		const std::string invalidRequest(std::string);
 		std::string createCookie();
 

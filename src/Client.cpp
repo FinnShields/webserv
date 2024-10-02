@@ -53,7 +53,7 @@ int Client::handle_request()
 		return -1;
 	}
     _response = _res->run();
-    return ret;
+    return _force_closeconnection ? 0 : ret;
 }
 
 //Return 0 = Unfinsihed request or response
@@ -141,6 +141,10 @@ void Client::resetForNextRequest()
 	_force_closeconnection = false;
 }
 
+void Client::set_closeconnection()
+{
+	_force_closeconnection = true;
+}
 void Client::close_connection()
 {
     std::cout << "[INFO] Closing connection" << std::endl;
