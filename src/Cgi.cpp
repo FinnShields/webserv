@@ -46,22 +46,16 @@ Cgi& Cgi::operator=(const Cgi&){
 }
 
 Cgi::~Cgi(){
-    std::cerr << "[INFO] Cgi destructor call\n";
+    std::cerr << "[INFO] CGI destructor call\n";
     cleanEnv();
     for (int i = 0; _argv[i] != nullptr; i++)
         delete[] _argv[i];
     delete[](_argv);
-	if (_fd_to_cgi[1] != -1 && close(_fd_to_cgi[1]) == -1)
-		std::cerr << "[CGI Destructor] Failure close cgi topipe\n";
-	if (_fd_from_cgi[0] != -1 && close(_fd_from_cgi[0]) == -1)
-        std::cerr << "[CGI Destructor] Failure close cgi frompipe\n";
 	if (_pid > 0)
 	{
 		kill(_pid, SIGKILL);
 		std::cerr << "[CGI Destructor] Child process killed\n";
 	}
-	else
-		std::cerr << "[CGI Destructor] Child process already terminated\n";
 }
 
 void Cgi::cleanEnv(){
@@ -140,13 +134,16 @@ ssize_t Cgi::writeToPipe(const void *buf, size_t count)
 	{
 		int bytesWritten = write(_fd_to_cgi[1], buf, std::min(count, (size_t)10000));
 		std::cout << "[CGI] Wrote to pipe " << bytesWritten << " bytes" << std::endl;
-		if (bytesWritten < 0 || bytesWritten == 0 ||  (!_request.IsBodyIncomplete() && (size_t) bytesWritten == count))
-		std::cerr << (close(_fd_to_cgi[1]) == -1 ? "[CGI] Failure close cgi topipe\n" : "[CGI] closed write Pipe\n");
-        _fd_to_cgi[1] = -1;
+		if (bytesWritten < 0)
+        {
+            close(_fd_to_cgi[1]);
+            kill(_pid, SIGKILL);
+            throw std::runtime_error("Write to cgi");
+        }
+        if (bytesWritten == 0)
+            return 0;
 		return bytesWritten;	
 	}
-	if (!_request.IsBodyIncomplete())
-		std::cerr << (close(_fd_to_cgi[1]) == -1 ? "[CGI] Failure close cgi topipe\n" : "[CGI] closed write Pipe\n");
 	return 0;
 }
 
@@ -157,12 +154,13 @@ std::string Cgi::readFromPipe()
     char buffer[MAX_BUFFER_SIZE];
 	ssize_t size = read(_fd_from_cgi[0], buffer, sizeof(buffer));
 	std::cout << "[CGI] Read from pipe " << size << " bytes" << std::endl;
-    if (size < 0) 
-		throw std::runtime_error("readFromFd: read error occured!");
+    if (size < 0)
+    {
+        kill(_pid, SIGKILL);
+        return ("Status: 500 Internal Server Error");
+    }
 	if (size == 0)
 	{
-		close(_fd_from_cgi[0]);
-        _fd_from_cgi[0] = -1;
 		_status = 200;
 		return "";
 	}
@@ -185,8 +183,7 @@ int Cgi::get_writefd()
 
 void Cgi::setExtension()
 {
-    //_pos_cgi = 9;   //  for old version staring from /cgi-bin/
-    _pos_cgi = 0;   //    for new verstion strating form begining /
+    _pos_cgi = 0;
     _pos_dot = _path.find('.', _pos_cgi);
     if (_pos_dot == std::string::npos)
         return ;
@@ -333,9 +330,11 @@ void Cgi::_runChildCgi(){
     }
     _argv[2] = nullptr;
     if (DEBUG)
-			std::cout << "CGI: cgi_path=" << _cgi_path << "<-" << std::endl;
-    if (DEBUG)
-			std::cout << "CGI: execve for ->" << _argv[0] << "<- ->" << _argv[1] << "<- " << std::endl;
+    {
+        std::cerr << "CGI write fd: " << _fd_to_cgi[1] << " readfd: " << _fd_from_cgi[0] << std::endl;
+        std::cerr << "CGI: cgi_path=" << _cgi_path << "<-" << std::endl;
+        std::cerr << "CGI: execve for ->" << _argv[0] << "<- ->" << _argv[1] << "<- " << std::endl;
+    }
     if (close(_fd_to_cgi[1]) == -1 || close(_fd_from_cgi[0]) == -1)
         throw std::runtime_error("close 	 error occurred!");
     if (dup2(_fd_to_cgi[0], 0) == -1 || dup2(_fd_from_cgi[1], 1) == -1)
@@ -353,7 +352,7 @@ void Cgi::_runChildCgi(){
     std::string path = _target_foldername;
 	if (DEBUG)
 			 std::cerr << "CGI: chdir to " << path  << std::endl;
-    std::cerr << "chdir returns: " << chdir(path.c_str()) << std::endl;
+    chdir(path.c_str());
     execve(_argv[0], _argv, _envp);
     std::cerr << ("CGI: execve error occurred!") << std::endl;
 	write(1, "Status: 500 Internal Server Error", 34);

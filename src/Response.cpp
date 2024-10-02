@@ -37,11 +37,16 @@ Response::~Response()
         _filestream_read.close();
         std::cout << "[INFO] File read closed" << std::endl;
     }
+	if (_file == 1 || _file == 2)
+	{
+		std::remove(_fileName.c_str());
+		std::cerr << "[FILE] Deleted due to interruption" << std::endl;
+	}
 }
 
 /* File status
 -1 = File failure
-0 = no file
+0 = no file / Upload succesfully.
 1 = file created and closed
 2 = file is opened in appending mode
 3 = has more chunks to upload
@@ -56,7 +61,8 @@ const std::string Response::run()
     if (!checkRequestIsValid())
     {
         _req.getBodyRawBytes().clear();
-	    return appendHeadersAndBody(_response);
+		_client.set_closeconnection();
+	    return appendHeadersAndBody(_response, true);
     }
 	_response = _srv.config.getBestValues(_index_virt, _target, "return", {""})[0] != "" ? redirect() :
 				isCGI() ? runCGI() :
@@ -65,7 +71,7 @@ const std::string Response::run()
 				(method == "PUT") ? put() :
 				(method == "DELETE") ? deleteResp() : 
 				getErrorPage(501);
-	return appendHeadersAndBody(_response);
+	return appendHeadersAndBody(_response, false);
 }
 
 bool Response::checkRequestIsValid()
@@ -107,14 +113,16 @@ bool Response::supportHTTPversion()
 const std::string Response::invalidRequest(std::string response)
 {
 	_req.getBodyRawBytes().clear();
-	return appendHeadersAndBody(response);
+	return appendHeadersAndBody(response, true);
 }
 
-const std::string Response::appendHeadersAndBody(std::string &response)
+const std::string Response::appendHeadersAndBody(std::string &response, bool closeConnection)
 {
 	if (response.empty())
 		return "";
 	setCookie(response);
+    if (closeConnection)
+		response += "Connection: close\r\n";
 	response += "\r\n";
 	response += (_req.get("method").compare("HEAD") && !_body.empty()) ? _body : "";
 	return response;
@@ -261,7 +269,6 @@ const std::string Response::runCGI()
         {
             _cgi_response = STATUS_LINE_200;
             setCookie(_cgi_response);
-            writeToCgi();
         }
 	}
 	else
@@ -294,15 +301,14 @@ int Response::writeToCgi()
 
 size_t Response::readfromCGI()
 {
-	std::string tmp = _cgi->readFromPipe();
+	if (!_cgi)
+        return 0;
+    std::string tmp = _cgi->readFromPipe();
 	if (tmp.find("Status: 500 Internal Server Error") != std::string::npos)
 	{
-		_cgi_response = getErrorPage(500);
-		_cgi_response = appendHeadersAndBody(_cgi_response);
-		_code = 500;
-		return _cgi_response.size();
+		_cgi_response = invalidRequest(getErrorPage(500));
+		return 0;
 	}
-	_code = _cgi->getStatus();
 	_cgi_response.append(tmp);
 	return tmp.size();
 }
@@ -342,29 +348,26 @@ const std::string Response::load_directory_listing(std::string directoryPath)
     t_vector_str        directories;
     t_vector_str        files;
     std::string         res;
+    std::ostringstream  oss;
 
     if (!load_directory_entries(directoryPath, directories, files))
         return (getErrorPage(403));
 
     if (_target == "/")
         _target = "";
-    _body = "<html><head><title>Directory Listing</title></head><body>\
-			<h2>Directory Listing of " + htmlEscape(directoryPath) + "</h2><ul>\
-    		<li><a href=\"../\">..</a>";
+    oss << "<html><head><title>Directory Listing</title></head><body>"
+		<< "<h2>Directory Listing of " << htmlEscape(directoryPath) << "</h2><ul>"
+    	<<"<li><a href=\"../\">..</a>";
     for (const auto& dirName : directories) 
-        _body += "<li id=\"" + dirName + "\"><a href=\"" + _target + "/" + dirName + "\">" + dirName + "</a>"
-                + "<button type=\"button\" onclick=\"deleteFile('" + dirName + "')\">Delete</button></li>";
-    for (const auto& fileName : files) {
-        _body += "<li id=\"" + fileName + "\"><a href=\"" + _target + "/" + fileName + "\" download>" + fileName + "</a>"
-                + "<button type=\"button\" onclick=\"deleteFile('" + fileName + "')\">Delete</button></li>";
-        _body += "</ul><script>\
-        	function deleteFile(fileName) {\
-        	fetch('" + _target + "/' + encodeURIComponent(fileName), { method: 'DELETE' })\
-        	    .then(response => { if (response.ok) document.getElementById(fileName).remove(); })\
-        	    .catch(error => console.error('Error:', error));\
-        	}</script>\
-        	</body></html>";
-    }
+        oss << "<li id=\"" << dirName << "\"><a href=\"" << _target << "/" << dirName << "\">" << dirName << "</a>"
+                << "<button type=\"button\" onclick=\"deleteFile('" << dirName << "')\">Delete</button></li>";
+    for (const auto& fileName : files)
+        oss << "<li id=\"" << fileName << "\"><a href=\"" << _target << "/" << fileName << "\" download>" << fileName << "</a>"
+                << "<button type=\"button\" onclick=\"deleteFile('" << fileName << "')\">Delete</button></li>";
+    oss << "</ul><script>function deleteFile(fileName) {fetch('" << _target << "/' + encodeURIComponent(fileName), { method: 'DELETE' })\
+            .then(response => { if (response.ok) document.getElementById(fileName).remove(); })\
+            .catch(error => console.error('Error:', error));}</script></body></html>";
+    _body = oss.str();
     res = _code == 201 ? STATUS_LINE_201 : STATUS_LINE_200 ;
     res += "Content-Type: text/html\r\n" + contentLength(_body.size());
     return (res);
@@ -559,6 +562,8 @@ int Response::createFile(int type)
     _fileCurrentSize = end - start;
     _file = 1;
     std::cout << "[INFO] File created  " << _req.getBodyTotalSize() << "/" << _req.getHeader("content-length") << std::endl;
+	if (_req.getBodyTotalSize() == std::stol(_req.getHeader("content-length")))
+			_file = 0;
     return 201;
 }
 
@@ -572,7 +577,7 @@ const std::string Response::appendfile()
     }
     std::vector<char> &bodyRaw = _req.getBodyRawBytes();
     if (int status = checkBodySize(bodyRaw) != 0)
-        return getErrorPage(status);
+        return invalidRequest(getErrorPage(status));
     size_t end = findString(bodyRaw, _boundary + "--", 0);
     checkOtherBoundary(bodyRaw, end, 0);
     end = end == std::string::npos ? bodyRaw.size() : end - 5;
@@ -582,6 +587,8 @@ const std::string Response::appendfile()
         _fileCurrentSize += end;
 		bodyRaw.clear();
         std::cout << "[INFO] File appended " << _req.getBodyTotalSize() << "/" << _req.getHeader("content-length") << std::endl;
+		if (_req.getBodyTotalSize() == std::stol(_req.getHeader("content-length")))
+			_file = 0;
         _response = STATUS_LINE_201;
 		setCookie(_response);
 		return _response + contentLength(0) + std::string("\r\n");

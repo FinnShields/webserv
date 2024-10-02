@@ -105,7 +105,6 @@ bool Request::extractTarget(std::string& input, size_t *pos)
 
 	start = *pos;
 	end = input.find_first_of(' ', start + 1);
-	std::cout << "Start: " << start << " End: " << end << std::endl;
 	if (end - start >= TARGET_MAX_LENGTH)
 	{
 		_badrequest = true;

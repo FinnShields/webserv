@@ -29,7 +29,6 @@
 #include "Response.hpp"
 
 #define SOCKETTIMEOUT 30 //Seconds before a socket times out
-#define POLLTIMEOUT 30000 //Miliseconds without actions before checking if some has timed out 
 
 class WebServer
 {

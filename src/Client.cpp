@@ -53,7 +53,7 @@ int Client::handle_request()
 		return -1;
 	}
     _response = _res->run();
-    return ret;
+    return _force_closeconnection ? 0 : ret;
 }
 
 //Return 0 = Unfinsihed request or response
@@ -119,8 +119,7 @@ bool Client::timeout(unsigned int timeout)
 	if (difftime(std::time(NULL), _starttime) > timeout)
 	{
 		std::cout << "[TIMER] Client fd: " << _fd << " timed out" << std::endl;
-		if (!_res)
-			_res = std::make_unique<Response>(_fd, *_request, *_server, *this);
+		_res = std::make_unique<Response>(_fd, *_request, *_server, *this);
 		_response = _res->getTimeOutErrorPage();
 		_force_closeconnection = true;
 		_starttime = std::time(NULL);
@@ -142,6 +141,10 @@ void Client::resetForNextRequest()
 	_force_closeconnection = false;
 }
 
+void Client::set_closeconnection()
+{
+	_force_closeconnection = true;
+}
 void Client::close_connection()
 {
     std::cout << "[INFO] Closing connection" << std::endl;
@@ -181,6 +184,8 @@ int Client::getCGIwritefd()
 int Client::readFromCGI()
 {
 	_starttime = std::time(NULL);
+	if (!_res)
+		return 0;
 	return _res->readfromCGI();
 }
 

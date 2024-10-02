@@ -82,8 +82,6 @@ class Cgi
 		std::string readFromPipe();
 		int get_pipereadfd();
 		int get_writefd();
-		void closeWritePipe();
-        
 };
 
 #endif
