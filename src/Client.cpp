@@ -119,8 +119,9 @@ bool Client::timeout(unsigned int timeout)
 	if (difftime(std::time(NULL), _starttime) > timeout)
 	{
 		std::cout << "[TIMER] Client fd: " << _fd << " timed out" << std::endl;
-		_res = std::make_unique<Response>(_fd, *_request, *_server, *this);
 		_response = _res->getTimeOutErrorPage();
+		_request = std::make_unique<Request>(_server);
+		_res = std::make_unique<Response>(_fd, *_request, *_server, *this);
 		_force_closeconnection = true;
 		_starttime = std::time(NULL);
 		return true;

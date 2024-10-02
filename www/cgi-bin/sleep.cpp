@@ -25,6 +25,7 @@ int main(int argc, char** argv, char** envp) {
     std::this_thread::sleep_for(std::chrono::seconds(10));
     std::cerr << "Awake!" << std::endl;
 
+	while(1);
     //std::cerr << "-------argc: " << argc << std::endl;
     std::string request_body = readFromFd(0);
     std::cout << "Content-Type: text/html\r\n\r\n";
@@ -41,7 +42,6 @@ int main(int argc, char** argv, char** envp) {
     }
     std::cout << "</h1>";
     std::cout << "</body></html>";
-	while(1);
     //close(0);
     return 0;
 }
