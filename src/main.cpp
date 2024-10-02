@@ -16,7 +16,7 @@
 #include "Config.hpp"
 
 #define DEFAULT_CONFIG "config/three_servers.conf"
-#define DEBUG_MODE 0
+#define DEBUG_MODE 1
 
 int main(int argc, char *argv[]) {
     try
@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
     {
         std::cerr << "Caught exception in main" << std::endl;
         std::cerr << e.what() << '\n';
-        std::exit(EXIT_FAILURE);
+        return 1;
     }
     return 0;
 }

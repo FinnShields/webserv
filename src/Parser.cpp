@@ -386,7 +386,7 @@ bool Parser::isValidMethod(t_group& group_data)
 	t_vector_str vec = group_data["limit_except"];
 	if (vec.empty() || vec.size() > 3)
 		return true;
-	t_vector_str mtd =  {"GET", "POST", "DELETE", "HEAD"};
+	t_vector_str mtd =  {"GET", "POST", "DELETE", "HEAD", "PUT"};
 	for (auto& m: vec){
 		if (find(mtd.begin(), mtd.end(), m) == mtd.end())
 			return false;
