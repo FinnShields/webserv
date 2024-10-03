@@ -6,7 +6,7 @@
 /*   By: apimikov <apimikov@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/26 14:05:21 by apimikov          #+#    #+#             */
-/*   Updated: 2024/09/26 14:08:21 by apimikov         ###   ########.fr       */
+/*   Updated: 2024/10/03 05:42:43 by apimikov         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -343,6 +343,11 @@ bool Parser::isValidIP(const t_vector_str& vec) {
 bool Parser::isValidPort(const t_vector_str& vec) {
 	if (vec.empty() || vec.size() > 1 || vec[0].empty())
 		return false;
+	for (auto& c : vec[0])
+	{
+		if (!isdigit(c))
+			return false;
+	}
 	try {
 		int num = std::stoi(vec[0]);
 		if ( num < 1 || num > 65535)
@@ -384,7 +389,7 @@ bool Parser::isValidNumber(const t_vector_str& vec, int limit_max) {
 bool Parser::isValidMethod(t_group& group_data)
 {
 	t_vector_str vec = group_data["limit_except"];
-	if (vec.empty() || vec.size() > 3)
+	if (vec.empty()) // || vec.size() > 3)
 		return true;
 	t_vector_str mtd =  {"GET", "POST", "DELETE", "HEAD", "PUT"};
 	for (auto& m: vec){
