@@ -87,7 +87,7 @@ server    #  name based virtual server
 
 ## Results
 
-✅ Passed with ???/100 ✅
+✅ Passed with 125/100 ✅
 
 ## License
 
